@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev" : "nodemon",
+    "dev": "nodemon",
     "test:db": "node scripts/test-database.js",
+    "test:connection": "npx ts-node scripts/test-connection.ts",
+    "test:auth": "npx ts-node scripts/test-auth.ts",
     "db:test": "node scripts/test-database.js",
     "db:check": "node scripts/test-database.js"
   },
@@ -15,13 +17,16 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.10",
+    "@types/pg": "^8.15.5",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

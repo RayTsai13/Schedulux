@@ -29,8 +29,8 @@ A scheduling application for small businesses to manage appointments with client
 - `appointments` - Actual bookings (both types)
 
 ### History & Analytics
-- `schedule_rules_history` - Tracks all schedule changes
-- `appointment_history` - Complete appointment lifecycle tracking
+- `schedule_rules_history` - Tracks all schedule changes (no foreign key constraints for trigger compatibility)
+- `appointment_history` - Complete appointment lifecycle tracking (no foreign key constraints for trigger compatibility)
 - `availability_snapshots` - Performance optimization for popular dates
 
 ## Scheduling System
@@ -117,6 +117,20 @@ npm run cli test-appointments     # Test booking workflows
 - Rich error messages and user experience
 - Conflict detection and suggestions
 
+### History Table Design
+
+**Database Handles:**
+- Automatic history tracking via triggers
+- Immutable audit trail creation
+- Timestamp management for all changes
+
+**Application Handles:**
+- History table cleanup (if needed)
+- Orphaned record management
+- Long-term data retention policies
+
+**Design Decision:** History tables use no foreign key constraints to prevent trigger timing conflicts while maintaining complete audit trails through application logic.
+
 ### Authentication
 - bcrypt password hashing with salt rounds
 - JWT-based API authentication
@@ -149,7 +163,7 @@ backend/
 ### Advanced Database Features
 - **JSONB**: Flexible storage for business hours, snapshots
 - **Partial Indexes**: Only index active records
-- **Triggers**: Automatic history tracking without application code
+- **Triggers**: Automatic history tracking without application code (history tables use no FK constraints for compatibility)
 - **Exclusion Constraints**: Prevent overlapping appointments at database level
 
 ## Real-World Applications
