@@ -100,7 +100,7 @@ const allowedOrigins = [
 // ============================================================================
 // MIDDLEWARE SETUP
 // ============================================================================
-// Middleware functions execute in order for every request
+// Middleware functions execute in order for EVERY REQUEST
 // They can modify request/response objects or terminate the request cycle
 
 // 1. Security Headers Middleware
