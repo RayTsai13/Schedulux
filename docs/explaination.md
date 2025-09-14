@@ -1,4 +1,4 @@
-# Scheduling App Project
+# Schedulux Project
 
 ## Overview
 

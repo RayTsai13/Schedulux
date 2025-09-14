@@ -2,7 +2,7 @@
 
 /**
  * Database Test Script
- * Tests all major functionality of the scheduling app database
+ * Tests all major functionality of the Schedulux database
  * Run with: node test-database.js
  */
 
@@ -13,7 +13,7 @@ require('dotenv').config();
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'scheduling_app',
+  database: process.env.DB_NAME || 'schedulux',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'password',
 });

@@ -1,4 +1,4 @@
-# Scheduling App - Project Status
+# Schedulux - Project Status
 
 **Last Updated:** August 20, 2025  
 **Current Phase:** Backend Foundation Complete

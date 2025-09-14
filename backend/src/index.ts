@@ -1,15 +1,16 @@
 /**
  * Express.js Server Setup
  * 
- * This file sets up the main Express server for the scheduling application.
+ * This file sets up the main Express server for the Schedulux application.
  * It includes all necessary middleware, routes, and error handling.
  */
 
 // Import required Node.js and third-party modules
-import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import dotenv from 'dotenv';
+import { Application, Request, Response, NextFunction } from 'express';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const dotenv = require('dotenv');
 
 /**
  * Custom HTTP Request Logging Utility
@@ -72,6 +73,7 @@ const logRequest = (req: Request, res: Response, next: NextFunction) => {
 // Import our custom modules
 import { query } from './config/database';
 import { ApiResponse, ApiError } from './types';
+import authRoutes from './routes/auth';
 
 // Load environment variables from .env file into process.env
 // This must be called before using any environment variables
@@ -123,7 +125,7 @@ app.use(helmet({
 // 2. CORS (Cross-Origin Resource Sharing) Middleware
 // This allows frontend applications running on different ports/domains to access our API
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
@@ -231,16 +233,19 @@ app.get('/health', async (req: Request, res: Response) => {
 // Mount API routes under /api prefix
 // This creates a clear separation between API endpoints and other routes
 
+// Authentication routes - handles user registration and login
+app.use('/api/auth', authRoutes);
+
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {
   const response: ApiResponse<{ name: string; version: string; description: string }> = {
     success: true,
     data: {
-      name: 'Scheduling App API',
+      name: 'Schedulux API',
       version: '1.0.0',
       description: 'REST API for appointment scheduling system'
     },
-    message: 'Welcome to the Scheduling App API'
+    message: 'Welcome to the Schedulux API'
   };
   
   res.json(response);
@@ -354,7 +359,7 @@ const gracefulShutdown = (signal: string) => {
 const server = app.listen(PORT, () => {
   // This callback runs when the server successfully starts
   console.log('============================================');
-  console.log('🚀 Scheduling App Server Started');
+  console.log('🚀 Schedulux Server Started');
   console.log('============================================');
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);

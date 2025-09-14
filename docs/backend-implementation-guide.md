@@ -52,7 +52,7 @@ backend/
 const dbConfig: PoolConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'scheduling_app_primary',
+  database: process.env.DB_NAME || 'schedulux_primary',
   user: process.env.DB_USER || 'raymondtsai',
   password: process.env.DB_PASSWORD || '',
   max: 20,                    // ← Change max connections here
@@ -176,7 +176,7 @@ const SALT_ROUNDS = 12; // ← Adjust security vs. performance here
 ```
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=scheduling_app_primary
+DB_NAME=schedulux_primary
 DB_USER=raymondtsai
 DB_PASSWORD=
 ```
