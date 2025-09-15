@@ -3,8 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Calendar, Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '../hooks/useAuth';
+import { authApi, RegisterRequest } from '../services/api';
 
 // Validation schema using Zod
 const signupSchema = z.object({
@@ -32,6 +34,8 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register,
@@ -47,17 +51,37 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      console.log('Signup data:', data);
+      const registerData: RegisterRequest = {
+        email: data.email,
+        password: data.password,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        role: data.role,
+        phone: data.phone || undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+
+      // Register the user
+      const response = await authApi.register(registerData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Handle successful signup here
-      toast.success('Account created successfully! Please check your email to verify your account.');
-    } catch (error) {
+      if (response.data && response.data.user) {
+        // After successful registration, automatically log them in
+        await login(data.email, data.password);
+        toast.success(`Welcome to Schedulux, ${response.data.user.first_name}!`);
+        navigate('/dashboard');
+      } else {
+        // Handle validation errors
+        if (response.data && Array.isArray(response.data)) {
+          response.data.forEach((error: any) => {
+            toast.error(error.message);
+          });
+        } else {
+          toast.error(response.message || 'Registration failed. Please try again.');
+        }
+      }
+    } catch (error: any) {
       console.error('Signup error:', error);
-      toast.error('Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

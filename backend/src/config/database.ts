@@ -61,7 +61,7 @@ const dbConfig: PoolConfig = {
   // Database server connection details
   host: process.env.DB_HOST || 'localhost',           // Database server hostname
   port: parseInt(process.env.DB_PORT || '5432'),      // PostgreSQL default port
-  database: process.env.DB_NAME || 'schedulux_primary',  // Database name
+  database: process.env.DB_NAME || 'scheduling_app_primary',  // Database name
   user: process.env.DB_USER || 'raymondtsai',         // Database username
   password: process.env.DB_PASSWORD || '',            // Database password (should be in .env)
   

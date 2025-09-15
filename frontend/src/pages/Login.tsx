@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Calendar, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '../hooks/useAuth';
 
 // Validation schema using Zod
 const loginSchema = z.object({
@@ -17,6 +18,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register,
@@ -29,17 +32,12 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      console.log('Login data:', data);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Handle successful login here
-      toast.success('Login successful! Welcome back.');
-    } catch (error) {
+      await login(data.email, data.password);
+      toast.success('Login successful!');
+      navigate('/dashboard');
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please check your credentials and try again.');
+      toast.error(error.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }

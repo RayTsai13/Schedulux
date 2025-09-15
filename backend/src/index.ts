@@ -95,6 +95,7 @@ const allowedOrigins = [
   'http://localhost:3000',    // React development server default
   'http://localhost:3001',    // Alternative React port
   'http://localhost:5173',    // Vite development server default
+  'http://localhost:5174',    // Vite development server alternative port
   'http://localhost:8080',    // Vue CLI default
   'http://127.0.0.1:3000',   // Alternative localhost format
 ];
