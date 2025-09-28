@@ -234,8 +234,10 @@ app.get('/health', async (req: Request, res: Response) => {
 // Mount API routes under /api prefix
 // This creates a clear separation between API endpoints and other routes
 
+import storefrontRoutes from './routes/storefronts';
+
 // Authentication routes - handles user registration and login
-app.use('/api/auth', authRoutes);
+app.use('/api/storefronts', storefrontRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {
@@ -251,11 +253,6 @@ app.get('/api', (req: Request, res: Response) => {
   
   res.json(response);
 });
-
-// TODO: Add route modules here
-// Example: app.use('/api/auth', authRoutes);
-// Example: app.use('/api/users', userRoutes);
-// Example: app.use('/api/storefronts', storefrontRoutes);
 
 // ============================================================================
 // 404 HANDLER
@@ -399,7 +396,12 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 // Register shutdown handlers for different signals
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));  // Termination request
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));    // Interrupt signal (Ctrl+C)
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));  // User-defined signal (used by nodemon)
+
+// Don't handle SIGUSR2 in development - nodemon uses it for restarts
+// Only handle SIGUSR2 in production
+if (process.env.NODE_ENV === 'production') {
+  process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));  // User-defined signal
+}
 
 // Handle uncaught exceptions (should not happen in production)
 process.on('uncaughtException', (error) => {

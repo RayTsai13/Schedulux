@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 // Import our business logic and types
 import { UserService } from '../services/UserService';
 import { CreateUserRequest, LoginRequest, ApiResponse, ValidationError } from '../types';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 // ============================================================================
 // ROUTER SETUP
@@ -356,62 +357,20 @@ router.post('/login',
  * For this example, we'll show how it would work with a token
  */
 router.get('/me', 
-  // TODO: Add authentication middleware here
-  async (req: Request, res: Response, next: NextFunction) => {
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      // In a real app, user ID would come from decoded JWT token
-      // For this example, we'll extract it from Authorization header
+      // User is already authenticated by middleware, user info is in req.user
+      const user = await UserService.getById(req.user!.userId);
       
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        const response: ApiResponse<null> = {
-          success: false,
-          error: 'Authentication required',
-          message: 'Please provide a valid authentication token'
-        };
-        return res.status(401).json(response);
-      }
+      const safeUser = sanitizeUserResponse(user);
+      const response: ApiResponse<any> = {
+        success: true,
+        data: safeUser,
+        message: 'User profile retrieved successfully'
+      };
       
-      // Extract token from "Bearer <token>" format
-      const token = authHeader.substring(7);
-      
-      try {
-        // Verify and decode JWT token
-        const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
-        const decoded = jwt.verify(token, secret) as any;
-        
-        // Get user from database using ID from token
-        const user = await UserService.getById(decoded.userId);
-        
-        if (!user) {
-          const response: ApiResponse<null> = {
-            success: false,
-            error: 'User not found',
-            message: 'The authenticated user no longer exists'
-          };
-          return res.status(404).json(response);
-        }
-        
-        // Return user profile (without password hash)
-        const safeUser = sanitizeUserResponse(user);
-        const response: ApiResponse<any> = {
-          success: true,
-          data: safeUser,
-          message: 'User profile retrieved successfully'
-        };
-        
-        res.status(200).json(response);
-        
-      } catch (jwtError) {
-        // Invalid or expired token
-        const response: ApiResponse<null> = {
-          success: false,
-          error: 'Invalid token',
-          message: 'Please log in again'
-        };
-        return res.status(401).json(response);
-      }
-      
+      res.status(200).json(response);
     } catch (error) {
       next(error);
     }
