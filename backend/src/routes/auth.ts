@@ -199,14 +199,6 @@ const sanitizeUserResponse = (user: any) => {
 /**
  * POST /api/auth/register - User Registration
  * 
- * This endpoint demonstrates a complete Express.js route handler with:
- * - Input validation (via middleware)
- * - Business logic integration (UserService)
- * - Error handling (try/catch)
- * - Proper HTTP status codes
- * - Consistent response format
- * - Security best practices
- * 
  * 🔄 REQUEST FLOW:
  * 1. Validation middleware checks input format
  * 2. handleValidationErrors middleware processes validation results
@@ -384,51 +376,3 @@ router.get('/me',
 // This will be used in index.ts as: app.use('/api/auth', authRoutes);
 
 export default router;
-
-/**
- * 🎓 EXPRESS.JS LEARNING SUMMARY
- * 
- * This file demonstrates key Express.js patterns you should understand:
- * 
- * 1. ROUTING PATTERNS:
- *    - Router() for modular route organization
- *    - Route methods (get, post, put, delete)
- *    - Route parameters and request body handling
- * 
- * 2. MIDDLEWARE PATTERNS:
- *    - Validation middleware with express-validator
- *    - Error handling middleware
- *    - Authentication middleware (demonstrated concept)
- *    - Middleware execution order and next() function
- * 
- * 3. REQUEST/RESPONSE PATTERNS:
- *    - Request object (req.body, req.headers, req.params)
- *    - Response object (res.status(), res.json())
- *    - HTTP status codes and when to use them
- * 
- * 4. ERROR HANDLING PATTERNS:
- *    - Try/catch blocks in async route handlers
- *    - Validation error handling
- *    - Business logic error handling
- *    - Express error middleware integration
- * 
- * 5. SECURITY PATTERNS:
- *    - Input validation and sanitization
- *    - Password security (hashing, not storing plain text)
- *    - JWT token generation and verification
- *    - Response sanitization (removing sensitive data)
- * 
- * 6. API DESIGN PATTERNS:
- *    - Consistent response format
- *    - Proper HTTP status codes
- *    - RESTful endpoint design
- *    - Clear error messages
- * 
- * 🚀 NEXT STEPS FOR LEARNING:
- * - Create similar routes for other resources (storefronts, appointments)
- * - Add authentication middleware for protected routes
- * - Implement rate limiting for security
- * - Add API documentation with Swagger
- * - Create unit tests for route handlers
- * - Add logging and monitoring
- */

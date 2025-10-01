@@ -432,15 +432,3 @@ CREATE TRIGGER track_appointment_changes_trigger
 CREATE TRIGGER update_slot_booking_count_trigger
     AFTER INSERT OR UPDATE OR DELETE ON appointments FOR EACH ROW
     EXECUTE FUNCTION update_slot_booking_count();
-
--- =========================================
--- END OF SCHEMA
--- =========================================
--- This schema provides:
--- ✅ Complete multi-storefront scheduling system
--- ✅ Flexible scheduling rules (weekly/daily/monthly)
--- ✅ Dual booking methods (request-based and slot-based)
--- ✅ Complete audit trail with history tables
--- ✅ Performance-optimized indexes
--- ✅ Automatic timestamp and booking count management
--- ✅ Data integrity constraints and validation
