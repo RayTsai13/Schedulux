@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Netlify Forms Detection</title>
+</head>
+<body>
+  <!-- This file helps Netlify detect forms during build time -->
+  <!-- It will never be shown to users -->
+  
+  <!-- Hero Email Signup Form -->
+  <form name="email-signup" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="email-signup" />
+    <input name="bot-field" />
+    <input type="email" name="email" />
+  </form>
+  
+  <!-- Newsletter Signup Form -->
+  <form name="newsletter-signup" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="newsletter-signup" />
+    <input name="bot-field" />
+    <input type="email" name="email" />
+  </form>
+</body>
+</html>

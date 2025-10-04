@@ -1,7 +1,26 @@
-import React from 'react';
-import { Calendar, ArrowRight, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Star, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Hero = () => {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Form submission will be handled by Netlify
+      toast.success('Thanks for signing up! We\'ll keep you updated on our launch.');
+      setEmail('');
+    } catch (error) {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-yellow-50 min-h-screen flex items-center">
       {/* Background decoration */}
@@ -29,15 +48,70 @@ const Hero = () => {
               and deliver exceptional customer experiences.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button className="group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2">
-                <span>Get Started Free</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+            <div className="space-y-6">
+              {/* Email Signup Form */}
+              <form 
+                name="email-signup" 
+                method="POST" 
+                data-netlify="true"
+                data-netlify-honeypot="bot-field"
+                onSubmit={handleEmailSubmit}
+                className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+              >
+                {/* Hidden field for Netlify */}
+                <input type="hidden" name="form-name" value="email-signup" />
+                {/* Honeypot field for spam protection */}
+                <div style={{ display: 'none' }}>
+                  <input name="bot-field" />
+                </div>
+                
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Get Early Access
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Be the first to know when we launch. No spam, unsubscribe anytime.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="email"
+                      name="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <span>Signing up...</span>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        <span>Notify Me</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
               
-              <button className="bg-white border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 hover:shadow-lg">
-                Learn More
-              </button>
+              {/* Secondary CTAs */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button className="bg-white border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg">
+                  Learn More
+                </button>
+                <button className="text-purple-600 hover:text-purple-700 font-semibold transition-colors">
+                  Schedule a Demo →
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center space-x-8 pt-4">

@@ -35,10 +35,10 @@ const Header = () => {
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <button className="text-gray-600 hover:text-purple-600 transition-colors font-medium">
-              Sign In
+              Request Demo
             </button>
             <button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105">
-              Get Started
+              Join Waitlist
             </button>
           </div>
 
@@ -79,10 +79,10 @@ const Header = () => {
               {/* Mobile CTA Buttons */}
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
                 <button className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2">
-                  Sign In
+                  Request Demo
                 </button>
                 <button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 w-full text-center">
-                  Get Started
+                  Join Waitlist
                 </button>
               </div>
             </div>

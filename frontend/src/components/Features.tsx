@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, Clock, Users, BarChart3, Smartphone, Shield } from 'lucide-react';
 
 const Features = () => {
@@ -87,14 +86,14 @@ const Features = () => {
           <div className="bg-gradient-to-r from-purple-600 to-yellow-500 rounded-3xl p-12 text-white">
             <h3 className="text-3xl font-bold mb-6">Ready to transform your business?</h3>
             <p className="text-purple-100 mb-8 max-w-3xl mx-auto text-lg">
-              Join thousands of businesses already using Schedulux to streamline their scheduling, reduce no-shows, and grow their customer base. Get started in minutes with our easy setup process.
+              Join thousands of businesses waiting for Schedulux to launch. Get early access and special founder pricing when we go live. Be part of the scheduling revolution.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="bg-white text-purple-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 text-lg">
-                Get Started Free
+                Join Early Access
               </button>
               <button className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-purple-600 transition-all duration-200 text-lg">
-                Schedule a Demo
+                Request Demo
               </button>
             </div>
             

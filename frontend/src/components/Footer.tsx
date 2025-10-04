@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, Mail, Phone, MapPin, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Footer = () => {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Form submission will be handled by Netlify
+      toast.success('Thank you for subscribing to our newsletter!');
+      setNewsletterEmail('');
+    } catch (error) {
+      toast.error('Failed to subscribe. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer id="contact" className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -78,16 +97,39 @@ const Footer = () => {
             {/* Newsletter */}
             <div className="mt-6">
               <h5 className="text-sm font-semibold mb-3">Stay updated</h5>
-              <div className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
-                />
-                <button className="bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-700 hover:to-yellow-600 px-4 py-2 rounded-r-lg transition-all duration-200">
-                  Subscribe
-                </button>
-              </div>
+              <form 
+                name="newsletter-signup" 
+                method="POST" 
+                data-netlify="true"
+                data-netlify-honeypot="bot-field"
+                onSubmit={handleNewsletterSubmit}
+              >
+                {/* Hidden field for Netlify */}
+                <input type="hidden" name="form-name" value="newsletter-signup" />
+                {/* Honeypot field for spam protection */}
+                <div style={{ display: 'none' }}>
+                  <input name="bot-field" />
+                </div>
+                
+                <div className="flex">
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
+                  />
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-700 hover:to-yellow-600 px-4 py-2 rounded-r-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? '...' : 'Subscribe'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
