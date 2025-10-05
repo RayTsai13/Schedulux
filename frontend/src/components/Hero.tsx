@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Star, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import emailjs from '@emailjs/browser';
 
 const Hero = () => {
   const [email, setEmail] = useState('');
@@ -11,10 +12,18 @@ const Hero = () => {
     setIsSubmitting(true);
     
     try {
-      // Form submission will be handled by Netlify
+      // EmailJS configuration - using environment variables
+      await emailjs.sendForm(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID',
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'YOUR_TEMPLATE_ID',
+        e.target as HTMLFormElement,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY'
+      );
+      
       toast.success('Thanks for signing up! We\'ll keep you updated on our launch.');
       setEmail('');
     } catch (error) {
+      console.error('EmailJS error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -51,20 +60,9 @@ const Hero = () => {
             <div className="space-y-6">
               {/* Email Signup Form */}
               <form 
-                name="email-signup" 
-                method="POST" 
-                data-netlify="true"
-                data-netlify-honeypot="bot-field"
                 onSubmit={handleEmailSubmit}
                 className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
               >
-                {/* Hidden field for Netlify */}
-                <input type="hidden" name="form-name" value="email-signup" />
-                {/* Honeypot field for spam protection */}
-                <div style={{ display: 'none' }}>
-                  <input name="bot-field" />
-                </div>
-                
                 <div className="text-center mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     Get Early Access
@@ -78,13 +76,16 @@ const Hero = () => {
                   <div className="flex-1">
                     <input
                       type="email"
-                      name="email"
+                      name="user_email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
                       required
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                     />
+                    {/* Hidden fields for EmailJS template */}
+                    <input type="hidden" name="form_type" value="early_access" />
+                    <input type="hidden" name="page_source" value="hero_section" />
                   </div>
                   <button
                     type="submit"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Mail, Phone, MapPin, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
 import { toast } from 'sonner';
+import emailjs from '@emailjs/browser';
 
 const Footer = () => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -11,10 +12,17 @@ const Footer = () => {
     setIsSubmitting(true);
     
     try {
-      // Form submission will be handled by Netlify
+      await emailjs.sendForm(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID',
+        import.meta.env.VITE_EMAILJS_NEWSLETTER_TEMPLATE_ID || 'YOUR_NEWSLETTER_TEMPLATE_ID',
+        e.target as HTMLFormElement,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY'
+      );
+      
       toast.success('Thank you for subscribing to our newsletter!');
       setNewsletterEmail('');
     } catch (error) {
+      console.error('EmailJS error:', error);
       toast.error('Failed to subscribe. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -97,30 +105,19 @@ const Footer = () => {
             {/* Newsletter */}
             <div className="mt-6">
               <h5 className="text-sm font-semibold mb-3">Stay updated</h5>
-              <form 
-                name="newsletter-signup" 
-                method="POST" 
-                data-netlify="true"
-                data-netlify-honeypot="bot-field"
-                onSubmit={handleNewsletterSubmit}
-              >
-                {/* Hidden field for Netlify */}
-                <input type="hidden" name="form-name" value="newsletter-signup" />
-                {/* Honeypot field for spam protection */}
-                <div style={{ display: 'none' }}>
-                  <input name="bot-field" />
-                </div>
-                
+              <form onSubmit={handleNewsletterSubmit}>
                 <div className="flex">
                   <input 
                     type="email" 
-                    name="email"
+                    name="user_email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Enter your email"
                     required
                     className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
                   />
+                  <input type="hidden" name="form_type" value="newsletter" />
+                  <input type="hidden" name="page_source" value="footer" />
                   <button 
                     type="submit"
                     disabled={isSubmitting}
