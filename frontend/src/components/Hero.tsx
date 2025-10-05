@@ -72,11 +72,6 @@ const Hero = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left column - Content */}
           <div className="space-y-8">
-            <div className="inline-flex items-center space-x-2 bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-sm font-medium">
-              <Star className="w-4 h-4 fill-current" />
-              <span>Trusted by thousands of businesses</span>
-            </div>
-            
             <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
               Schedule
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-yellow-500"> smarter</span>,
@@ -135,26 +130,6 @@ const Hero = () => {
                 </div>
               </form>
               
-              {/* Secondary CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-white border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg">
-                  Learn More
-                </button>
-                <button className="text-purple-600 hover:text-purple-700 font-semibold transition-colors">
-                  Schedule a Demo →
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-8 pt-4">
-              <div className="flex items-center space-x-2">
-                <div className="flex -space-x-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex items-center justify-center text-white font-semibold">A</div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 flex items-center justify-center text-white font-semibold">B</div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-yellow-500 flex items-center justify-center text-white font-semibold">C</div>
-                </div>
-                <span className="text-sm text-gray-600">Loved by business owners everywhere</span>
-              </div>
             </div>
           </div>
           
