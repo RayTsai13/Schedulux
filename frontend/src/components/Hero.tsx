@@ -85,7 +85,8 @@ const Hero = () => {
             
             <div className="space-y-6">
               {/* Email Signup Form */}
-              <form 
+              <form
+                id="early-access-form"
                 onSubmit={handleEmailSubmit}
                 className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
               >

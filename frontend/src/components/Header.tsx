@@ -8,6 +8,23 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleJoinWaitlist = () => {
+    const formElement = document.getElementById('early-access-form');
+    if (formElement) {
+      formElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+      // Focus on the email input after scrolling
+      setTimeout(() => {
+        const emailInput = formElement.querySelector('input[type="email"]') as HTMLInputElement;
+        if (emailInput) {
+          emailInput.focus();
+        }
+      }, 500);
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,7 +51,10 @@ const Header = () => {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105">
+            <button
+              onClick={handleJoinWaitlist}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+            >
               Join Waitlist
             </button>
           </div>
@@ -75,7 +95,13 @@ const Header = () => {
               
               {/* Mobile CTA Buttons */}
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                <button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 w-full text-center">
+                <button
+                  onClick={() => {
+                    handleJoinWaitlist();
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 w-full text-center"
+                >
                   Join Waitlist
                 </button>
               </div>
