@@ -6,7 +6,8 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // Base URL for all API requests - points to your Express.js backend server
 // This is automatically prepended to all relative URLs in API calls
-const API_BASE_URL = 'http://localhost:3000/api';
+// For landing page deployment, this won't be used, but we configure it for future expansion
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Create a configured axios instance that will be used for all HTTP requests
 // This centralizes configuration and allows us to add interceptors

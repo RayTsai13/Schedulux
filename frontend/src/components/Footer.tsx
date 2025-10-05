@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Mail, Phone, MapPin, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
 import { toast } from 'sonner';
-import emailjs from '@emailjs/browser';
 
 const Footer = () => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -10,19 +9,52 @@ const Footer = () => {
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
-      await emailjs.sendForm(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID',
-        import.meta.env.VITE_EMAILJS_NEWSLETTER_TEMPLATE_ID || 'YOUR_NEWSLETTER_TEMPLATE_ID',
-        e.target as HTMLFormElement,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY'
-      );
-      
-      toast.success('Thank you for subscribing to our newsletter!');
-      setNewsletterEmail('');
+      // Send to Web3Forms
+      const formData = new FormData(e.target as HTMLFormElement);
+      formData.append('access_key', import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '');
+
+      const web3formsResponse = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      const web3formsData = await web3formsResponse.json();
+
+      if (!web3formsData.success) {
+        console.error('Web3Forms error:', web3formsData);
+        toast.error('Failed to subscribe. Please try again.');
+        return;
+      }
+
+      // Send to Brevo (SendinBlue)
+      const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': import.meta.env.VITE_BREVO_API_KEY || ''
+        },
+        body: JSON.stringify({
+          email: newsletterEmail,
+          listIds: [parseInt(import.meta.env.VITE_BREVO_NEWSLETTER_LIST_ID || '0')],
+          updateEnabled: true
+        })
+      });
+
+      // Brevo returns 201 for success, 204 if contact already exists
+      if (brevoResponse.ok || brevoResponse.status === 204) {
+        toast.success('Thank you for subscribing to our newsletter!');
+        setNewsletterEmail('');
+      } else {
+        const brevoError = await brevoResponse.json();
+        console.error('Brevo error:', brevoError);
+        // Still show success since Web3Forms worked
+        toast.success('Thank you for subscribing to our newsletter!');
+        setNewsletterEmail('');
+      }
     } catch (error) {
-      console.error('EmailJS error:', error);
+      console.error('Form submission error:', error);
       toast.error('Failed to subscribe. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -107,18 +139,19 @@ const Footer = () => {
               <h5 className="text-sm font-semibold mb-3">Stay updated</h5>
               <form onSubmit={handleNewsletterSubmit}>
                 <div className="flex">
-                  <input 
-                    type="email" 
-                    name="user_email"
+                  <input
+                    type="email"
+                    name="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Enter your email"
                     required
                     className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
                   />
+                  <input type="hidden" name="subject" value="New Newsletter Subscription - Schedulux" />
+                  <input type="hidden" name="from_name" value="Schedulux Landing Page" />
                   <input type="hidden" name="form_type" value="newsletter" />
-                  <input type="hidden" name="page_source" value="footer" />
-                  <button 
+                  <button
                     type="submit"
                     disabled={isSubmitting}
                     className="bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-700 hover:to-yellow-600 px-4 py-2 rounded-r-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"

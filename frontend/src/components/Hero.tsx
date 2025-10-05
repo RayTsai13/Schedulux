@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Star, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import emailjs from '@emailjs/browser';
 
 const Hero = () => {
   const [email, setEmail] = useState('');
@@ -10,20 +9,52 @@ const Hero = () => {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
-      // EmailJS configuration - using environment variables
-      await emailjs.sendForm(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID',
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'YOUR_TEMPLATE_ID',
-        e.target as HTMLFormElement,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY'
-      );
-      
-      toast.success('Thanks for signing up! We\'ll keep you updated on our launch.');
-      setEmail('');
+      // Send to Web3Forms
+      const formData = new FormData(e.target as HTMLFormElement);
+      formData.append('access_key', import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '');
+
+      const web3formsResponse = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      const web3formsData = await web3formsResponse.json();
+
+      if (!web3formsData.success) {
+        console.error('Web3Forms error:', web3formsData);
+        toast.error('Something went wrong. Please try again.');
+        return;
+      }
+
+      // Send to Brevo (SendinBlue)
+      const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': import.meta.env.VITE_BREVO_API_KEY || ''
+        },
+        body: JSON.stringify({
+          email: email,
+          listIds: [parseInt(import.meta.env.VITE_BREVO_EARLY_ACCESS_LIST_ID || '0')],
+          updateEnabled: true
+        })
+      });
+
+      // Brevo returns 201 for success, 204 if contact already exists
+      if (brevoResponse.ok || brevoResponse.status === 204) {
+        toast.success('Thanks for signing up! We\'ll keep you updated on our launch.');
+        setEmail('');
+      } else {
+        const brevoError = await brevoResponse.json();
+        console.error('Brevo error:', brevoError);
+        // Still show success since Web3Forms worked
+        toast.success('Thanks for signing up! We\'ll keep you updated on our launch.');
+        setEmail('');
+      }
     } catch (error) {
-      console.error('EmailJS error:', error);
+      console.error('Form submission error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -76,16 +107,16 @@ const Hero = () => {
                   <div className="flex-1">
                     <input
                       type="email"
-                      name="user_email"
+                      name="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
                       required
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                     />
-                    {/* Hidden fields for EmailJS template */}
+                    <input type="hidden" name="subject" value="New Early Access Signup - Schedulux" />
+                    <input type="hidden" name="from_name" value="Schedulux Landing Page" />
                     <input type="hidden" name="form_type" value="early_access" />
-                    <input type="hidden" name="page_source" value="hero_section" />
                   </div>
                   <button
                     type="submit"
