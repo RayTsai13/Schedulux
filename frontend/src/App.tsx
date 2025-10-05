@@ -1,32 +1,42 @@
 // ================================================================
-// SIMPLIFIED LANDING PAGE APP
-// ================================================================ 
+// SIMPLIFIED LANDING PAGE APP WITH POLICY PAGES
+// ================================================================
+
+// Routing
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Toast notification system for user feedback
 import { Toaster } from 'sonner';
 
-// Landing page component
+// Page components
 import Landing from './pages/Landing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookiePolicy from './pages/CookiePolicy';
 
 // ================================================================
-// MAIN APP COMPONENT - SIMPLIFIED LANDING PAGE ONLY
+// MAIN APP COMPONENT - LANDING PAGE WITH POLICY PAGES
 // ================================================================
 
 /**
- * App Component - Simplified for landing page deployment
- * 
- * This version removes all authentication and routing complexity
- * to focus solely on the landing page experience for quick deployment.
+ * App Component - Landing page with legal policy pages
+ *
+ * Includes routing for Privacy Policy, Terms of Service, and Cookie Policy
  */
 function App() {
   return (
-    <>
-      {/* Landing page with all sections */}
-      <Landing />
-      
+    <BrowserRouter>
+      {/* Main routes */}
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+      </Routes>
+
       {/* Global notification system for email signup feedback */}
       <Toaster position="top-right" richColors />
-    </>
+    </BrowserRouter>
   );
 }
 
