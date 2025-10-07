@@ -237,6 +237,9 @@ app.get('/health', async (req: Request, res: Response) => {
 import storefrontRoutes from './routes/storefronts';
 
 // Authentication routes - handles user registration and login
+app.use('/api/auth', authRoutes);
+
+// Storefront routes - handles business location management
 app.use('/api/storefronts', storefrontRoutes);
 
 // Basic API info endpoint

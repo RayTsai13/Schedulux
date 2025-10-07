@@ -470,6 +470,150 @@ export const api = {
 };
 
 // ================================================================
+// STOREFRONT API FUNCTIONS
+// ================================================================
+
+// Storefront-related types
+export interface Storefront {
+  id: number;
+  vendor_id: number;
+  name: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  timezone: string;
+  business_hours?: BusinessHours;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessHours {
+  [day: string]: {
+    isOpen: boolean;
+    periods: Array<{
+      start: string; // "09:00"
+      end: string;   // "17:00"
+    }>;
+  };
+}
+
+export interface CreateStorefrontRequest {
+  name: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  timezone?: string;
+  business_hours?: BusinessHours;
+}
+
+export interface UpdateStorefrontRequest extends Partial<CreateStorefrontRequest> {
+  is_active?: boolean;
+}
+
+export const storefrontApi = {
+  /**
+   * Get all storefronts for the current vendor
+   */
+  getAll: async (): Promise<ApiResponse<Storefront[]>> => {
+    try {
+      const response = await apiClient.get('/storefronts');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch storefronts.',
+      };
+    }
+  },
+
+  /**
+   * Get a single storefront by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch storefront.',
+      };
+    }
+  },
+
+  /**
+   * Create a new storefront
+   */
+  create: async (data: CreateStorefrontRequest): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.post('/storefronts', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create storefront.',
+      };
+    }
+  },
+
+  /**
+   * Update an existing storefront
+   */
+  update: async (
+    id: number,
+    data: UpdateStorefrontRequest
+  ): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.put(`/storefronts/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update storefront.',
+      };
+    }
+  },
+
+  /**
+   * Delete a storefront (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/storefronts/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete storefront.',
+      };
+    }
+  },
+};
+
+// ================================================================
 // EXPORT CONFIGURED AXIOS INSTANCE
 // ================================================================
 

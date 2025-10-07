@@ -32,9 +32,13 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      const success = await login(data.email, data.password);
+      if (success) {
+        toast.success('Login successful!');
+        navigate('/dashboard');
+      } else {
+        toast.error('Login failed. Please check your credentials.');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Login failed. Please check your credentials.');

@@ -25,6 +25,7 @@ import Landing from './pages/Landing';    // Home/marketing page (public)
 import Login from './pages/Login';        // User login form (public)
 import Signup from './pages/Signup';      // User registration form (public)
 import Dashboard from './pages/Dashboard'; // Main app interface (protected)
+import StorefrontManagement from './pages/vendor/StorefrontManagement'; // Vendor storefront management (protected)
 
 // ================================================================
 // MAIN APP COMPONENT - APPLICATION ENTRY POINT
@@ -127,15 +128,29 @@ function App() {
           {/* requireAuth={true} means: */}
           {/* - If user IS logged in → show Dashboard */}
           {/* - If user is NOT logged in → redirect to /login */}
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute requireAuth={true}>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          
+
+          {/* ============================================================ */}
+          {/* VENDOR ROUTES - PROTECTED */}
+          {/* ============================================================ */}
+
+          {/* Storefront Management - Vendor only */}
+          <Route
+            path="/vendor/storefronts"
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <StorefrontManagement />
+              </ProtectedRoute>
+            }
+          />
+
         </Routes>
         
         {/* ============================================================ */}

@@ -10,9 +10,16 @@ import { StrictMode } from 'react';
 // This replaces the legacy ReactDOM.render() method and enables React 18 features
 import { createRoot } from 'react-dom/client';
 
+// Import TanStack Query for server state management
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
 // Import our main App component - the root of our component tree
 // This contains all routing, authentication, and page components
 import App from './App.tsx';
+
+// Import TanStack Query client configuration
+import { queryClient } from './config/queryClient';
 
 // Import global CSS styles that apply to the entire application
 // This includes Tailwind CSS utilities and custom global styles
@@ -59,11 +66,21 @@ createRoot(document.getElementById('root')!).render(
   // - Validates that hooks follow the rules of hooks
   // Note: StrictMode only runs checks in development, not production
   <StrictMode>
-    
-    {/* Render the main App component */}
-    {/* This component contains all routing logic, authentication providers, */}
-    {/* and serves as the entry point to your entire component tree */}
-    <App />
-    
+
+    {/* TanStack Query Provider - Manages all server state (API data) */}
+    {/* This wraps the app to enable useQuery/useMutation hooks everywhere */}
+    <QueryClientProvider client={queryClient}>
+
+      {/* Render the main App component */}
+      {/* This component contains all routing logic, authentication providers, */}
+      {/* and serves as the entry point to your entire component tree */}
+      <App />
+
+      {/* React Query DevTools - Only visible in development */}
+      {/* Provides UI to inspect queries, mutations, and cache */}
+      <ReactQueryDevtools initialIsOpen={false} />
+
+    </QueryClientProvider>
+
   </StrictMode>
 );
