@@ -23,7 +23,7 @@ const dotenv = require('dotenv');
  * - Fixed format, minimal customization
  * - Requires separate @types/morgan package for TypeScript
  * 
- * What our custom logger does:
+ * What this custom logger does:
  * - Modern ISO timestamp format: [2025-08-20T10:30:45.123Z]
  * - Color-coded status indicators: 🟢 (success), 🟡 (redirect), 🔴 (error)
  * - Response time measurement in milliseconds
@@ -66,7 +66,6 @@ const logRequest = (req: Request, res: Response, next: NextFunction) => {
   }) as any; // TypeScript assertion: Express has complex overloaded types for res.end
   
   // Pass control to the next middleware in the chain
-  // If we don't call this, the request will hang forever
   next();
 };
 
@@ -76,7 +75,6 @@ import { ApiResponse, ApiError } from './types';
 import authRoutes from './routes/auth';
 
 // Load environment variables from .env file into process.env
-// This must be called before using any environment variables
 dotenv.config();
 
 // Create Express application instance
@@ -113,14 +111,14 @@ app.use(helmet({
   // Configure Content Security Policy
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],           // Only allow resources from same origin by default
+      defaultSrc: ["'self'"],                   // Only allow resources from same origin by default
       styleSrc: ["'self'", "'unsafe-inline'"],  // Allow inline styles (needed for some frameworks)
-      scriptSrc: ["'self'"],            // Only allow scripts from same origin
+      scriptSrc: ["'self'"],                    // Only allow scripts from same origin
       imgSrc: ["'self'", "data:", "https:"],    // Allow images from same origin, data URLs, and HTTPS
     },
   },
   // Enable cross-origin embedder policy
-  crossOriginEmbedderPolicy: false,     // Disable for development (enable in production)
+  crossOriginEmbedderPolicy: false,             // Disable for development (enable in production)
 }));
 
 // 2. CORS (Cross-Origin Resource Sharing) Middleware
@@ -143,8 +141,8 @@ app.use(cors({
 }));
 
 // 3. Request Logging Middleware (Custom TypeScript Implementation)
-// Instead of using morgan (which requires separate type definitions),
-// we implement our own logging middleware with full TypeScript support
+// Instead of using morgan which requires separate type definitions,
+// we implement our own logging middleware with TypeScript support
 // This logs HTTP requests with timestamps, status codes, and response times
 app.use(logRequest);
 

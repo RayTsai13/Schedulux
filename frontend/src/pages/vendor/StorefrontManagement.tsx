@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Store, Plus, Edit2, Trash2, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react';
 import { useStorefronts, useDeleteStorefront } from '../../hooks/useStorefronts';
 import { useUIStore } from '../../stores';
+import StorefrontFormModal from '../../components/vendor/StorefrontFormModal';
 import type { Storefront } from '../../services/api';
 
 /**
@@ -13,17 +13,12 @@ import type { Storefront } from '../../services/api';
 
 const StorefrontManagement = () => {
   const { data: storefronts, isLoading, error } = useStorefronts();
-  const { openModal } = useUIStore();
+  const { activeModal, modalData, openModal, closeModal } = useUIStore();
   const deleteStorefront = useDeleteStorefront();
-
-  const [selectedStorefront, setSelectedStorefront] = useState<Storefront | null>(null);
 
   const handleDelete = async (id: number, name: string) => {
     if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       await deleteStorefront.mutateAsync(id);
-      if (selectedStorefront?.id === id) {
-        setSelectedStorefront(null);
-      }
     }
   };
 
@@ -84,7 +79,12 @@ const StorefrontManagement = () => {
               where you provide services to your clients.
             </p>
             <button
-              onClick={() => openModal('createStorefront')}
+              onClick={() => {
+                console.log('Button clicked! Opening modal...');
+                console.log('Current activeModal:', activeModal);
+                openModal('createStorefront');
+                console.log('After openModal, activeModal should be:', 'createStorefront');
+              }}
               className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 inline-flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
@@ -93,6 +93,19 @@ const StorefrontManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals - Also needed in empty state */}
+      <StorefrontFormModal
+        isOpen={activeModal === 'createStorefront'}
+        onClose={closeModal}
+      />
+
+      <StorefrontFormModal
+        isOpen={activeModal === 'editStorefront'}
+        onClose={closeModal}
+        storefront={modalData as Storefront}
+      />
+    </div>
     );
   }
 
@@ -130,6 +143,18 @@ const StorefrontManagement = () => {
           ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <StorefrontFormModal
+        isOpen={activeModal === 'createStorefront'}
+        onClose={closeModal}
+      />
+
+      <StorefrontFormModal
+        isOpen={activeModal === 'editStorefront'}
+        onClose={closeModal}
+        storefront={modalData as Storefront}
+      />
     </div>
   );
 };

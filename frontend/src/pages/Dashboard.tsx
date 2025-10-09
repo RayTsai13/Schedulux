@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calendar, Clock, Users, DollarSign, Plus, Filter, Search, Bell } from 'lucide-react';
 import { AppointmentList, AppointmentDetailCard, StatusBadge } from '../components/ui';
 import type { BaseAppointment, DetailedAppointment } from '../components/ui';
+import Header from '../components/Header';
 
 const Dashboard = () => {
   const [selectedView, setSelectedView] = useState<'overview' | 'appointments' | 'clients' | 'analytics'>('overview');
@@ -131,7 +132,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Navigation Header */}
+      <Header />
+
+      {/* Page Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">

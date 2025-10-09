@@ -27,20 +27,6 @@ const router = Router();
  * This middleware runs BEFORE the registration route handler
  * It validates all required fields and applies security rules
  * If validation fails, it returns errors before hitting business logic
- * 
- * 🔍 VALIDATION PATTERNS:
- * - isEmail(): Ensures proper email format
- * - isLength(): Enforces minimum/maximum constraints
- * - matches(): Uses regex for complex validation (phone numbers)
- * - isIn(): Validates against allowed values (enums)
- * - normalizeEmail(): Standardizes email format (lowercase, etc.)
- * - trim(): Removes whitespace
- * 
- * 🛡️ SECURITY BENEFITS:
- * - Prevents malformed data from reaching database
- * - Standardizes input format for consistency
- * - Provides clear, user-friendly error messages
- * - Reduces database load by catching errors early
  */
 const validateRegistration = [
   // Email validation and normalization
@@ -199,13 +185,13 @@ const sanitizeUserResponse = (user: any) => {
 /**
  * POST /api/auth/register - User Registration
  * 
- * 🔄 REQUEST FLOW:
+ * REQUEST FLOW:
  * 1. Validation middleware checks input format
  * 2. handleValidationErrors middleware processes validation results
  * 3. Route handler processes business logic
  * 4. Response sent back to client
  * 
- * 📝 RESPONSE FORMATS:
+ *. RESPONSE FORMATS:
  * - 201 Created: User successfully registered
  * - 400 Bad Request: Validation errors or duplicate email
  * - 500 Internal Server Error: Unexpected server error
@@ -273,19 +259,7 @@ router.post('/register',
 /**
  * POST /api/auth/login - User Authentication
  * 
- * This endpoint demonstrates user authentication patterns:
- * - Credential validation
- * - Service layer integration
- * - JWT token generation
- * - Security considerations (no user enumeration)
- * 
- * 🔒 SECURITY FEATURES:
- * - Returns same error for invalid email vs invalid password
- * - Uses constant-time password comparison
- * - Generates fresh token on each login
- * - Sanitizes user data in response
- * 
- * 📝 RESPONSE FORMATS:
+ * RESPONSE FORMATS:
  * - 200 OK: Login successful
  * - 401 Unauthorized: Invalid credentials
  * - 400 Bad Request: Validation errors
@@ -339,14 +313,6 @@ router.post('/login',
 
 /**
  * GET /api/auth/me - Get Current User Profile
- * 
- * This endpoint demonstrates:
- * - Protected route patterns (requires authentication)
- * - JWT token verification
- * - User profile retrieval
- * 
- * Note: This route would typically require authentication middleware
- * For this example, we'll show how it would work with a token
  */
 router.get('/me', 
   authenticateToken,

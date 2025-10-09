@@ -38,9 +38,18 @@ const Header = () => {
             <a href="#contact" className="text-gray-600 hover:text-purple-600 transition-colors font-medium">
               Contact
             </a>
-            <Link to="/dashboard" className="text-gray-600 hover:text-purple-600 transition-colors font-medium">
-              Dashboard
-            </Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/dashboard" className="text-gray-600 hover:text-purple-600 transition-colors font-medium">
+                  Dashboard
+                </Link>
+                {user?.role === 'vendor' && (
+                  <Link to="/vendor/storefronts" className="text-gray-600 hover:text-purple-600 transition-colors font-medium">
+                    Storefronts
+                  </Link>
+                )}
+              </>
+            )}
           </nav>
 
           {/* Desktop CTA Buttons */}
@@ -96,27 +105,40 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-100">
             <div className="flex flex-col space-y-4">
-              <a 
-                href="#features" 
+              <a
+                href="#features"
                 className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Features
               </a>
-              <a 
-                href="#contact" 
+              <a
+                href="#contact"
                 className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
               </a>
-              <Link 
-                to="/dashboard" 
-                className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  {user?.role === 'vendor' && (
+                    <Link
+                      to="/vendor/storefronts"
+                      className="text-gray-600 hover:text-purple-600 transition-colors font-medium py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Storefronts
+                    </Link>
+                  )}
+                </>
+              )}
               
               {/* Mobile CTA Buttons */}
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
