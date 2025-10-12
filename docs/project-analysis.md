@@ -24,9 +24,13 @@
 | **Database** | PostgreSQL 15+ | JSONB, triggers, advanced indexing |
 | **Frontend** | React 18 + Vite + TypeScript | Modern SPA with hot reloading |
 | **Styling** | TailwindCSS | Utility-first responsive design |
+| **UI Components** | shadcn/ui + Custom Components | Hybrid approach: forms + business logic |
+| **Calendar** | react-big-calendar | Vendor appointment calendar grid view |
 | **State** | Zustand + TanStack Query | Client state + server state management |
 | **Auth** | bcrypt + JWT | Secure password hashing + tokens |
 | **Validation** | express-validator + Zod | Server + client input validation |
+| **Notifications** | Sonner | Toast notifications and user feedback |
+| **Date Handling** | date-fns + react-datepicker | Date manipulation and selection |
 
 ### Database Design Philosophy
 The scheduling system uses a priority-based rule system for maximum flexibility:
@@ -55,9 +59,296 @@ Method 2: Client books predefined slot → Instant confirmation
 - **Appointment conflicts**: ~2-8ms (exclusion constraints)
 - **Audit queries**: Isolated from operational performance
 
+## 🎨 Component Library Architecture
+
+### Philosophy: Hybrid Approach (60/30/10 Rule)
+
+Schedulux employs a strategic hybrid component strategy that balances development speed, maintainability, and competitive differentiation:
+
+**60% Custom Components** - Business Logic & Competitive Advantage
+- Components with unique business logic specific to scheduling
+- Domain-specific UI that differentiates the product
+- Complex components already built and working well
+
+**30% shadcn/ui** - Forms & Accessibility
+- Basic form components (Input, Select, Button, Label, Textarea)
+- Accessible UI primitives with Tailwind styling
+- Future complex components (Table, Tabs, Tooltip)
+
+**10% Specialized Libraries** - Solved Complex Problems
+- Calendar grid visualization (react-big-calendar)
+- Date/time selection (react-datepicker, date-fns)
+- Notifications (Sonner)
+
+### Decision Framework: When to Use What
+
+#### Use shadcn/ui Components When:
+✅ **Form inputs** - Text, email, password, textarea fields
+✅ **Selection controls** - Select dropdowns, checkboxes, radio buttons
+✅ **Buttons** - Primary, secondary, ghost, outline variants
+✅ **Form labels** - Proper ARIA associations for accessibility
+✅ **Future needs** - Tables, tabs, tooltips, dialogs (when needed)
+
+**Why shadcn/ui:**
+- Copies code into your project (you own it, no external dependency risk)
+- Built on Tailwind CSS (matches existing design system)
+- Built on Radix UI (accessibility primitives included)
+- Can edit source code directly for customization
+- Minimal bundle impact (only what you use)
+- No breaking changes from library updates
+
+#### Use Custom Components When:
+✅ **Business logic** - BusinessHoursEditor, TimezoneSelector
+✅ **Domain-specific** - AppointmentCard, StatusBadge, AppointmentList
+✅ **Already built well** - Modal, ProtectedRoute
+✅ **Brand identity** - Header, Footer, Hero, landing page components
+✅ **Unique booking flows** - Client booking wizard, time slot picker
+
+**Why Custom:**
+- Contains business rules no library understands
+- Provides competitive differentiation
+- Already built with quality and working well
+- Full control over behavior and styling
+- Low maintenance burden for simple components
+
+#### Use Specialized Libraries When:
+✅ **Calendar grid views** - react-big-calendar for vendor dashboard
+✅ **Date/time pickers** - react-datepicker for date selection
+✅ **Notifications** - Sonner for toast messages
+✅ **Date manipulation** - date-fns for timezone-aware calculations
+
+**Why Specialized:**
+- Complex problems already solved by community
+- Battle-tested with thousands of users
+- Would take weeks/months to build from scratch
+- Active maintenance and bug fixes
+- Industry-standard solutions
+
+### Component Inventory
+
+#### Custom Components to Maintain
+```
+frontend/src/components/
+├── ui/
+│   ├── Modal.tsx                    ✅ Keep - Well-built with focus trapping
+│   ├── AppointmentCard.tsx          ✅ Keep - Domain-specific design
+│   ├── AppointmentList.tsx          ✅ Keep - Domain-specific container
+│   ├── AppointmentDetailCard.tsx    ✅ Keep - Complex business component
+│   └── StatusBadge.tsx             ✅ Keep - Custom status styling
+├── vendor/
+│   ├── BusinessHoursEditor.tsx      ✅ Keep - Complex business logic (300+ lines)
+│   ├── TimezoneSelector.tsx         ✅ Keep - Specialized selector
+│   └── StorefrontFormModal.tsx      ✅ Keep - Business form orchestration
+├── Header.tsx                       ✅ Keep - Brand identity
+├── Footer.tsx                       ✅ Keep - Brand identity
+├── Hero.tsx                         ✅ Keep - Marketing component
+├── Features.tsx                     ✅ Keep - Marketing component
+├── Testimonials.tsx                 ✅ Keep - Marketing component
+├── Pricing.tsx                      ✅ Keep - Marketing component
+└── ProtectedRoute.tsx              ✅ Keep - Auth logic
+```
+
+#### shadcn/ui Components to Adopt
+```
+frontend/src/components/ui/
+├── input.tsx           ➕ Add - Replace basic <input> elements
+├── button.tsx          ➕ Add - Standardize button variants
+├── select.tsx          ➕ Add - Accessible dropdown component
+├── label.tsx           ➕ Add - Proper form label associations
+├── textarea.tsx        ➕ Add - Replace basic <textarea> elements
+├── form.tsx            ➕ Add (future) - Form wrapper with validation
+├── table.tsx           ➕ Add (future) - Appointment lists/analytics
+├── tabs.tsx            ➕ Add (future) - Dashboard navigation
+└── tooltip.tsx         ➕ Add (future) - Help text and guidance
+```
+
+#### Specialized Library Usage
+```
+Vendor Dashboard:
+- react-big-calendar     - Month/week/day calendar grid view
+- Drag-and-drop appointments
+- Multi-view scheduling interface
+
+Client Booking Flow:
+- react-datepicker      - Date selection (already installed)
+- Custom time slot picker - Built with shadcn/ui Calendar + custom logic
+- date-fns              - Timezone conversions and formatting
+
+Notifications:
+- Sonner                - Toast notifications (already installed)
+```
+
+### Implementation Strategy
+
+#### Phase 1: Add shadcn/ui Foundation (Estimated: 30 minutes)
+```bash
+# Install shadcn/ui CLI
+npx shadcn@latest init
+
+# Add core form components
+npx shadcn@latest add input
+npx shadcn@latest add button
+npx shadcn@latest add select
+npx shadcn@latest add label
+npx shadcn@latest add textarea
+```
+
+#### Phase 2: Gradual Form Migration (Estimated: 2-3 hours)
+- Update Login.tsx to use shadcn Input/Button
+- Update Signup.tsx to use shadcn Input/Button
+- Update StorefrontFormModal.tsx to use shadcn form components
+- **Keep all custom business logic components unchanged**
+
+#### Phase 3: Calendar Integration (Estimated: 3-4 hours)
+- Install react-big-calendar
+- Create VendorCalendarView component for dashboard
+- Connect to appointments API
+- Implement drag-and-drop scheduling
+
+#### Phase 4: Client Booking Flow (Estimated: 6-8 hours)
+- Use shadcn/ui Calendar for date selection
+- Build custom TimeSlotPicker with available slots
+- Create booking confirmation flow
+- Integrate availability calculation logic
+
+### Architecture Benefits
+
+**Development Speed:**
+- 40% faster form development with shadcn/ui components
+- No time wasted building solved problems (calendar grids)
+- Focus development time on unique business features
+
+**Maintainability:**
+- Own all shadcn/ui code - can modify anytime
+- Custom components isolated and well-documented
+- Clear decision framework for future components
+
+**Performance:**
+- Minimal bundle size (~20KB for shadcn forms)
+- Tree-shaking eliminates unused components
+- No heavy component library overhead
+
+**Accessibility:**
+- shadcn/ui built on Radix UI (WCAG compliant)
+- ARIA labels and keyboard navigation included
+- Screen reader support out of the box
+
+**Flexibility:**
+- Can mix shadcn and custom in same component
+- Easy to swap implementations if needed
+- No vendor lock-in (code is in your project)
+
+### Example: Hybrid Component Usage
+
+```tsx
+// StorefrontFormModal.tsx - Mixing shadcn and custom components
+
+import Modal from '../ui/Modal';  // ← Custom Modal (keep)
+import { Input } from '@/components/ui/input';  // ← shadcn input
+import { Label } from '@/components/ui/label';  // ← shadcn label
+import { Button } from '@/components/ui/button';  // ← shadcn button
+import BusinessHoursEditor from './BusinessHoursEditor';  // ← Custom (keep)
+import TimezoneSelector from './TimezoneSelector';  // ← Custom (keep)
+
+const StorefrontFormModal = ({ isOpen, onClose }) => {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Create Storefront">
+      <form>
+        {/* shadcn components for basic inputs */}
+        <div>
+          <Label htmlFor="name">Storefront Name</Label>
+          <Input id="name" placeholder="Downtown Salon" />
+        </div>
+
+        {/* Custom components for business logic */}
+        <TimezoneSelector value={timezone} onChange={setTimezone} />
+        <BusinessHoursEditor value={hours} onChange={setHours} />
+
+        {/* shadcn button */}
+        <Button type="submit">Create Storefront</Button>
+      </form>
+    </Modal>
+  );
+};
+```
+
+### Trade-offs Analysis
+
+| Aspect | All Custom | All Library | Hybrid (Our Choice) |
+|--------|-----------|-------------|---------------------|
+| Development Speed | ❌ Slowest | ✅ Fastest | ✅ Fast |
+| Bundle Size | ✅ Smallest | ❌ Largest | ✅ Small |
+| Customization | ✅ Complete | ❌ Limited | ✅ Flexible |
+| Maintenance | ⚠️ High effort | ✅ Library handles | ✅ Balanced |
+| Accessibility | ⚠️ Manual work | ✅ Built-in | ✅ Built-in (forms) |
+| Learning Curve | ✅ None | ❌ Moderate | ⚠️ Minimal |
+| Competitive Edge | ✅ Maximum | ❌ Generic | ✅ Where it matters |
+
+**Verdict:** Hybrid approach provides the best balance for a SaaS scheduling platform.
+
+### Component Library Alternatives Considered
+
+**shadcn/ui** ✅ Selected
+- Copies code to project (no external dependency)
+- Tailwind-based (matches our stack)
+- Accessible (Radix UI primitives)
+- Can modify source directly
+- MIT License (free commercial use)
+
+**HeroUI/NextUI** ❌ Rejected
+- External npm dependency (breaking changes risk)
+- Larger bundle size (~200KB vs 20KB)
+- Less control (theme config only)
+- Still missing scheduler component
+- Would conflict with existing custom components
+
+**Material-UI** ❌ Rejected
+- Heavy bundle size (300KB+)
+- Material Design doesn't match brand
+- Overkill for needs
+- Difficult to customize
+
+**Chakra UI** ❌ Rejected
+- External dependency
+- Different styling paradigm
+- Not needed - Tailwind already in use
+
+**Headless UI** ⚠️ Alternative
+- Similar to shadcn (Tailwind-based)
+- Could work but less comprehensive
+- shadcn/ui preferred for better DX
+
+### Future Component Strategy
+
+**When adding new features, ask:**
+
+1. **Does this solve a unique business problem?**
+   → Build custom component
+
+2. **Is this a standard form/UI element?**
+   → Use shadcn/ui component
+
+3. **Is this a complex solved problem? (calendar, charts, etc.)**
+   → Find specialized library (react-big-calendar, recharts)
+
+4. **Can I build it in <2 hours?**
+   → Consider custom if it provides differentiation
+
+5. **Will this be used across multiple features?**
+   → Invest in quality custom component
+
+**Result:** Fast development without sacrificing competitive advantage.
+
 ## 🎨 Frontend Development Progress (October 2025)
 
 ### Major Frontend Milestones Achieved
+
+**Component Library Strategy Defined** ✅ (October 2025)
+- **Hybrid Architecture**: Established 60/30/10 rule (custom/shadcn/specialized)
+- **Decision Framework**: Clear guidelines for choosing component approach
+- **Technology Selection**: shadcn/ui for forms, react-big-calendar for scheduling
+- **Custom Component Preservation**: All existing quality components retained
+- **Strategic Roadmap**: Implementation phases planned for gradual adoption
 
 **Complete User Interface Implementation** ✅
 - **Professional Marketing Site**: Built comprehensive landing page with Hero section, Features grid, and customer Testimonials
@@ -306,12 +597,15 @@ src/
 - ✅ Frontend-backend connection tested and verified
 
 **Remaining Integration Tasks:**
+- ❌ Install shadcn/ui and adopt core form components (Input, Button, Select, Label, Textarea)
 - ❌ Complete storefront form UI (modal + business hours editor)
+- ❌ Migrate forms to use shadcn/ui components (Login, Signup, StorefrontFormModal)
 - ❌ Connect Dashboard to real appointment data endpoints
 - ❌ Implement real-time appointment management (CRUD operations)
-- ❌ Add calendar view component for appointment scheduling
+- ❌ Add calendar view component with react-big-calendar for vendor dashboard
 - ❌ Implement service management for vendors
 - ❌ Build schedule rules management interface
+- ❌ Create client booking flow with custom time slot picker
 
 ### Database Schema (100% Complete) ✅
 ```sql
