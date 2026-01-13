@@ -1,24 +1,5 @@
 // Appointment and scheduling-related types
-export interface ScheduleRule {
-  id: number;
-  storefront_id: number;
-  service_id?: number;
-  rule_type: 'weekly' | 'daily' | 'monthly';
-  priority: number;
-  day_of_week?: number;
-  specific_date?: Date;
-  month?: number;
-  year?: number;
-  start_time: string;
-  end_time: string;
-  is_available: boolean;
-  max_concurrent_appointments: number;
-  notes?: string;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at?: Date;
-}
+// Note: ScheduleRule types are in schedule-rule.ts
 
 export interface AppointmentSlot {
   id: number;

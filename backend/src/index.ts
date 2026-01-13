@@ -234,6 +234,7 @@ app.get('/health', async (req: Request, res: Response) => {
 
 import storefrontRoutes from './routes/storefronts';
 import serviceRoutes from './routes/services';
+import scheduleRuleRoutes from './routes/schedule-rules';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
@@ -244,6 +245,10 @@ app.use('/api/storefronts', storefrontRoutes);
 // Service routes - handles vendor service offerings
 // Note: Routes are mounted at /api for both /storefronts/:id/services and /services/:id
 app.use('/api', serviceRoutes);
+
+// Schedule rules routes - handles vendor availability patterns
+// Note: Routes are mounted at /api for both /storefronts/:id/rules and /rules/:id
+app.use('/api', scheduleRuleRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {
