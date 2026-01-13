@@ -24,3 +24,14 @@ export interface CreateStorefrontRequest {
   timezone?: string;
   business_hours?: any;
 }
+
+export interface UpdateStorefrontRequest {
+  name?: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  timezone?: string;
+  business_hours?: any;
+  is_active?: boolean;
+}
