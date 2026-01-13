@@ -233,12 +233,17 @@ app.get('/health', async (req: Request, res: Response) => {
 // This creates a clear separation between API endpoints and other routes
 
 import storefrontRoutes from './routes/storefronts';
+import serviceRoutes from './routes/services';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
 
 // Storefront routes - handles business location management
 app.use('/api/storefronts', storefrontRoutes);
+
+// Service routes - handles vendor service offerings
+// Note: Routes are mounted at /api for both /storefronts/:id/services and /services/:id
+app.use('/api', serviceRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {

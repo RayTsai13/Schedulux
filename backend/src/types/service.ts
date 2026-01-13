@@ -15,11 +15,20 @@ export interface Service {
 }
 
 export interface CreateServiceRequest {
-  storefront_id: number;
   name: string;
   description?: string;
   duration_minutes: number;
   buffer_time_minutes?: number;
   price?: number;
   category?: string;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  description?: string;
+  duration_minutes?: number;
+  buffer_time_minutes?: number;
+  price?: number;
+  category?: string;
+  is_active?: boolean;
 }
