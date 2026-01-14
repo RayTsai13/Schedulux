@@ -61,6 +61,43 @@ export class ScheduleRuleModel {
   }
 
   /**
+   * Find schedule rules applicable to a date range
+   * Used by AvailabilityService for calculating available slots
+   *
+   * Returns:
+   * - All weekly rules (to be filtered by day_of_week in application)
+   * - Daily rules where specific_date falls within the range
+   * - Monthly rules (to be filtered by month in application)
+   *
+   * @param storefrontId - Storefront to get rules for
+   * @param serviceId - Optional service filter (null returns storefront-wide rules)
+   * @param startDate - Start of date range
+   * @param endDate - End of date range
+   */
+  static async findByDateRange(
+    storefrontId: number,
+    serviceId: number | null,
+    startDate: Date,
+    endDate: Date
+  ): Promise<ScheduleRule[]> {
+    const result = await query(
+      `SELECT * FROM schedule_rules
+       WHERE storefront_id = $1
+         AND (service_id IS NULL OR service_id = $2)
+         AND is_active = TRUE
+         AND deleted_at IS NULL
+         AND (
+           rule_type = 'weekly'
+           OR (rule_type = 'daily' AND specific_date >= $3::date AND specific_date <= $4::date)
+           OR rule_type = 'monthly'
+         )
+       ORDER BY priority DESC, rule_type ASC, id ASC`,
+      [storefrontId, serviceId, startDate, endDate]
+    );
+    return result.rows;
+  }
+
+  /**
    * Create a new schedule rule
    */
   static async create(storefrontId: number, ruleData: CreateScheduleRuleRequest): Promise<ScheduleRule> {

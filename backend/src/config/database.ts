@@ -1,7 +1,8 @@
 // Import PostgreSQL client library types and classes
 // Pool manages multiple database connections efficiently
 // PoolConfig provides TypeScript interface for configuration options
-import { Pool, PoolConfig } from 'pg';
+// PoolClient is used for transactions that require multiple queries on the same connection
+import { Pool, PoolConfig, PoolClient } from 'pg';
 // Import environment variable loader for secure configuration management
 const dotenv = require('dotenv');
 
@@ -209,6 +210,60 @@ export async function query(text: string, params?: any[]) {
   // Return the complete PostgreSQL result object
   // This includes .rows (data), .rowCount (affected rows), .fields (metadata)
   return res;
+}
+
+/**
+ * Get a client from the connection pool for manual transaction management
+ *
+ * Use this when you need to run multiple queries in a single transaction
+ * or need advisory locks for concurrency control.
+ *
+ * IMPORTANT: Always release the client back to the pool when done!
+ * Use try/finally pattern or withTransaction() helper instead.
+ *
+ * @returns Promise<PoolClient> - A client checked out from the pool
+ */
+export async function getClient(): Promise<PoolClient> {
+  return await pool.connect();
+}
+
+/**
+ * Execute a function within a database transaction
+ *
+ * This helper handles the transaction lifecycle:
+ * 1. Acquires a client from the pool
+ * 2. Begins a transaction
+ * 3. Executes your function with the client
+ * 4. Commits on success, rolls back on error
+ * 5. Always releases the client back to the pool
+ *
+ * Usage:
+ * const result = await withTransaction(async (client) => {
+ *   await client.query('INSERT INTO ...', [...]);
+ *   await client.query('UPDATE ...', [...]);
+ *   return { success: true };
+ * });
+ *
+ * @param fn - Async function that receives a PoolClient and returns a result
+ * @returns Promise<T> - The result of the function
+ * @throws Rethrows any error after rolling back the transaction
+ */
+export async function withTransaction<T>(
+  fn: (client: PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /**

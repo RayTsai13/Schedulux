@@ -4,4 +4,5 @@ export * from './storefront';
 export * from './service';
 export * from './schedule-rule';
 export * from './appointment';
+export * from './availability';
 export * from './common';

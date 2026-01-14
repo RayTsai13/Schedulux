@@ -235,6 +235,8 @@ app.get('/health', async (req: Request, res: Response) => {
 import storefrontRoutes from './routes/storefronts';
 import serviceRoutes from './routes/services';
 import scheduleRuleRoutes from './routes/schedule-rules';
+import availabilityRoutes from './routes/availability';
+import appointmentRoutes from './routes/appointments';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
@@ -249,6 +251,13 @@ app.use('/api', serviceRoutes);
 // Schedule rules routes - handles vendor availability patterns
 // Note: Routes are mounted at /api for both /storefronts/:id/rules and /rules/:id
 app.use('/api', scheduleRuleRoutes);
+
+// Availability routes - public endpoint for fetching available time slots
+app.use('/api', availabilityRoutes);
+
+// Appointment routes - handles booking management
+// Note: Routes are mounted at /api for /appointments and /storefronts/:id/appointments
+app.use('/api', appointmentRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {
