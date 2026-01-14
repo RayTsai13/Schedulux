@@ -51,9 +51,9 @@ backend/                      # Node.js/Express REST API
 ├── src/
 │   ├── config/             # Database connection pooling (PostgreSQL)
 │   ├── middleware/         # Auth, CORS, custom logging, validation
-│   ├── models/             # Repository pattern data access layer
-│   ├── routes/             # API endpoints (auth, storefronts, etc.)
-│   ├── services/           # Business logic (UserService, etc.)
+│   ├── models/             # Repository pattern data access layer (User, Storefront, Service, ScheduleRule)
+│   ├── routes/             # API endpoints (auth, storefronts, services, schedule-rules)
+│   ├── services/           # Business logic (UserService, StorefrontService, ServiceService, ScheduleRuleService)
 │   ├── types/              # TypeScript interfaces and API response types
 │   ├── utils/              # JWT, bcrypt, password validation helpers
 │   └── index.ts            # Express app setup with middleware chain
@@ -64,8 +64,8 @@ frontend/                     # React 18 SPA (Vite build tool)
 ├── src/
 │   ├── components/         # Reusable UI components
 │   │   ├── ui/            # shadcn/ui wrapped components (Button, Input, etc.)
-│   │   └── vendor/        # Business-specific components (StorefrontForm)
-│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts)
+│   │   └── vendor/        # Business-specific components (StorefrontFormModal, ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor)
+│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts, useServices, useScheduleRules)
 │   ├── pages/             # Route-level page components
 │   │   ├── auth/          # Login, Signup pages
 │   │   └── vendor/        # Storefront, Service, Appointment management
@@ -115,9 +115,9 @@ Example: `auth.ts` route calls `UserService.register()` which calls `UserModel.c
 
 #### Frontend: Store → Hooks → Components
 ```
-Zustand Store (global state: UI, calendar state)
+Zustand Store (global state: UI, calendar state, storefronts)
     ↓
-Custom Hooks (useAuth, useStorefronts - wraps React Query)
+Custom Hooks (useAuth, useStorefronts, useServices, useScheduleRules - wrap React Query)
     ↓
 Components (consume hooks, dispatch mutations)
 ```
@@ -173,6 +173,17 @@ const useStorefronts = () => {
   });
 };
 ```
+
+#### Available Custom Hooks
+- **`useAuth()`** - Authentication state (login, logout, token, user info)
+- **`useStorefronts()`** - Fetch/manage vendor storefronts with Create/Update/Delete mutations
+- **`useServices()`** - Fetch/manage services per storefront with Create/Update/Delete mutations
+- **`useScheduleRules()`** - Fetch/manage schedule rules (availability patterns) with Create/Update/Delete mutations
+
+All hooks follow the same pattern:
+- Read operations use `useQuery` for caching and background sync
+- Write operations (create/update/delete) use `useMutation` with automatic query invalidation
+- Error handling and loading states exposed to components
 
 ### Backend Patterns
 
@@ -410,11 +421,18 @@ psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 
 ## Project Status
 
-**Current:** 75% complete - Core infrastructure (auth, database, API foundation) ready for business logic implementation.
+**Current:** 85% complete - Core infrastructure, CRUD operations, and business logic layer fully implemented.
 
-**In Progress (Per DEVELOPMENT_PLAN.md):**
-- Phase 1: Storefront form components (Modal, TimezoneSelector, BusinessHoursEditor)
-- Phase 2: Service management CRUD
+**Completed Phases:**
+- ✓ Phase 1: Storefront CRUD (API endpoints, service layer, React hooks, UI components)
+- ✓ Phase 2: Service management CRUD (API endpoints, service layer, React hooks, UI components)
+- ✓ Bonus: Schedule rules CRUD (API endpoints with ownership validation, rule-type constraints, React hooks)
+
+**In Progress:**
 - Phase 3: Appointment booking and availability calculations
+  - Slot-based instant booking
+  - Schedule rule-based manual appointment creation
+  - Conflict detection and validation
+  - Frontend appointment management UI
 
-See `docs/DEVELOPMENT_PLAN.md` for detailed feature breakdown and phase estimates.
+See `docs/DEVELOPMENT_PLAN.md` for detailed feature breakdown.

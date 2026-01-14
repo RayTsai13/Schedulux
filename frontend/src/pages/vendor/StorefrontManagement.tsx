@@ -58,54 +58,55 @@ const StorefrontManagement = () => {
   // Empty state
   if (!storefronts || storefronts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Storefronts</h1>
-              <p className="text-gray-600 mt-1">Manage your business locations</p>
+      <>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Storefronts</h1>
+                <p className="text-gray-600 mt-1">Manage your business locations</p>
+              </div>
             </div>
-          </div>
 
-          {/* Empty State */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Store className="w-10 h-10 text-purple-600" />
+            {/* Empty State */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Store className="w-10 h-10 text-purple-600" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">No storefronts yet</h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Get started by creating your first storefront. A storefront represents a physical location
+                where you provide services to your clients.
+              </p>
+              <button
+                onClick={() => {
+                  console.log('Button clicked! Opening modal...');
+                  console.log('Current activeModal:', activeModal);
+                  openModal('createStorefront');
+                  console.log('After openModal, activeModal should be:', 'createStorefront');
+                }}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 inline-flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Create Your First Storefront</span>
+              </button>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">No storefronts yet</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Get started by creating your first storefront. A storefront represents a physical location
-              where you provide services to your clients.
-            </p>
-            <button
-              onClick={() => {
-                console.log('Button clicked! Opening modal...');
-                console.log('Current activeModal:', activeModal);
-                openModal('createStorefront');
-                console.log('After openModal, activeModal should be:', 'createStorefront');
-              }}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 inline-flex items-center space-x-2"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Create Your First Storefront</span>
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Modals - Also needed in empty state */}
-      <StorefrontFormModal
-        isOpen={activeModal === 'createStorefront'}
-        onClose={closeModal}
-      />
+        {/* Modals - Also needed in empty state */}
+        <StorefrontFormModal
+          isOpen={activeModal === 'createStorefront'}
+          onClose={closeModal}
+        />
 
-      <StorefrontFormModal
-        isOpen={activeModal === 'editStorefront'}
-        onClose={closeModal}
-        storefront={modalData as Storefront}
-      />
-    </div>
+        <StorefrontFormModal
+          isOpen={activeModal === 'editStorefront'}
+          onClose={closeModal}
+          storefront={modalData as Storefront}
+        />
+      </>
     );
   }
 

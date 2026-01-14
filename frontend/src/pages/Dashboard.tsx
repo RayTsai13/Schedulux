@@ -1,134 +1,39 @@
 import { useState } from 'react';
-import { Calendar, Clock, Users, DollarSign, Plus, Filter, Search, Bell } from 'lucide-react';
-import { AppointmentList, AppointmentDetailCard, StatusBadge } from '../components/ui';
-import type { BaseAppointment, DetailedAppointment } from '../components/ui';
+import { Calendar, Clock, Users, DollarSign, Plus, Bell, Settings, Store, Loader2 } from 'lucide-react';
 import Header from '../components/Header';
+import ServiceManager from '../components/vendor/ServiceManager';
+import HoursManager from '../components/vendor/HoursManager';
+import StorefrontFormModal from '../components/vendor/StorefrontFormModal';
+import { useStorefronts } from '../hooks/useStorefronts';
+import { useUIStore } from '../stores';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 const Dashboard = () => {
-  const [selectedView, setSelectedView] = useState<'overview' | 'appointments' | 'clients' | 'analytics'>('overview');
-  const [selectedAppointment, setSelectedAppointment] = useState<string | null>(null);
+  const [selectedView, setSelectedView] = useState<'overview' | 'appointments' | 'clients' | 'analytics' | 'settings'>('settings');
+  const [selectedStorefrontId, setSelectedStorefrontId] = useState<number | null>(null);
+  const [settingsTab, setSettingsTab] = useState<'services' | 'hours'>('services');
 
-  // Mock data - replace with real data from your backend
-  const todayStats = {
-    totalAppointments: 12,
-    completedAppointments: 8,
-    revenue: 1250,
-    newClients: 3
-  };
+  // Fetch storefronts for vendor setup
+  const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
+  const { activeModal, openModal, closeModal } = useUIStore();
 
-  const recentAppointments: BaseAppointment[] = [
-    {
-      id: '1',
-      title: 'Haircut & Style',
-      client: 'Sarah Johnson',
-      service: 'Premium Cut & Style',
-      time: '9:00 AM',
-      date: 'Today',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      title: 'Color Treatment',
-      client: 'Mike Chen',
-      service: 'Full Color & Highlights',
-      time: '11:30 AM',
-      date: 'Today',
-      status: 'today'
-    },
-    {
-      id: '3',
-      title: 'Consultation',
-      client: 'Emma Davis',
-      service: 'Style Consultation',
-      time: '2:00 PM',
-      date: 'Today',
-      status: 'upcoming'
-    },
-    {
-      id: '4',
-      title: 'Wedding Package',
-      client: 'Jessica Wilson',
-      service: 'Bridal Hair & Makeup',
-      time: '10:00 AM',
-      date: 'Tomorrow',
-      status: 'confirmed'
-    }
-  ];
+  // Auto-select first storefront when loaded
+  if (storefronts && storefronts.length > 0 && !selectedStorefrontId) {
+    setSelectedStorefrontId(storefronts[0].id);
+  }
 
-  const upcomingAppointments: BaseAppointment[] = [
-    {
-      id: '5',
-      title: 'Deep Conditioning',
-      client: 'Alex Rodriguez',
-      service: 'Keratin Treatment',
-      time: '3:30 PM',
-      date: 'Tomorrow',
-      status: 'confirmed'
-    },
-    {
-      id: '6',
-      title: 'Trim & Blow Dry',
-      client: 'Lisa Park',
-      service: 'Maintenance Cut',
-      time: '1:00 PM',
-      date: 'Sept 16',
-      status: 'upcoming'
-    }
-  ];
-
-  const detailedAppointment: DetailedAppointment = {
-    id: '2',
-    title: 'Color Treatment',
-    client: 'Mike Chen',
-    service: 'Full Color & Highlights',
-    time: '11:30 AM',
-    date: 'Today',
-    status: 'today',
-    duration: 120,
-    price: 185,
-    phone: '(555) 123-4567',
-    email: 'mike.chen@email.com',
-    notes: 'Client wants to go darker with subtle highlights. Allergic to ammonia-based products.',
-    location: 'Studio A',
-    rating: 4.8
-  };
-
-  const handleAppointmentClick = (appointmentId: string) => {
-    setSelectedAppointment(appointmentId);
-  };
-
-  const handleComplete = (appointmentId: string) => {
-    console.log('Marking appointment as complete:', appointmentId);
-    // Implement completion logic
-  };
-
-  const handleCancel = (appointmentId: string) => {
-    console.log('Cancelling appointment:', appointmentId);
-    // Implement cancellation logic
-  };
-
-  const StatCard = ({ title, value, icon: Icon, trend, color }: {
-    title: string;
-    value: string | number;
-    icon: any;
-    trend?: string;
-    color: string;
-  }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {trend && (
-            <p className="text-sm text-green-600 mt-1">↗ {trend}</p>
-          )}
-        </div>
-        <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-      </div>
-    </div>
-  );
+  // Get current date
+  const today = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -141,15 +46,14 @@ const Dashboard = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <span className="text-sm text-gray-500">September 14, 2025</span>
+              <span className="text-sm text-gray-500">{today}</span>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <button className="relative p-2 text-gray-500 hover:text-gray-700">
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
-              
+
               <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2">
                 <Plus className="w-4 h-4" />
                 <span>New Appointment</span>
@@ -166,7 +70,8 @@ const Dashboard = () => {
             { key: 'overview', label: 'Overview', icon: Calendar },
             { key: 'appointments', label: 'Appointments', icon: Clock },
             { key: 'clients', label: 'Clients', icon: Users },
-            { key: 'analytics', label: 'Analytics', icon: DollarSign }
+            { key: 'analytics', label: 'Analytics', icon: DollarSign },
+            { key: 'settings', label: 'Settings', icon: Settings }
           ].map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -183,129 +88,27 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Overview Content */}
+        {/* Overview - Coming Soon */}
         {selectedView === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard
-                title="Today's Appointments"
-                value={todayStats.totalAppointments}
-                icon={Calendar}
-                trend="+2 from yesterday"
-                color="bg-blue-500"
-              />
-              <StatCard
-                title="Completed Today"
-                value={todayStats.completedAppointments}
-                icon={Clock}
-                trend="67% completion rate"
-                color="bg-green-500"
-              />
-              <StatCard
-                title="Today's Revenue"
-                value={`$${todayStats.revenue}`}
-                icon={DollarSign}
-                trend="+15% from last week"
-                color="bg-purple-500"
-              />
-              <StatCard
-                title="New Clients"
-                value={todayStats.newClients}
-                icon={Users}
-                trend="This week"
-                color="bg-orange-500"
-              />
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Today's Appointments */}
-              <div className="lg:col-span-2">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900">Today's Schedule</h2>
-                  <div className="flex items-center space-x-2">
-                    <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-                      <Search className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <AppointmentList
-                  appointments={recentAppointments}
-                  showHeader={false}
-                  onAppointmentClick={handleAppointmentClick}
-                  className="shadow-sm"
-                />
-              </div>
-
-              {/* Upcoming Appointments */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Upcoming</h2>
-                <AppointmentList
-                  appointments={upcomingAppointments}
-                  showHeader={false}
-                  onAppointmentClick={handleAppointmentClick}
-                  className="shadow-sm"
-                />
-              </div>
-            </div>
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Overview Dashboard</h2>
+            <p className="text-gray-600">Real-time stats and today's schedule coming soon...</p>
+            <p className="text-sm text-gray-500 mt-2">Start by setting up your services in the Settings tab.</p>
           </div>
         )}
 
-        {/* Appointments View */}
+        {/* Appointments - Coming Soon */}
         {selectedView === 'appointments' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-gray-900">All Appointments</h2>
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <StatusBadge status="today" size="sm" />
-                  <StatusBadge status="upcoming" size="sm" />
-                  <StatusBadge status="completed" size="sm" />
-                </div>
-                <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                  View Calendar
-                </button>
-              </div>
-            </div>
-
-            {selectedAppointment ? (
-              <div className="space-y-4">
-                <button 
-                  onClick={() => setSelectedAppointment(null)}
-                  className="text-purple-600 hover:text-purple-700 font-medium"
-                >
-                  ← Back to list
-                </button>
-                <AppointmentDetailCard
-                  appointment={detailedAppointment}
-                  onComplete={handleComplete}
-                  onCancel={handleCancel}
-                  onEdit={(id) => console.log('Edit appointment:', id)}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AppointmentList
-                  appointments={recentAppointments}
-                  title="Today's Appointments"
-                  onAppointmentClick={handleAppointmentClick}
-                />
-                <AppointmentList
-                  appointments={upcomingAppointments}
-                  title="Upcoming Appointments"
-                  onAppointmentClick={handleAppointmentClick}
-                />
-              </div>
-            )}
+          <div className="text-center py-12">
+            <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Appointments</h2>
+            <p className="text-gray-600">Appointment management coming soon...</p>
+            <p className="text-sm text-gray-500 mt-2">Start by setting up your services and business hours in the Settings tab.</p>
           </div>
         )}
 
-        {/* Placeholder for other views */}
+        {/* Clients - Coming Soon */}
         {selectedView === 'clients' && (
           <div className="text-center py-12">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -314,6 +117,7 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Analytics - Coming Soon */}
         {selectedView === 'analytics' && (
           <div className="text-center py-12">
             <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -321,6 +125,101 @@ const Dashboard = () => {
             <p className="text-gray-600">Analytics dashboard coming soon...</p>
           </div>
         )}
+
+        {/* Settings View - REAL DATA */}
+        {selectedView === 'settings' && (
+          <div className="space-y-6">
+            {/* Storefront Selector */}
+            {storefrontsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+              </div>
+            ) : storefronts && storefronts.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Store className="w-5 h-5 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">Storefront:</span>
+                    </div>
+                    <Select
+                      value={selectedStorefrontId?.toString() || ''}
+                      onValueChange={(value) => setSelectedStorefrontId(parseInt(value, 10))}
+                    >
+                      <SelectTrigger className="w-[250px]">
+                        <SelectValue placeholder="Select storefront" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {storefronts.map((storefront) => (
+                          <SelectItem key={storefront.id} value={storefront.id.toString()}>
+                            {storefront.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Settings Sub-tabs */}
+                <div className="border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-8">
+                    <button
+                      onClick={() => setSettingsTab('services')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        settingsTab === 'services'
+                          ? 'border-purple-500 text-purple-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Services
+                    </button>
+                    <button
+                      onClick={() => setSettingsTab('hours')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        settingsTab === 'hours'
+                          ? 'border-purple-500 text-purple-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Business Hours
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Settings Content */}
+                {selectedStorefrontId && (
+                  <>
+                    {settingsTab === 'services' && (
+                      <ServiceManager storefrontId={selectedStorefrontId} />
+                    )}
+                    {settingsTab === 'hours' && (
+                      <HoursManager storefrontId={selectedStorefrontId} />
+                    )}
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Storefronts Yet</h2>
+                <p className="text-gray-600 mb-4">Create a storefront first to manage services and hours.</p>
+                <button
+                  onClick={() => openModal('createStorefront')}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Storefront</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Storefront Modal */}
+        <StorefrontFormModal
+          isOpen={activeModal === 'createStorefront'}
+          onClose={closeModal}
+        />
       </div>
     </div>
   );

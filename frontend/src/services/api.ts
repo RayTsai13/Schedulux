@@ -614,6 +614,336 @@ export const storefrontApi = {
 };
 
 // ================================================================
+// SERVICE API FUNCTIONS
+// ================================================================
+
+// Service-related types (matches backend exactly)
+export interface Service {
+  id: number;
+  storefront_id: number;
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  buffer_time_minutes: number;
+  price?: number;
+  category?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+export interface CreateServiceRequest {
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  buffer_time_minutes?: number;
+  price?: number;
+  category?: string;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  description?: string;
+  duration_minutes?: number;
+  buffer_time_minutes?: number;
+  price?: number;
+  category?: string;
+  is_active?: boolean;
+}
+
+export const serviceApi = {
+  /**
+   * Get all active services for a storefront (public)
+   */
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<Service[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/services`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch services.',
+      };
+    }
+  },
+
+  /**
+   * Get all services including inactive (vendor only)
+   */
+  getAllByStorefront: async (storefrontId: number): Promise<ApiResponse<Service[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/services/all`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch services.',
+      };
+    }
+  },
+
+  /**
+   * Get a single service by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.get(`/services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch service.',
+      };
+    }
+  },
+
+  /**
+   * Create a new service
+   */
+  create: async (storefrontId: number, data: CreateServiceRequest): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.post(`/storefronts/${storefrontId}/services`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create service.',
+      };
+    }
+  },
+
+  /**
+   * Update a service
+   */
+  update: async (id: number, data: UpdateServiceRequest): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.put(`/services/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update service.',
+      };
+    }
+  },
+
+  /**
+   * Delete a service (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete service.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// SCHEDULE RULE API FUNCTIONS
+// ================================================================
+
+// Schedule rule types (matches backend exactly)
+export type RuleType = 'weekly' | 'daily' | 'monthly';
+
+export interface ScheduleRule {
+  id: number;
+  storefront_id: number;
+  service_id: number | null;
+  rule_type: RuleType;
+  priority: number;
+  day_of_week: number | null;
+  specific_date: string | null;
+  month: number | null;
+  year: number | null;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  max_concurrent_appointments: number;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateScheduleRuleRequest {
+  service_id?: number | null;
+  rule_type: RuleType;
+  priority?: number;
+  day_of_week?: number;
+  specific_date?: string;
+  month?: number;
+  year?: number;
+  start_time: string;
+  end_time: string;
+  is_available?: boolean;
+  max_concurrent_appointments?: number;
+  notes?: string;
+}
+
+export interface UpdateScheduleRuleRequest {
+  service_id?: number | null;
+  rule_type?: RuleType;
+  priority?: number;
+  day_of_week?: number | null;
+  specific_date?: string | null;
+  month?: number | null;
+  year?: number | null;
+  start_time?: string;
+  end_time?: string;
+  is_available?: boolean;
+  max_concurrent_appointments?: number;
+  notes?: string | null;
+  is_active?: boolean;
+}
+
+export const scheduleRuleApi = {
+  /**
+   * Get all active schedule rules for a storefront (public)
+   */
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<ScheduleRule[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/rules`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rules.',
+      };
+    }
+  },
+
+  /**
+   * Get all schedule rules including inactive (vendor only)
+   */
+  getAllByStorefront: async (storefrontId: number): Promise<ApiResponse<ScheduleRule[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/rules/all`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rules.',
+      };
+    }
+  },
+
+  /**
+   * Get a single schedule rule by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.get(`/rules/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Create a new schedule rule
+   */
+  create: async (storefrontId: number, data: CreateScheduleRuleRequest): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.post(`/storefronts/${storefrontId}/rules`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Update a schedule rule
+   */
+  update: async (id: number, data: UpdateScheduleRuleRequest): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.put(`/rules/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Delete a schedule rule (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/rules/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete schedule rule.',
+      };
+    }
+  },
+};
+
+// ================================================================
 // EXPORT CONFIGURED AXIOS INSTANCE
 // ================================================================
 

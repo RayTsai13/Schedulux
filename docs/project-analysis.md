@@ -1,8 +1,8 @@
 # Schedulux Project Analysis
 
-**Last Updated:** October 6, 2025
+**Last Updated:** January 13, 2026
 **Branch:** main
-**Status:** State Management Implemented, Storefront Management UI Complete  
+**Status:** Core CRUD APIs Complete (Storefront, Service, Schedule Rules), Ready for Appointment Booking  
 
 ## 🎯 Project Overview
 
@@ -339,31 +339,40 @@ const StorefrontFormModal = ({ isOpen, onClose }) => {
 
 **Result:** Fast development without sacrificing competitive advantage.
 
-## 🎨 Frontend Development Progress (October 2025)
+## 🎨 Frontend Development Progress (January 2026)
 
 ### Major Frontend Milestones Achieved
 
-**Component Library Strategy Defined** ✅ (October 2025)
-- **Hybrid Architecture**: Established 60/30/10 rule (custom/shadcn/specialized)
+**Core CRUD Implementation Complete** ✅ (January 2026)
+- **Storefront Management**: Full CRUD UI with modals, forms, and business hours editor
+- **Service Management**: Complete service CRUD with storefront filtering and categories
+- **Schedule Rules Management**: Full CRUD with priority ordering and rule type constraints
+- **React Query Integration**: All CRUD operations using custom hooks (useStorefronts, useServices, useScheduleRules)
+- **Component Library**: Extended with vendor-specific components (ServiceManager, HoursManager)
+- **Ownership Validation**: All operations validate vendor ownership via backend APIs
+
+**Component Library Strategy Implemented** ✅ (October 2025)
+- **Hybrid Architecture**: Implemented 60/30/10 rule (custom/shadcn/specialized)
 - **Decision Framework**: Clear guidelines for choosing component approach
 - **Technology Selection**: shadcn/ui for forms, react-big-calendar for scheduling
-- **Custom Component Preservation**: All existing quality components retained
-- **Strategic Roadmap**: Implementation phases planned for gradual adoption
+- **Custom Components**: ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor
+- **Strategic Roadmap**: Successfully completed Phase 1 & 2, started Phase 3
 
 **Complete User Interface Implementation** ✅
 - **Professional Marketing Site**: Built comprehensive landing page with Hero section, Features grid, and customer Testimonials
 - **Authentication System**: Implemented login/signup forms with real-time validation using React Hook Form + Zod
 - **Dashboard Interface**: Created multi-tab dashboard with Overview, Appointments, Clients, and Analytics sections
-- **Component Library**: Developed reusable UI components for appointment management
-- **Storefront Management**: Complete vendor interface for managing business locations
+- **Component Library**: Developed reusable UI components for appointment and business management
+- **Vendor Management Pages**: StorefrontManagement, ServiceManagement, ScheduleRuleManagement
 
 **Modern Development Stack** ✅
 - **React 18 + TypeScript**: Strict type safety with latest React features
 - **Vite Build System**: Fast development with hot module replacement
 - **TailwindCSS**: Professional responsive design with gradient themes
 - **Lucide React Icons**: Consistent icon library throughout the application
-- **TanStack Query**: Server state management with automatic caching and refetching
+- **TanStack Query 5**: Server state management with automatic caching and refetching (fully integrated)
 - **Zustand**: Lightweight client state management with persistence
+- **shadcn/ui**: Form components (Button, Input, Select, Label, Textarea) integrated
 
 **Advanced Features Implemented** ✅
 - **Role-Based Registration**: Separate flows for business owners (vendors) and customers (clients)
@@ -372,6 +381,8 @@ const StorefrontFormModal = ({ isOpen, onClose }) => {
 - **State Management Architecture**: Separation of server state (TanStack Query) and client state (Zustand)
 - **Toast Notifications**: User feedback system using Sonner library
 - **React Query DevTools**: Development tooling for debugging server state
+- **CRUD Operations**: Create, read, update, delete operations for Storefronts, Services, and Schedule Rules
+- **Ownership Validation**: Frontend validates operations belong to authenticated vendor
 
 ### Technical Architecture Highlights
 
@@ -465,7 +476,7 @@ All API endpoints are configured and ready for backend integration:
 
 ## 📊 Implementation Status
 
-### Backend (80% Complete) ✅
+### Backend (90% Complete) ✅
 ```
 backend/
 ├── src/
@@ -474,12 +485,19 @@ backend/
 │   │   └── database.ts       ✅ PostgreSQL connection pooling + query helpers
 │   ├── models/               ✅ Repository pattern implementation
 │   │   ├── User.ts          ✅ User CRUD operations + soft deletes
-│   │   └── Storefront.ts    ✅ Multi-tenant storefront data access
+│   │   ├── Storefront.ts    ✅ Multi-tenant storefront data access
+│   │   ├── Service.ts       ✅ Service CRUD with storefront ownership
+│   │   └── ScheduleRule.ts  ✅ Schedule rule data access with priority ordering
 │   ├── services/             ✅ Business logic layer
-│   │   └── UserService.ts   ✅ Registration, authentication, validation
-│   ├── routes/               ✅ Authentication + Storefront routes
+│   │   ├── UserService.ts   ✅ Registration, authentication, validation
+│   │   ├── StorefrontService.ts ✅ Storefront creation/update with validation
+│   │   ├── ServiceService.ts ✅ Service management with ownership validation
+│   │   └── ScheduleRuleService.ts ✅ Rule creation/management with priority constraints
+│   ├── routes/               ✅ Complete API endpoints
 │   │   ├── auth.ts          ✅ /register, /login, /me endpoints
-│   │   └── storefronts.ts   ✅ /storefronts CRUD endpoints
+│   │   ├── storefronts.ts   ✅ /storefronts CRUD endpoints with ownership
+│   │   ├── services.ts      ✅ /services CRUD with storefront filtering
+│   │   └── schedule-rules.ts ✅ /schedule-rules CRUD with type validation
 │   ├── middleware/
 │   │   └── auth.ts          ✅ JWT token verification middleware
 │   ├── types/                ✅ Complete TypeScript coverage
@@ -487,6 +505,7 @@ backend/
 │   │   ├── user.ts          ✅ User interfaces
 │   │   ├── storefront.ts    ✅ Business location types
 │   │   ├── service.ts       ✅ Service offering types
+│   │   ├── scheduleRule.ts  ✅ Schedule rule types (weekly/daily/monthly)
 │   │   ├── appointment.ts   ✅ Scheduling types
 │   │   └── common.ts        ✅ API response types
 │   └── utils/
@@ -507,20 +526,22 @@ backend/
 - ✅ Complete user authentication flow (register/login/profile)
 - ✅ JWT token generation and verification
 - ✅ Protected route middleware implementation
-- ✅ Storefront CRUD API endpoints with authorization
-- ✅ Input validation with express-validator
+- ✅ **Storefront CRUD API** with ownership validation and timezone support
+- ✅ **Service CRUD API** with storefront filtering and public/private endpoints
+- ✅ **Schedule Rules CRUD API** with priority ordering and rule-type constraints (weekly/daily/monthly)
+- ✅ Input validation with express-validator and Zod
 - ✅ Consistent API response format with proper HTTP status codes
 - ✅ Repository pattern with clean service layer separation
 - ✅ Comprehensive error handling and validation
+- ✅ Ownership validation across all CRUD operations
 - ✅ Admin user creation script for development
 
-**Missing Core APIs:**
-- ❌ `/api/services` - Service management per storefront
-- ❌ `/api/appointments` - Booking and scheduling logic
-- ❌ `/api/schedule-rules` - Availability pattern management
-- ❌ Availability calculation algorithms
+**Remaining Core APIs:**
+- ⏳ `/api/appointments` - Booking and scheduling logic
+- ⏳ Availability calculation algorithms
+- ⏳ Appointment status transitions (pending → confirmed → completed)
 
-### Frontend (80% Complete) ✅
+### Frontend (85% Complete) ✅
 ```
 src/
 ├── pages/                           ✅ Complete UI implementation
@@ -529,7 +550,9 @@ src/
 │   ├── Signup.tsx                  ✅ Registration form with role selection (vendor/client)
 │   ├── Dashboard.tsx               ✅ Multi-tab dashboard with mock data integration
 │   └── vendor/                     ✅ Vendor-specific pages
-│       └── StorefrontManagement.tsx ✅ Complete storefront CRUD UI with empty states
+│       ├── StorefrontManagement.tsx ✅ Complete storefront CRUD UI with empty states
+│       ├── ServiceManagement.tsx   ✅ Service management with storefront filtering
+│       └── ScheduleRuleManagement.tsx ✅ Schedule rules CRUD with priority ordering
 ├── components/                      ✅ Complete component library
 │   ├── Header.tsx                  ✅ Navigation with auth state management
 │   ├── Hero.tsx                    ✅ Landing page hero with animated UI mockup
@@ -537,15 +560,29 @@ src/
 │   ├── Testimonials.tsx            ✅ Customer testimonial carousel
 │   ├── Footer.tsx                  ✅ Multi-column footer with links
 │   ├── ProtectedRoute.tsx          ✅ Auth-based routing middleware
+│   ├── vendor/                     ✅ Business-specific components
+│   │   ├── StorefrontFormModal.tsx ✅ Create/edit storefront modal
+│   │   ├── ServiceManager.tsx      ✅ Service CRUD component
+│   │   ├── HoursManager.tsx        ✅ Business hours editor
+│   │   ├── TimezoneSelector.tsx    ✅ Searchable timezone selector
+│   │   └── BusinessHoursEditor.tsx ✅ Weekly schedule builder
 │   └── ui/                         ✅ Appointment management components
 │       ├── AppointmentCard.tsx            ✅ Individual appointment display
 │       ├── AppointmentList.tsx            ✅ Appointment collection container
 │       ├── AppointmentDetailCard.tsx      ✅ Detailed appointment view
 │       ├── StatusBadge.tsx               ✅ Status indicator component
+│       ├── Modal.tsx                     ✅ Reusable modal wrapper
+│       ├── Button.tsx                    ✅ shadcn/ui button component
+│       ├── Input.tsx                     ✅ shadcn/ui input component
+│       ├── Select.tsx                    ✅ shadcn/ui select component
+│       ├── Label.tsx                     ✅ shadcn/ui label component
+│       ├── Textarea.tsx                  ✅ shadcn/ui textarea component
 │       └── index.ts                      ✅ TypeScript interfaces and exports
-├── hooks/                           ✅ Custom React hooks
+├── hooks/                           ✅ Complete React Query integration
 │   ├── useAuth.tsx                 ✅ Complete authentication context with persistence
-│   └── useStorefronts.ts           ✅ TanStack Query hooks for storefront operations
+│   ├── useStorefronts.ts           ✅ TanStack Query hooks for storefront operations (CRUD)
+│   ├── useServices.ts              ✅ TanStack Query hooks for service operations (CRUD)
+│   └── useScheduleRules.ts         ✅ TanStack Query hooks for schedule rule operations (CRUD)
 ├── stores/                          ✅ Zustand state management
 │   ├── useStorefrontStore.ts       ✅ Selected storefront tracking with persistence
 │   ├── useCalendarStore.ts         ✅ Calendar view state and filters
@@ -554,20 +591,22 @@ src/
 ├── config/                          ✅ Application configuration
 │   └── queryClient.ts              ✅ TanStack Query client setup
 └── services/                        ✅ API integration layer
-    └── api.ts                      ✅ Axios with interceptors + storefront API functions
+    └── api.ts                      ✅ Axios with interceptors + API functions
 ```
 
-**Recently Completed Features (October 2025):**
+**Completed Features (January 2026):**
+- ✅ **Storefront Management**: Complete CRUD UI + API integration with TimezoneSelector and BusinessHoursEditor
+- ✅ **Service Management**: Complete CRUD UI + API integration with storefront filtering
+- ✅ **Schedule Rules Management**: Complete CRUD UI + API integration with priority ordering
+- ✅ **Custom React Hooks**: useStorefronts, useServices, useScheduleRules with React Query
+- ✅ **Component Library**: StorefrontFormModal, ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor
+- ✅ **shadcn/ui Integration**: Button, Input, Select, Label, Textarea components installed and integrated
 - ✅ **State Management Architecture**: TanStack Query + Zustand separation of concerns
-- ✅ **Storefront Management UI**: Complete CRUD interface with empty/loading/error states
 - ✅ **Server State Caching**: Automatic data caching and invalidation with React Query
 - ✅ **Client State Persistence**: Zustand stores with localStorage integration
 - ✅ **React Query DevTools**: Development debugging for server state inspection
-- ✅ **Authentication Fix**: Login redirect issue resolved
-- ✅ **Admin User Script**: Development setup automation for user creation
-- ✅ **Development Tooling**: Comprehensive testing and debugging documentation
 
-**Previously Completed Features:**
+**Earlier Completed Features:**
 - ✅ **Complete Marketing Site**: Professional landing page with Hero, Features, and Testimonials sections
 - ✅ **Advanced Form Handling**: React Hook Form + Zod validation for all forms
 - ✅ **Role-Based Registration**: Vendor vs Client registration with different UI flows
@@ -578,34 +617,21 @@ src/
 - ✅ **TypeScript Coverage**: Complete type safety with interfaces and strict mode
 
 **Technical Implementation Details:**
-- ✅ **State Management**: TanStack Query for server state, Zustand for client state
+- ✅ **State Management**: TanStack Query for server state (Storefront/Service/ScheduleRule CRUD), Zustand for client state
 - ✅ **API Integration**: Axios with request/response interceptors and automatic auth headers
-- ✅ **Component Architecture**: Modular, reusable components with TypeScript props
+- ✅ **Component Architecture**: Modular, reusable components with TypeScript props following 60/30/10 hybrid strategy
 - ✅ **Responsive Design**: Mobile-first Tailwind CSS with gradient themes
 - ✅ **Performance Optimized**: Vite build system with React fast refresh
 - ✅ **Query Caching**: 5-minute stale time, 10-minute garbage collection
 - ✅ **Persistent UI State**: Calendar view, storefront selection saved to localStorage
+- ✅ **Full Backend Integration**: All CRUD operations connected to backend APIs
 
-**Backend Integration Status:**
-- ✅ API service layer completely configured for HTTP requests
-- ✅ Authentication flow fully integrated with backend
-- ✅ Storefront API fully integrated (CRUD operations working)
-- ✅ Form validation schemas ready for server-side integration
-- ✅ Loading states and error handling infrastructure in place
-- ✅ TypeScript interfaces defined for all data models
-- ✅ TanStack Query hooks handle API calls with automatic caching
-- ✅ Frontend-backend connection tested and verified
-
-**Remaining Integration Tasks:**
-- ❌ Install shadcn/ui and adopt core form components (Input, Button, Select, Label, Textarea)
-- ❌ Complete storefront form UI (modal + business hours editor)
-- ❌ Migrate forms to use shadcn/ui components (Login, Signup, StorefrontFormModal)
-- ❌ Connect Dashboard to real appointment data endpoints
-- ❌ Implement real-time appointment management (CRUD operations)
-- ❌ Add calendar view component with react-big-calendar for vendor dashboard
-- ❌ Implement service management for vendors
-- ❌ Build schedule rules management interface
-- ❌ Create client booking flow with custom time slot picker
+**Remaining Frontend Tasks:**
+- ⏳ Appointment booking UI (wizard, time slot picker, confirmation flow)
+- ⏳ Calendar view component with react-big-calendar for vendor dashboard
+- ⏳ Client booking flow (public-facing interface)
+- ⏳ Appointment management pages (create, edit, cancel)
+- ⏳ Analytics dashboard with metrics and charts
 
 ### Database Schema (100% Complete) ✅
 ```sql
@@ -725,62 +751,97 @@ NODE_ENV=development
 
 ## 🗺️ Development Roadmap
 
-### Phase 1: Core APIs (Current Priority - 2-3 weeks)
+### ✅ Phase 1: Core APIs - COMPLETED
+**Status**: ✅ Complete (Backend + Frontend)
+
+1. **Storefront Management API** ✅
+   - ✅ CRUD operations for business locations
+   - ✅ Vendor ownership validation and authorization
+   - ✅ Business hours configuration with timezone support
+   - ✅ Multi-storefront listing and filtering
+
+2. **Service Management API** ✅
+   - ✅ Service catalog per storefront with categories
+   - ✅ Duration, pricing, and buffer time configuration
+   - ✅ Active/inactive status with soft deletion
+   - ✅ Service availability rule associations
+
+3. **Schedule Rules Management API** ✅ (BONUS: Originally Phase 5)
+   - ✅ CRUD operations with priority ordering
+   - ✅ Rule type constraints (weekly/daily/monthly)
+   - ✅ Vendor ownership validation
+   - ✅ Complete frontend UI with management pages
+
+### ✅ Phase 2: Frontend-Backend Integration - COMPLETED
+**Status**: ✅ Complete - All CRUD operations connected
+
+1. **Dashboard Integration** ✅
+   - ✅ Storefront management connected to backend API
+   - ✅ Service management connected to backend API
+   - ✅ Schedule rules connected to backend API
+   - ✅ Real-time CRUD operations working with proper state updates
+
+2. **User Management Integration** ✅
+   - ✅ Authentication system fully operational
+   - ✅ Vendor storefront management interface complete
+   - ✅ Service creation and management for business owners
+   - ✅ React Query DevTools for debugging
+
+### 🔄 Phase 3: Appointment Booking API (CURRENT PRIORITY - 1-2 weeks)
 **Status**: In Progress - Backend API Implementation
 
-1. **Storefront Management API**
-   - CRUD operations for business locations
-   - Vendor ownership validation and authorization
-   - Business hours configuration with timezone support
-   - Multi-storefront listing and filtering
-
-2. **Service Management API**
-   - Service catalog per storefront with categories
-   - Duration, pricing, and buffer time configuration
-   - Active/inactive status with soft deletion
-   - Service availability rule associations
-
-3. **Appointment Booking API**
-   - Request-based appointment workflow (pending → confirmed)
+1. **Appointment Booking API**
+   - Appointment creation endpoints
+   - Request-based workflow (pending → confirmed → completed)
    - Slot-based instant booking with capacity management
    - Conflict detection using schedule rules
    - Status transitions and history tracking
 
-### Phase 2: Frontend-Backend Integration (1-2 weeks)
-**Status**: Ready to Begin - Frontend Infrastructure Complete
-
-1. **Dashboard Integration**
-   - Connect appointment management to real API endpoints
-   - Replace mock data with live appointment feeds
-   - Implement real-time CRUD operations for appointments
-   - Add loading states and error handling for all API calls
-
-2. **User Management Integration**
-   - Connect user profile management to backend
-   - Implement vendor storefront management interface
-   - Add service creation and management for business owners
-   - Client appointment booking and history views
-
-### Phase 3: Advanced Scheduling Features (1-2 weeks)
-**Status**: Prepared - Business Logic Implementation
-
-1. **Availability Calculation Engine**
+2. **Availability Calculation Engine**
    - Priority-based schedule rule processing
    - Weekly/daily/monthly pattern evaluation
    - Service-specific availability filtering
    - Real-time conflict detection algorithms
 
-2. **Calendar Interface Implementation**
-   - Interactive calendar view for appointment scheduling
+### 🔄 Phase 4: Calendar & Appointment Management (1-2 weeks)
+**Status**: Ready to Begin - Frontend Components
+
+1. **Calendar Interface Implementation**
+   - Interactive calendar view with react-big-calendar
+   - Month/week/day view toggle
    - Drag-and-drop appointment management
-   - Multi-week/month view with availability display
+   - Appointment creation from calendar UI
    - Integration with existing AppointmentCard components
 
-### Phase 4: Production Enhancement (1 week)
+2. **Appointment Management Pages**
+   - Create appointment with multi-step wizard
+   - Edit existing appointments
+   - Cancel/reschedule functionality
+   - Status transition workflows
+   - Appointment history and audit trails
+
+### Phase 5: Client Features (1-2 weeks)
+**Status**: Prepared - Public booking and client management
+
+1. **Public Booking Page**
+   - Unauthenticated storefront browsing
+   - Service catalog display
+   - Available time slot selection
+   - Guest booking flow
+   - Email confirmation integration
+
+2. **Client Dashboard**
+   - View upcoming appointments
+   - Cancel/reschedule bookings
+   - Appointment history
+   - Favorite storefronts
+   - Profile management
+
+### Phase 6: Production Enhancement (1 week)
 **Status**: Foundation Ready - Performance & Security
 
 1. **Performance Optimization**
-   - API response caching with TanStack Query
+   - API response caching with TanStack Query (already implemented)
    - Optimistic updates for better user experience
    - Image optimization and lazy loading
    - Bundle size optimization and code splitting
@@ -790,28 +851,14 @@ NODE_ENV=development
    - Comprehensive error logging and monitoring
    - Health check endpoints for deployment
    - Environment-specific configurations
-   - Real-time appointment status updates
+   - Real-time appointment status updates via webhooks
 
-2. **Enhanced User Experience**
-   - Interactive calendar view for appointment scheduling
-   - Real-time appointment management dashboard
-   - Client communication system (notes, confirmations)
-   - Mobile-responsive design optimization
-
-### Phase 4: Production Readiness (1 week)
-**Priority**: Deployment and monitoring
-
-1. **Performance & Security**
-   - Rate limiting implementation
+3. **Deployment Infrastructure**
    - API documentation with OpenAPI/Swagger
-   - Comprehensive error logging and monitoring
-   - Database connection pooling optimization
-
-2. **Deployment Infrastructure**
-   - Environment-specific configurations
    - Database migration scripts
    - Health check endpoints
    - Graceful shutdown handling
+   - Monitoring and alerting setup
 
 ## 🏢 Business Applications & Market Fit
 
@@ -1132,17 +1179,19 @@ Zustand state updated (close modal, reset UI)
 
 ## 📋 Current Project Status Summary
 
-**Foundation Complete + State Management Implemented**: Database schema, authentication system, state management architecture, and storefront management UI are production-ready.
+**Core CRUD Complete**: Storefront, Service, and Schedule Rules management fully implemented on backend and frontend with complete API integration and ownership validation.
 
-**Major Frontend Milestone Achieved** (October 2025): Complete state management implementation with TanStack Query + Zustand, storefront management UI with real backend integration, and comprehensive development tooling.
+**Major Milestone Achieved** (January 2026): Phase 1 & 2 complete, plus bonus Phase 5 (Schedule Rules CRUD). All core business entities have full CRUD operations with properly secured API endpoints and React Query integration.
 
-**Next Milestone**: Complete storefront CRUD forms (modal + business hours editor), then move to service management and appointment scheduling.
+**Next Milestone**: Implement appointment booking system with availability calculation engine, then build calendar interface and appointment management features.
 
-**Timeline**: 2-3 weeks to complete MVP with full scheduling functionality.
+**Timeline**: 1-2 weeks to complete appointment booking foundation, then 1 week for calendar UI and remaining refinements.
 
 **Current State**:
-- ✅ **Backend Foundation**: Solid technical foundation with authentication and storefront APIs complete
-- ✅ **State Management**: TanStack Query + Zustand architecture implemented and tested
-- ✅ **Frontend-Backend Integration**: Fully connected and operational
-- ✅ **Storefront Management**: UI complete, forms pending
-- 🔄 **Next Phase**: Storefront form components, service management, appointment scheduling
+- ✅ **Backend Foundation**: 90% complete with Auth, Storefront, Service, and Schedule Rules APIs fully operational
+- ✅ **Frontend Implementation**: 85% complete with all CRUD pages and components working
+- ✅ **State Management**: TanStack Query + Zustand architecture fully implemented across all features
+- ✅ **Component Library**: Hybrid approach (60% custom/30% shadcn/ui/10% specialized libraries) implemented
+- ✅ **Full Backend Integration**: All CRUD operations connected and tested
+- ✅ **Database Schema**: 100% complete with production-ready features
+- 🔄 **Next Phase**: Appointment booking API, availability calculation, calendar UI, appointment management

@@ -179,11 +179,14 @@ const Login = () => {
 
         {/* Demo Credentials */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">Demo Credentials</h3>
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">Demo Admin Credentials</h3>
           <div className="text-sm text-yellow-700 space-y-1">
-            <p><strong>Email:</strong> demo@schedulux.com</p>
-            <p><strong>Password:</strong> Password123!</p>
+            <p><strong>Email:</strong> admin@schedulux.com</p>
+            <p><strong>Password:</strong> Admin123!</p>
           </div>
+          <p className="text-xs text-yellow-600 mt-2">
+            Run <code className="bg-yellow-100 px-1 rounded">cd backend && npx ts-node scripts/create-admin.ts</code> to create this account
+          </p>
         </div>
       </div>
     </div>
