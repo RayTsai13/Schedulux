@@ -1,8 +1,8 @@
 # Schedulux Project Analysis
 
-**Last Updated:** January 13, 2026
+**Last Updated:** January 14, 2026
 **Branch:** main
-**Status:** Core CRUD APIs Complete (Storefront, Service, Schedule Rules), Ready for Appointment Booking  
+**Status:** Availability Engine & Booking API Complete - Phase 3a/3b Finished, Ready for Calendar UI  
 
 ## 🎯 Project Overview
 
@@ -30,7 +30,8 @@
 | **Auth** | bcrypt + JWT | Secure password hashing + tokens |
 | **Validation** | express-validator + Zod | Server + client input validation |
 | **Notifications** | Sonner | Toast notifications and user feedback |
-| **Date Handling** | date-fns + react-datepicker | Date manipulation and selection |
+| **Date Handling** | date-fns + date-fns-tz + react-datepicker | Timezone-aware date manipulation, availability calculations, and selection |
+| **Concurrency Control** | PostgreSQL Advisory Locks | Race condition prevention for simultaneous bookings |
 
 ### Database Design Philosophy
 The scheduling system uses a priority-based rule system for maximum flexibility:
@@ -476,7 +477,7 @@ All API endpoints are configured and ready for backend integration:
 
 ## 📊 Implementation Status
 
-### Backend (90% Complete) ✅
+### Backend (95% Complete) ✅
 ```
 backend/
 ├── src/
@@ -492,12 +493,16 @@ backend/
 │   │   ├── UserService.ts   ✅ Registration, authentication, validation
 │   │   ├── StorefrontService.ts ✅ Storefront creation/update with validation
 │   │   ├── ServiceService.ts ✅ Service management with ownership validation
-│   │   └── ScheduleRuleService.ts ✅ Rule creation/management with priority constraints
+│   │   ├── ScheduleRuleService.ts ✅ Rule creation/management with priority constraints
+│   │   ├── AvailabilityService.ts ✅ Slot calculation with priority resolution and timezone handling
+│   │   └── AppointmentService.ts ✅ Booking with race condition prevention via advisory locks
 │   ├── routes/               ✅ Complete API endpoints
 │   │   ├── auth.ts          ✅ /register, /login, /me endpoints
 │   │   ├── storefronts.ts   ✅ /storefronts CRUD endpoints with ownership
 │   │   ├── services.ts      ✅ /services CRUD with storefront filtering
-│   │   └── schedule-rules.ts ✅ /schedule-rules CRUD with type validation
+│   │   ├── schedule-rules.ts ✅ /schedule-rules CRUD with type validation
+│   │   ├── availability.ts  ✅ Public availability query endpoint
+│   │   └── appointments.ts  ✅ Appointment CRUD with booking logic
 │   ├── middleware/
 │   │   └── auth.ts          ✅ JWT token verification middleware
 │   ├── types/                ✅ Complete TypeScript coverage
@@ -535,11 +540,23 @@ backend/
 - ✅ Comprehensive error handling and validation
 - ✅ Ownership validation across all CRUD operations
 - ✅ Admin user creation script for development
+- ✅ **Availability Calculation Engine** - Slot calculation from schedule rules
+  - Priority-based rule resolution (daily > monthly > weekly)
+  - Time block merging with sweep line algorithm
+  - Timezone-aware date/time handling
+  - Concurrent booking limit enforcement
+- ✅ **Appointment Booking API** - Create and manage appointments
+  - PostgreSQL advisory locks for race condition prevention
+  - Atomic transactions with availability re-checking
+  - Status transitions and history tracking
+  - Ownership validation for all operations
 
-**Remaining Core APIs:**
-- ⏳ `/api/appointments` - Booking and scheduling logic
-- ⏳ Availability calculation algorithms
-- ⏳ Appointment status transitions (pending → confirmed → completed)
+**Completed APIs:**
+- ✅ `GET /api/storefronts/:id/availability` - Public availability query
+- ✅ `POST /api/appointments` - Create/book appointments (authenticated)
+- ✅ `GET /api/appointments` - User's appointments (authenticated)
+- ✅ `GET /api/storefronts/:id/appointments` - Vendor appointments (authenticated, vendor-only)
+- ✅ `PATCH /api/appointments/:id/status` - Update appointment status
 
 ### Frontend (85% Complete) ✅
 ```
@@ -787,21 +804,26 @@ NODE_ENV=development
    - ✅ Service creation and management for business owners
    - ✅ React Query DevTools for debugging
 
-### 🔄 Phase 3: Appointment Booking API (CURRENT PRIORITY - 1-2 weeks)
-**Status**: In Progress - Backend API Implementation
+### ✅ Phase 3: Appointment Booking API - COMPLETED
+**Status**: ✅ Complete - Availability Engine & Booking API Implemented
 
-1. **Appointment Booking API**
-   - Appointment creation endpoints
-   - Request-based workflow (pending → confirmed → completed)
-   - Slot-based instant booking with capacity management
-   - Conflict detection using schedule rules
-   - Status transitions and history tracking
+**Phase 3a: Availability Calculation Engine** ✅
+- ✅ Priority-based schedule rule processing (daily > monthly > weekly)
+- ✅ Time block merging with sweep line algorithm
+- ✅ Weekly/daily/monthly pattern evaluation
+- ✅ Service-specific availability filtering
+- ✅ Timezone-aware calculations with date-fns-tz
+- ✅ Concurrent booking limit enforcement
+- ✅ Public endpoint: `GET /api/storefronts/:id/availability`
 
-2. **Availability Calculation Engine**
-   - Priority-based schedule rule processing
-   - Weekly/daily/monthly pattern evaluation
-   - Service-specific availability filtering
-   - Real-time conflict detection algorithms
+**Phase 3b: Appointment Booking API** ✅
+- ✅ Appointment creation with booking logic
+- ✅ Request-based workflow (pending → confirmed → completed)
+- ✅ Slot-based instant booking with capacity management
+- ✅ Conflict detection using schedule rules
+- ✅ PostgreSQL advisory locks for race condition prevention
+- ✅ Status transitions and history tracking
+- ✅ Authenticated endpoints with ownership validation
 
 ### 🔄 Phase 4: Calendar & Appointment Management (1-2 weeks)
 **Status**: Ready to Begin - Frontend Components
@@ -1179,19 +1201,23 @@ Zustand state updated (close modal, reset UI)
 
 ## 📋 Current Project Status Summary
 
-**Core CRUD Complete**: Storefront, Service, and Schedule Rules management fully implemented on backend and frontend with complete API integration and ownership validation.
+**Major Milestone Achieved** (January 14, 2026): Phase 1, 2, and 3 (Availability & Booking API) complete. All core business entities have full CRUD operations with properly secured API endpoints, React Query integration, and advanced scheduling logic.
 
-**Major Milestone Achieved** (January 2026): Phase 1 & 2 complete, plus bonus Phase 5 (Schedule Rules CRUD). All core business entities have full CRUD operations with properly secured API endpoints and React Query integration.
+**Availability Engine Complete**: Slot calculation from schedule rules with priority resolution, timezone handling, and concurrent booking limits fully implemented and tested.
 
-**Next Milestone**: Implement appointment booking system with availability calculation engine, then build calendar interface and appointment management features.
+**Booking API Complete**: Appointment creation with race condition prevention using PostgreSQL advisory locks, atomic transactions, and ownership validation fully operational.
 
-**Timeline**: 1-2 weeks to complete appointment booking foundation, then 1 week for calendar UI and remaining refinements.
+**Next Milestone**: Build calendar interface and appointment management UI components, then implement client-facing booking flow.
+
+**Timeline**: 1 week for calendar UI and appointment management components, then 1 week for client booking interface refinements.
 
 **Current State**:
-- ✅ **Backend Foundation**: 90% complete with Auth, Storefront, Service, and Schedule Rules APIs fully operational
+- ✅ **Backend Foundation**: 95% complete with Auth, Storefront, Service, Schedule Rules, Availability, and Appointment APIs fully operational
 - ✅ **Frontend Implementation**: 85% complete with all CRUD pages and components working
+- ✅ **Availability Engine**: 100% complete - slot calculation, priority resolution, timezone handling
+- ✅ **Booking API**: 100% complete - appointments with race condition prevention
 - ✅ **State Management**: TanStack Query + Zustand architecture fully implemented across all features
 - ✅ **Component Library**: Hybrid approach (60% custom/30% shadcn/ui/10% specialized libraries) implemented
-- ✅ **Full Backend Integration**: All CRUD operations connected and tested
+- ✅ **Full Backend Integration**: All CRUD and booking operations connected and tested
 - ✅ **Database Schema**: 100% complete with production-ready features
-- 🔄 **Next Phase**: Appointment booking API, availability calculation, calendar UI, appointment management
+- 🔄 **Next Phase**: Calendar UI, appointment management components, client booking flow

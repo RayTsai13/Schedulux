@@ -51,9 +51,9 @@ backend/                      # Node.js/Express REST API
 ├── src/
 │   ├── config/             # Database connection pooling (PostgreSQL)
 │   ├── middleware/         # Auth, CORS, custom logging, validation
-│   ├── models/             # Repository pattern data access layer (User, Storefront, Service, ScheduleRule)
-│   ├── routes/             # API endpoints (auth, storefronts, services, schedule-rules)
-│   ├── services/           # Business logic (UserService, StorefrontService, ServiceService, ScheduleRuleService)
+│   ├── models/             # Repository pattern data access layer (User, Storefront, Service, ScheduleRule, Appointment)
+│   ├── routes/             # API endpoints (auth, storefronts, services, schedule-rules, availability, appointments)
+│   ├── services/           # Business logic (UserService, StorefrontService, ServiceService, ScheduleRuleService, AvailabilityService, AppointmentService)
 │   ├── types/              # TypeScript interfaces and API response types
 │   ├── utils/              # JWT, bcrypt, password validation helpers
 │   └── index.ts            # Express app setup with middleware chain
@@ -94,8 +94,10 @@ frontend/                     # React 18 SPA (Vite build tool)
 | **Backend Validation** | express-validator + Zod | Server-side input sanitization |
 | **Database** | PostgreSQL 15+ | Connection pooling (20 max), JSONB columns, exclusion constraints |
 | **Database Pattern** | Repository Pattern | Data access layer separation (models/) + Services (services/) |
+| **Date/Time Handling** | date-fns + date-fns-tz | Timezone-aware date manipulation, availability calculations |
 | **API Client** | Axios | Request/response interceptors for JWT injection |
 | **Security** | Helmet middleware | CORS, CSP, XSS protection, HSTS headers |
+| **Concurrency** | PostgreSQL Advisory Locks | Race condition prevention for simultaneous bookings |
 | **HTTP Logging** | Custom logger | ISO timestamps, color-coded status, duration tracking |
 
 ### Key Architecture Patterns
@@ -179,11 +181,15 @@ const useStorefronts = () => {
 - **`useStorefronts()`** - Fetch/manage vendor storefronts with Create/Update/Delete mutations
 - **`useServices()`** - Fetch/manage services per storefront with Create/Update/Delete mutations
 - **`useScheduleRules()`** - Fetch/manage schedule rules (availability patterns) with Create/Update/Delete mutations
+- **`useAvailability()`** (NEW) - Fetch available appointment slots for a storefront/service with date range filtering
+- **`useAppointments()`** (NEW) - Fetch user's appointments with status and date filtering
+- **`useCreateAppointment()`** (NEW) - Create/book appointments with race condition prevention
 
 All hooks follow the same pattern:
 - Read operations use `useQuery` for caching and background sync
 - Write operations (create/update/delete) use `useMutation` with automatic query invalidation
 - Error handling and loading states exposed to components
+- Availability and appointment hooks handle timezone conversions automatically
 
 ### Backend Patterns
 
@@ -421,18 +427,39 @@ psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 
 ## Project Status
 
-**Current:** 85% complete - Core infrastructure, CRUD operations, and business logic layer fully implemented.
+**Current:** 92% complete - Core infrastructure, CRUD operations, availability engine, and booking API fully implemented.
 
 **Completed Phases:**
 - ✓ Phase 1: Storefront CRUD (API endpoints, service layer, React hooks, UI components)
 - ✓ Phase 2: Service management CRUD (API endpoints, service layer, React hooks, UI components)
 - ✓ Bonus: Schedule rules CRUD (API endpoints with ownership validation, rule-type constraints, React hooks)
+- ✓ Phase 3a: Availability Engine (slot calculation, priority-based rule resolution, timezone handling)
+- ✓ Phase 3b: Appointment Booking API (booking with race condition prevention, ownership validation)
+
+**Completed Features (January 2026):**
+- ✅ **AvailabilityService** - Calculate available slots based on schedule rules
+  - Priority resolution: daily > monthly > weekly rules
+  - Time block merging with sweep line algorithm
+  - Timezone-aware calculations with date-fns-tz
+  - Concurrent booking limit enforcement
+- ✅ **AppointmentService** - Create and manage appointments
+  - PostgreSQL advisory locks for race condition prevention
+  - Atomic transactions with availability re-checking
+  - Status transitions and ownership validation
+  - 15-minute time bucket locking for slot protection
+- ✅ **Public Availability Endpoint** - `GET /api/storefronts/:id/availability`
+  - Query parameters: service_id, start_date, end_date (YYYY-MM-DD format)
+  - Returns slots with local date/time and available capacity
+- ✅ **Authenticated Appointment Endpoints**
+  - `POST /api/appointments` - Create/book appointments
+  - `GET /api/appointments` - User's bookings
+  - `GET /api/storefronts/:id/appointments` - Vendor's storefront appointments
+  - `PATCH /api/appointments/:id/status` - Update appointment status
 
 **In Progress:**
-- Phase 3: Appointment booking and availability calculations
-  - Slot-based instant booking
-  - Schedule rule-based manual appointment creation
-  - Conflict detection and validation
-  - Frontend appointment management UI
+- Phase 4: Calendar UI and appointment management components
+  - Calendar interface with react-big-calendar
+  - Appointment listing and filtering
+  - Frontend hooks for availability and appointments
 
-See `docs/DEVELOPMENT_PLAN.md` for detailed feature breakdown.
+See `docs/project-analysis.md` for detailed feature breakdown and roadmap.
