@@ -30,6 +30,8 @@ export class AppointmentService {
    * @param serviceId - Service being booked
    * @param startDatetimeStr - ISO 8601 datetime string for requested start
    * @param clientNotes - Optional notes from the client
+   * @param serviceLocationType - Where the service happens ('at_vendor' or 'at_client')
+   * @param clientAddress - Client's address (required if serviceLocationType is 'at_client')
    * @returns Created appointment
    * @throws Error if slot is unavailable or validation fails
    */
@@ -38,7 +40,9 @@ export class AppointmentService {
     storefrontId: number,
     serviceId: number,
     startDatetimeStr: string,
-    clientNotes?: string
+    clientNotes?: string,
+    serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
+    clientAddress?: string
   ): Promise<Appointment> {
     // Parse the start datetime
     const startDatetime = parseISO(startDatetimeStr);
@@ -67,18 +71,40 @@ export class AppointmentService {
       throw new Error('Service is not active');
     }
 
+    // Determine effective service location type based on storefront capabilities
+    let effectiveLocationType = serviceLocationType;
+
+    // If storefront is fixed-location only, force service_location_type to 'at_vendor'
+    if (storefront.location_type === 'fixed') {
+      if (serviceLocationType === 'at_client') {
+        // Silently correct to 'at_vendor' for fixed-location storefronts
+        // This handles cases where client accidentally selects wrong option
+        effectiveLocationType = 'at_vendor';
+      }
+    }
+
+    // Validate client address if service is at client location
+    if (effectiveLocationType === 'at_client') {
+      if (!clientAddress || clientAddress.trim().length === 0) {
+        throw new Error('Client address is required for at-client appointments');
+      }
+    }
+
     // Calculate end datetime
     const totalDuration = service.duration_minutes + service.buffer_time_minutes;
     const endDatetime = addMinutes(startDatetime, totalDuration);
 
     // Execute booking within a transaction with advisory lock
+    // Note: Always starts with status 'pending' for approval workflow
     return await this.createWithLock(
       clientId,
       storefront,
       service,
       startDatetime,
       endDatetime,
-      clientNotes
+      clientNotes,
+      effectiveLocationType,
+      effectiveLocationType === 'at_client' ? clientAddress : undefined
     );
   }
 
@@ -91,7 +117,9 @@ export class AppointmentService {
     service: Service,
     startDatetime: Date,
     endDatetime: Date,
-    clientNotes?: string
+    clientNotes?: string,
+    serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
+    clientAddress?: string
   ): Promise<Appointment> {
     const client = await getClient();
 
@@ -131,6 +159,9 @@ export class AppointmentService {
         status: 'pending',
         client_notes: clientNotes,
         price_quoted: service.price ?? undefined,
+        // Marketplace location fields
+        service_location_type: serviceLocationType,
+        client_address: clientAddress,
       };
 
       const appointment = await AppointmentModel.createWithClient(
@@ -273,12 +304,12 @@ export class AppointmentService {
    *
    * Permissions:
    * - Client can: cancel their own pending/confirmed appointments
-   * - Vendor can: confirm, cancel, complete, mark no-show
+   * - Vendor can: confirm, decline, cancel, complete, mark no-show
    */
   static async updateStatus(
     appointmentId: number,
     userId: number,
-    newStatus: 'confirmed' | 'cancelled' | 'completed' | 'no_show',
+    newStatus: 'confirmed' | 'cancelled' | 'completed' | 'no_show' | 'declined',
     notes?: { vendor_notes?: string; internal_notes?: string }
   ): Promise<Appointment> {
     const appointment = await AppointmentModel.findById(appointmentId);
@@ -319,6 +350,12 @@ export class AppointmentService {
 
   /**
    * Validate that a status transition is allowed
+   *
+   * Approval Workflow:
+   * - 'pending' is the initial "Request" state
+   * - Vendor can 'confirm' (approve) or 'decline' the request
+   * - Both client and vendor can 'cancel' pending or confirmed appointments
+   * - Only vendor can 'complete' or mark 'no_show'
    */
   private static validateStatusTransition(
     currentStatus: string,
@@ -326,13 +363,14 @@ export class AppointmentService {
     isClient: boolean,
     isVendor: boolean
   ): void {
-    // Define allowed transitions
+    // Define allowed transitions for the approval workflow
     const allowedTransitions: Record<string, string[]> = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['cancelled', 'completed', 'no_show'],
-      cancelled: [],
-      completed: [],
-      no_show: [],
+      pending: ['confirmed', 'declined', 'cancelled'],  // Request can be approved, declined, or cancelled
+      confirmed: ['cancelled', 'completed', 'no_show'],  // Confirmed can be cancelled, completed, or no-show
+      declined: [],  // Terminal state - no further transitions
+      cancelled: [], // Terminal state
+      completed: [], // Terminal state
+      no_show: [],   // Terminal state
     };
 
     const allowed = allowedTransitions[currentStatus] || [];
@@ -343,11 +381,16 @@ export class AppointmentService {
       );
     }
 
-    // Client restrictions
+    // Client restrictions - clients can only cancel their appointments
     if (isClient && !isVendor) {
       if (newStatus !== 'cancelled') {
         throw new Error('Clients can only cancel appointments');
       }
+    }
+
+    // Vendor-only actions: decline, complete, no_show
+    if (!isVendor && ['declined', 'completed', 'no_show'].includes(newStatus)) {
+      throw new Error(`Only vendors can ${newStatus === 'declined' ? 'decline' : newStatus} appointments`);
     }
   }
 
@@ -388,5 +431,113 @@ export class AppointmentService {
     return await this.updateStatus(appointmentId, vendorId, 'completed', {
       internal_notes: internalNotes,
     });
+  }
+
+  // ============================================
+  // APPROVAL WORKFLOW METHODS
+  // ============================================
+
+  /**
+   * Approve a booking request (vendor only)
+   *
+   * Transitions an appointment from 'pending' to 'confirmed'.
+   * This is the semantic approval action for the "Request to Book" workflow.
+   *
+   * @param appointmentId - The appointment to approve
+   * @param vendorId - The vendor approving the request (must own the storefront)
+   * @param vendorNotes - Optional notes to send to the client
+   * @returns The updated appointment with 'confirmed' status
+   * @throws Error if appointment not found, vendor doesn't own it, or invalid transition
+   */
+  static async approveRequest(
+    appointmentId: number,
+    vendorId: number,
+    vendorNotes?: string
+  ): Promise<Appointment> {
+    const appointment = await AppointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      throw new Error('Appointment not found');
+    }
+
+    // Verify vendor owns the storefront
+    const storefront = await StorefrontModel.findById(appointment.storefront_id);
+    if (!storefront) {
+      throw new Error('Storefront not found');
+    }
+
+    if (storefront.vendor_id !== vendorId) {
+      throw new Error('Forbidden: You do not own this storefront');
+    }
+
+    // Verify appointment is in 'pending' state
+    if (appointment.status !== 'pending') {
+      throw new Error(`Cannot approve: appointment is already '${appointment.status}'`);
+    }
+
+    // Transition to confirmed
+    const updated = await AppointmentModel.updateStatus(appointmentId, 'confirmed', {
+      vendor_notes: vendorNotes,
+    });
+
+    if (!updated) {
+      throw new Error('Failed to approve appointment');
+    }
+
+    // TODO: Trigger notification to client about approval
+
+    return updated;
+  }
+
+  /**
+   * Decline a booking request (vendor only)
+   *
+   * Transitions an appointment from 'pending' to 'declined'.
+   * This is used when a vendor cannot fulfill a booking request.
+   *
+   * @param appointmentId - The appointment to decline
+   * @param vendorId - The vendor declining the request (must own the storefront)
+   * @param reason - Optional reason for declining (stored in vendor_notes)
+   * @returns The updated appointment with 'declined' status
+   * @throws Error if appointment not found, vendor doesn't own it, or invalid transition
+   */
+  static async declineRequest(
+    appointmentId: number,
+    vendorId: number,
+    reason?: string
+  ): Promise<Appointment> {
+    const appointment = await AppointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      throw new Error('Appointment not found');
+    }
+
+    // Verify vendor owns the storefront
+    const storefront = await StorefrontModel.findById(appointment.storefront_id);
+    if (!storefront) {
+      throw new Error('Storefront not found');
+    }
+
+    if (storefront.vendor_id !== vendorId) {
+      throw new Error('Forbidden: You do not own this storefront');
+    }
+
+    // Verify appointment is in 'pending' state
+    if (appointment.status !== 'pending') {
+      throw new Error(`Cannot decline: appointment is already '${appointment.status}'`);
+    }
+
+    // Transition to declined
+    const updated = await AppointmentModel.updateStatus(appointmentId, 'declined', {
+      vendor_notes: reason,
+    });
+
+    if (!updated) {
+      throw new Error('Failed to decline appointment');
+    }
+
+    // TODO: Trigger notification to client about decline
+
+    return updated;
   }
 }

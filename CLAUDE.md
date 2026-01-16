@@ -65,9 +65,10 @@ frontend/                     # React 18 SPA (Vite build tool)
 │   ├── components/         # Reusable UI components
 │   │   ├── ui/            # shadcn/ui wrapped components (Button, Input, etc.)
 │   │   └── vendor/        # Business-specific components (StorefrontFormModal, ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor)
-│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts, useServices, useScheduleRules)
+│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts, useServices, useScheduleRules, useAvailability, useAppointments)
 │   ├── pages/             # Route-level page components
 │   │   ├── auth/          # Login, Signup pages
+│   │   ├── booking/       # Client-side appointment booking flow (BookingPage)
 │   │   └── vendor/        # Storefront, Service, Appointment management
 │   ├── services/          # Axios API client with interceptors
 │   ├── stores/            # Zustand state management (UI, Calendar, etc.)
@@ -178,12 +179,17 @@ const useStorefronts = () => {
 
 #### Available Custom Hooks
 - **`useAuth()`** - Authentication state (login, logout, token, user info)
-- **`useStorefronts()`** - Fetch/manage vendor storefronts with Create/Update/Delete mutations
+- **`useStorefronts()`** - Fetch all storefronts or single storefront by ID; Create/Update/Delete mutations
 - **`useServices()`** - Fetch/manage services per storefront with Create/Update/Delete mutations
 - **`useScheduleRules()`** - Fetch/manage schedule rules (availability patterns) with Create/Update/Delete mutations
-- **`useAvailability()`** (NEW) - Fetch available appointment slots for a storefront/service with date range filtering
-- **`useAppointments()`** (NEW) - Fetch user's appointments with status and date filtering
-- **`useCreateAppointment()`** (NEW) - Create/book appointments with race condition prevention
+- **`useAvailability()`** - Fetch available appointment slots for a storefront/service with date range filtering
+  - Parameters: `storefrontId`, `serviceId`, `startDate`, `endDate` (YYYY-MM-DD format)
+  - Auto-converts to local timezone, returns slots with capacity info
+- **`useAppointments()`** - Fetch vendor's storefront appointments or client's booked appointments
+  - Vendor: `useStorefrontAppointments(storefrontId)` - Filter by status, date range
+  - Client: `useClientAppointments()` - Filter by status, date range
+  - Mutations: `useConfirmAppointment()`, `useCancelAppointment()`, `useCompleteAppointment()`
+- **`useCreateAppointment()`** - Book/create appointments with race condition prevention
 
 All hooks follow the same pattern:
 - Read operations use `useQuery` for caching and background sync
@@ -259,7 +265,14 @@ interface ApiResponse<T> {
 - **Audit triggers** maintain complete change history in `audit_log`
 - **Indexes** optimized for scheduling queries (1-15ms typical response)
 
-**Current migration:** `migrations/004_clean_schema.sql` - Ensure this is applied before any development.
+**Marketplace Fields (Phase 1 & 2):**
+- `storefronts`: `profile_type` (individual/business), `location_type` (fixed/mobile/hybrid), `service_radius`, `service_area_city`, `avatar_url`, `is_verified` (admin-only)
+- `appointments`: `service_location_type` (at_vendor/at_client), `client_address`
+
+**Current migrations:**
+- `migrations/004_clean_schema.sql` - Base schema
+- `migrations/005_marketplace_pivot.sql` - Marketplace fields (profile/location/service area)
+- `migrations/006_add_declined_status.sql` - Approval workflow status
 
 ## Development Workflow
 
@@ -346,6 +359,12 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 - Mutations automatically trigger `useQuery` refetch via `queryClient.invalidateQueries()`
 - Avoid storing API responses in Zustand - let React Query handle server state
 
+### Navigation & Headers
+- **All pages must include `<Header />`** at the top (from `components/Header.tsx`)
+- Header provides persistent navigation across Dashboard, Storefronts, and individual storefront pages
+- Prevents users from getting "trapped" on vendor/booking pages with no way to navigate away
+- Page-specific content goes below the Header in content containers
+
 ### Styling
 - Use TailwindCSS utility classes directly in JSX (no CSS files)
 - Use `clsx` for conditional classes: `clsx('p-4', disabled && 'opacity-50')`
@@ -391,7 +410,10 @@ PORT=3000
 **Database prerequisite**
 ```bash
 # PostgreSQL must be running with schedulux_primary database
+# Apply migrations in order:
 psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
+psql -d schedulux_primary -f backend/migrations/005_marketplace_pivot.sql
+psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
 ```
 
 ## Common Tasks
@@ -427,7 +449,7 @@ psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 
 ## Project Status
 
-**Current:** 92% complete - Core infrastructure, CRUD operations, availability engine, and booking API fully implemented.
+**Current:** 98% complete - Full-stack booking system with Marketplace Pivot (flexible vendor identities, mobile services, approval workflows).
 
 **Completed Phases:**
 - ✓ Phase 1: Storefront CRUD (API endpoints, service layer, React hooks, UI components)
@@ -435,6 +457,9 @@ psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 - ✓ Bonus: Schedule rules CRUD (API endpoints with ownership validation, rule-type constraints, React hooks)
 - ✓ Phase 3a: Availability Engine (slot calculation, priority-based rule resolution, timezone handling)
 - ✓ Phase 3b: Appointment Booking API (booking with race condition prevention, ownership validation)
+- ✓ Phase 4: Calendar UI and appointment booking components
+- ✓ **Marketplace Pivot - Phase 1: Schema & Types** (Profile types, location types, marketplace fields, frontend forms)
+- ✓ **Marketplace Pivot - Phase 2: Core Business Logic** (Validation rules, location handling, approval workflows)
 
 **Completed Features (January 2026):**
 - ✅ **AvailabilityService** - Calculate available slots based on schedule rules
@@ -455,11 +480,50 @@ psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
   - `GET /api/appointments` - User's bookings
   - `GET /api/storefronts/:id/appointments` - Vendor's storefront appointments
   - `PATCH /api/appointments/:id/status` - Update appointment status
+- ✅ **Client Booking Page** - `/book/:storefrontId` public booking flow
+  - 3-step wizard: Service Selection → Date/Time Selection → Confirmation
+  - Week-based date navigation with available slot display
+  - Authentication check before final booking
+  - Timezone-aware time slot display
+- ✅ **Vendor Calendar & Appointments**
+  - Calendar tab with react-big-calendar showing booked appointments
+  - Appointment detail modal with status management (confirm, complete, cancel)
+  - Calendar state persistence with Zustand
+- ✅ **Persistent Navigation Header**
+  - All pages (Dashboard, Storefronts, Storefront Details, Booking) have consistent top navigation
+  - Easy navigation between Dashboard, Storefronts list, and individual storefront pages
+- ✅ **Simplified Authentication**
+  - Reduced password requirements to 6+ characters (no uppercase/special char requirements)
+  - Faster testing and user registration
+- ✅ **Marketplace Pivot - Phase 1: Database & Types**
+  - Profile types: `individual` (tutors, freelancers) and `business` (salons, clinics)
+  - Location types: `fixed` (brick-and-mortar), `mobile` (travels to client), `hybrid` (both)
+  - Storefront fields: `service_radius`, `service_area_city`, `avatar_url`, `is_verified` (admin-only)
+  - Appointment fields: `service_location_type`, `client_address`
+  - Enhanced frontend forms with marketplace settings section
+  - Profile badges and location indicators on storefront cards
+  - Client address collection during booking for mobile vendors
+- ✅ **Marketplace Pivot - Phase 2: Core Business Logic**
+  - **StorefrontService Validation**:
+    - Fixed locations require address
+    - Mobile/hybrid require service radius and service area city
+    - `is_verified` is admin-only (cannot be set by vendors)
+  - **AppointmentService Refactoring**:
+    - Auto-correction of location type for fixed vendors
+    - Validation of client address for at-client appointments
+    - Explicit "pending" status for Request to Book workflow
+  - **Approval Workflow Methods**:
+    - `approveRequest()`: Vendor accepts pending request (pending → confirmed)
+    - `declineRequest()`: Vendor declines pending request (pending → declined)
+  - **New Status**: `'declined'` for rejected requests (terminal state)
+  - **New Endpoints**:
+    - `POST /api/appointments/:id/approve` - Approve pending request
+    - `POST /api/appointments/:id/decline` - Decline pending request
 
-**In Progress:**
-- Phase 4: Calendar UI and appointment management components
-  - Calendar interface with react-big-calendar
-  - Appointment listing and filtering
-  - Frontend hooks for availability and appointments
+**Remaining (2%):**
+- Client-side appointment management page (view, cancel, reschedule bookings)
+- Public storefront discovery/listing page
+- Email notifications for appointments
+- Admin dashboard for system-wide analytics
 
 See `docs/project-analysis.md` for detailed feature breakdown and roadmap.

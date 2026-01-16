@@ -26,6 +26,8 @@ import Login from './pages/Login';        // User login form (public)
 import Signup from './pages/Signup';      // User registration form (public)
 import Dashboard from './pages/Dashboard'; // Main app interface (protected)
 import StorefrontManagement from './pages/vendor/StorefrontManagement'; // Vendor storefront management (protected)
+import StorefrontDashboard from './pages/vendor/StorefrontDashboard'; // Single storefront dashboard (protected)
+import BookingPage from './pages/booking/BookingPage'; // Client booking flow (public, auth required for final step)
 
 // ================================================================
 // MAIN APP COMPONENT - APPLICATION ENTRY POINT
@@ -150,6 +152,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Storefront Dashboard - Single storefront management */}
+          <Route
+            path="/vendor/storefronts/:id"
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <StorefrontDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ============================================================ */}
+          {/* CLIENT BOOKING ROUTES - PUBLIC */}
+          {/* ============================================================ */}
+
+          {/* Booking Page - Public access (auth required only for final confirmation) */}
+          <Route path="/book/:storefrontId" element={<BookingPage />} />
 
         </Routes>
         

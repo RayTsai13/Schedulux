@@ -474,6 +474,13 @@ export const api = {
 // ================================================================
 
 // Storefront-related types
+
+// Profile type: individual vendors (tutors, freelancers) vs businesses (salons, clinics)
+export type ProfileType = 'individual' | 'business';
+
+// Location type: where services are provided
+export type LocationType = 'fixed' | 'mobile' | 'hybrid';
+
 export interface Storefront {
   id: number;
   vendor_id: number;
@@ -485,6 +492,14 @@ export interface Storefront {
   timezone: string;
   business_hours?: BusinessHours;
   is_active: boolean;
+  // Marketplace fields
+  profile_type: ProfileType;
+  location_type: LocationType;
+  service_radius?: number; // Miles, only for mobile/hybrid
+  service_area_city?: string; // For "Serves within X miles of [City]"
+  avatar_url?: string;
+  is_verified: boolean; // Admin-only, read-only for vendors
+  // Timestamps
   created_at: string;
   updated_at: string;
 }
@@ -502,11 +517,18 @@ export interface BusinessHours {
 export interface CreateStorefrontRequest {
   name: string;
   description?: string;
-  address?: string;
+  address?: string; // Optional for mobile vendors
   phone?: string;
   email?: string;
   timezone?: string;
   business_hours?: BusinessHours;
+  // Marketplace fields (defaults applied by backend)
+  profile_type?: ProfileType;
+  location_type?: LocationType;
+  service_radius?: number;
+  service_area_city?: string;
+  avatar_url?: string;
+  // NOTE: is_verified is NOT included - admin-only
 }
 
 export interface UpdateStorefrontRequest extends Partial<CreateStorefrontRequest> {
@@ -938,6 +960,248 @@ export const scheduleRuleApi = {
         success: false,
         error: 'Network error',
         message: 'Unable to delete schedule rule.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// APPOINTMENT API FUNCTIONS
+// ================================================================
+
+// Appointment-related types (matches backend exactly)
+export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show' | 'declined';
+
+// Service location type: where the appointment takes place
+export type ServiceLocationType = 'at_vendor' | 'at_client';
+
+export interface Appointment {
+  id: number;
+  client_id: number;
+  storefront_id: number;
+  service_id: number;
+  slot_id?: number | null;
+  requested_start_datetime: string;
+  requested_end_datetime: string;
+  confirmed_start_datetime?: string | null;
+  confirmed_end_datetime?: string | null;
+  status: AppointmentStatus;
+  client_notes?: string | null;
+  vendor_notes?: string | null;
+  internal_notes?: string | null;
+  price_quoted?: number | null;
+  price_final?: number | null;
+  // Marketplace location fields
+  service_location_type: ServiceLocationType;
+  client_address?: string | null; // Required when service_location_type = 'at_client'
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+}
+
+export interface UpdateAppointmentStatusRequest {
+  status: AppointmentStatus;
+  vendor_notes?: string;
+  internal_notes?: string;
+}
+
+export const appointmentApi = {
+  /**
+   * Get appointments for a storefront (vendor only)
+   * Supports filtering by status and date range
+   */
+  getByStorefront: async (
+    storefrontId: number,
+    params?: { status?: string; start_date?: string; end_date?: string }
+  ): Promise<ApiResponse<Appointment[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/appointments`, { params });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointments.',
+      };
+    }
+  },
+
+  /**
+   * Get appointments for the current client
+   */
+  getClientAppointments: async (
+    params?: { status?: string; upcoming?: boolean }
+  ): Promise<ApiResponse<Appointment[]>> => {
+    try {
+      const response = await apiClient.get('/appointments', { params });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointments.',
+      };
+    }
+  },
+
+  /**
+   * Get a single appointment by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.get(`/appointments/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointment.',
+      };
+    }
+  },
+
+  /**
+   * Update appointment status (vendor: confirm, cancel, complete, no_show; client: cancel only)
+   */
+  updateStatus: async (
+    id: number,
+    data: UpdateAppointmentStatusRequest
+  ): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.patch(`/appointments/${id}/status`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update appointment.',
+      };
+    }
+  },
+
+  /**
+   * Cancel an appointment (convenience method)
+   */
+  cancel: async (id: number, reason?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'cancelled',
+      internal_notes: reason,
+    });
+  },
+
+  /**
+   * Confirm an appointment (vendor only)
+   */
+  confirm: async (id: number, vendorNotes?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'confirmed',
+      vendor_notes: vendorNotes,
+    });
+  },
+
+  /**
+   * Complete an appointment (vendor only)
+   */
+  complete: async (id: number, internalNotes?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'completed',
+      internal_notes: internalNotes,
+    });
+  },
+};
+
+// ================================================================
+// AVAILABILITY API FUNCTIONS (PUBLIC - No auth required)
+// ================================================================
+
+export interface AvailableSlot {
+  start_datetime: string;
+  end_datetime: string;
+  local_date: string;
+  local_start_time: string;
+  local_end_time: string;
+  available_capacity: number;
+}
+
+export interface AvailabilityResponse {
+  storefront_id: number;
+  service_id: number;
+  timezone: string;
+  service: {
+    name: string;
+    duration_minutes: number;
+    buffer_time_minutes: number;
+    price: number | null;
+  };
+  slots: AvailableSlot[];
+}
+
+export interface CreateAppointmentRequest {
+  storefront_id: number;
+  service_id: number;
+  start_datetime: string;
+  client_notes?: string;
+  // Marketplace location fields
+  service_location_type?: ServiceLocationType; // Default: 'at_vendor'
+  client_address?: string; // Required when service_location_type = 'at_client'
+}
+
+export const availabilityApi = {
+  /**
+   * Get available appointment slots for a service (PUBLIC endpoint)
+   */
+  getSlots: async (
+    storefrontId: number,
+    params: { service_id: number; start_date: string; end_date: string }
+  ): Promise<ApiResponse<AvailabilityResponse>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/availability`, { params });
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: ApiResponse<AvailabilityResponse> } };
+      if (axiosError.response?.data) {
+        return axiosError.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch availability.',
+      };
+    }
+  },
+};
+
+// Add createAppointment to appointmentApi
+export const bookingApi = {
+  /**
+   * Create/book a new appointment
+   */
+  create: async (data: CreateAppointmentRequest): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.post('/appointments', data);
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: ApiResponse<Appointment> } };
+      if (axiosError.response?.data) {
+        return axiosError.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to book appointment.',
       };
     }
   },

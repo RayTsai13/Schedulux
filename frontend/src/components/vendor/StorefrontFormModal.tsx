@@ -7,7 +7,7 @@ import Modal from '../ui/Modal';
 import TimezoneSelector from './TimezoneSelector';
 import BusinessHoursEditor from './BusinessHoursEditor';
 import { useCreateStorefront, useUpdateStorefront } from '../../hooks/useStorefronts';
-import type { Storefront, BusinessHours } from '../../services/api';
+import type { Storefront, BusinessHours, ProfileType, LocationType } from '../../services/api';
 
 // Validation schema
 const storefrontSchema = z.object({
@@ -25,6 +25,12 @@ const storefrontSchema = z.object({
     })),
   })).optional(),
   is_active: z.boolean().optional(),
+  // Marketplace fields
+  profile_type: z.enum(['individual', 'business']).default('business'),
+  location_type: z.enum(['fixed', 'mobile', 'hybrid']).default('fixed'),
+  service_radius: z.number().min(1).max(100).optional().nullable(),
+  service_area_city: z.string().max(100).optional(),
+  avatar_url: z.string().url().optional().or(z.literal('')),
 });
 
 type StorefrontFormData = z.infer<typeof storefrontSchema>;
@@ -60,12 +66,19 @@ const StorefrontFormModal = ({ isOpen, onClose, storefront }: StorefrontFormModa
       timezone: 'UTC',
       business_hours: undefined,
       is_active: true,
+      // Marketplace fields
+      profile_type: 'business' as ProfileType,
+      location_type: 'fixed' as LocationType,
+      service_radius: null,
+      service_area_city: '',
+      avatar_url: '',
     },
   });
 
   // Watch timezone and business hours for controlled components
   const timezone = watch('timezone');
   const businessHours = watch('business_hours');
+  const locationType = watch('location_type');
 
   // Pre-populate form when editing
   useEffect(() => {
@@ -79,6 +92,12 @@ const StorefrontFormModal = ({ isOpen, onClose, storefront }: StorefrontFormModa
         timezone: storefront.timezone,
         business_hours: storefront.business_hours,
         is_active: storefront.is_active,
+        // Marketplace fields
+        profile_type: storefront.profile_type || 'business',
+        location_type: storefront.location_type || 'fixed',
+        service_radius: storefront.service_radius || null,
+        service_area_city: storefront.service_area_city || '',
+        avatar_url: storefront.avatar_url || '',
       });
     } else if (!isEditMode) {
       // Reset to defaults for create mode
@@ -91,33 +110,38 @@ const StorefrontFormModal = ({ isOpen, onClose, storefront }: StorefrontFormModa
         timezone: 'UTC',
         business_hours: undefined,
         is_active: true,
+        // Marketplace fields
+        profile_type: 'business',
+        location_type: 'fixed',
+        service_radius: null,
+        service_area_city: '',
+        avatar_url: '',
       });
     }
   }, [isEditMode, storefront, reset]);
 
   const onSubmit = async (data: StorefrontFormData) => {
     try {
+      const submissionData = {
+        ...data,
+        email: data.email || undefined,
+        description: data.description || undefined,
+        address: data.address || undefined,
+        phone: data.phone || undefined,
+        avatar_url: data.avatar_url || undefined,
+        service_area_city: data.service_area_city || undefined,
+        service_radius: data.service_radius || undefined,
+      };
+
       if (isEditMode && storefront) {
         // Update existing storefront
         await updateStorefront.mutateAsync({
           id: storefront.id,
-          data: {
-            ...data,
-            email: data.email || undefined,
-            description: data.description || undefined,
-            address: data.address || undefined,
-            phone: data.phone || undefined,
-          },
+          data: submissionData,
         });
       } else {
         // Create new storefront
-        await createStorefront.mutateAsync({
-          ...data,
-          email: data.email || undefined,
-          description: data.description || undefined,
-          address: data.address || undefined,
-          phone: data.phone || undefined,
-        });
+        await createStorefront.mutateAsync(submissionData);
       }
 
       // Close modal on success (mutations handle toast notifications)
@@ -176,6 +200,123 @@ const StorefrontFormModal = ({ isOpen, onClose, storefront }: StorefrontFormModa
           {errors.description && (
             <p className="mt-1.5 text-sm text-red-600">{errors.description.message}</p>
           )}
+        </div>
+
+        {/* Marketplace Settings */}
+        <div className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4">
+          <h3 className="text-sm font-semibold text-purple-900">Marketplace Settings</h3>
+
+          {/* Profile Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Type
+            </label>
+            <div className="flex space-x-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="business"
+                  {...register('profile_type')}
+                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-700">Business (Salon, Clinic, Studio)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="individual"
+                  {...register('profile_type')}
+                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-700">Individual (Tutor, Freelancer)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Location Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service Location
+            </label>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="fixed"
+                  {...register('location_type')}
+                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-700">Fixed Location</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="mobile"
+                  {...register('location_type')}
+                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-700">Mobile (I travel to clients)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="hybrid"
+                  {...register('location_type')}
+                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-700">Hybrid (Both)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Mobile/Hybrid Settings */}
+          {(locationType === 'mobile' || locationType === 'hybrid') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-purple-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Service Area City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  {...register('service_area_city')}
+                  className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:border-purple-500 focus:ring-purple-200"
+                  placeholder="e.g., San Francisco, CA"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Displayed as "Serves within X miles of [City]"
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Service Radius (miles) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  {...register('service_radius', { valueAsNumber: true })}
+                  min={1}
+                  max={100}
+                  className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:border-purple-500 focus:ring-purple-200"
+                  placeholder="15"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Avatar URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Profile Image URL
+            </label>
+            <input
+              type="url"
+              {...register('avatar_url')}
+              className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:border-purple-500 focus:ring-purple-200"
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Optional profile image or logo
+            </p>
+          </div>
         </div>
 
         {/* Address */}

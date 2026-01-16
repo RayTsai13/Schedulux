@@ -36,6 +36,18 @@ const validateCreateAppointment = [
     .trim()
     .isLength({ max: 1000 })
     .withMessage('client_notes must be less than 1000 characters'),
+
+  // Marketplace location fields
+  body('service_location_type')
+    .optional()
+    .isIn(['at_vendor', 'at_client'])
+    .withMessage('service_location_type must be at_vendor or at_client'),
+
+  body('client_address')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('client_address must be less than 500 characters'),
 ];
 
 const validateAppointmentId = [
@@ -52,8 +64,8 @@ const validateStorefrontId = [
 
 const validateStatusUpdate = [
   body('status')
-    .isIn(['confirmed', 'cancelled', 'completed', 'no_show'])
-    .withMessage('status must be one of: confirmed, cancelled, completed, no_show'),
+    .isIn(['confirmed', 'cancelled', 'completed', 'no_show', 'declined'])
+    .withMessage('status must be one of: confirmed, cancelled, completed, no_show, declined'),
 
   body('vendor_notes')
     .optional()
@@ -68,10 +80,25 @@ const validateStatusUpdate = [
     .withMessage('internal_notes must be less than 1000 characters'),
 ];
 
+// Validation for approval workflow endpoints
+const validateApprovalNotes = [
+  body('vendor_notes')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('vendor_notes must be less than 1000 characters'),
+
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('reason must be less than 1000 characters'),
+];
+
 const validateQueryParams = [
   query('status')
     .optional()
-    .isIn(['pending', 'confirmed', 'cancelled', 'completed', 'no_show'])
+    .isIn(['pending', 'confirmed', 'cancelled', 'completed', 'no_show', 'declined'])
     .withMessage('Invalid status filter'),
 
   query('upcoming')
@@ -164,7 +191,12 @@ const handleServiceError = (
       message.includes('does not belong') ||
       message.includes('not active') ||
       message.includes('Cannot transition') ||
-      message.includes('can only cancel')) {
+      message.includes('can only cancel') ||
+      message.includes('does not offer mobile') ||
+      message.includes('Client address is required') ||
+      message.includes('Cannot approve') ||
+      message.includes('Cannot decline') ||
+      message.includes('Only vendors can')) {
     const response: ApiResponse<null> = {
       success: false,
       error: 'Bad request',
@@ -209,14 +241,23 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const clientId = req.user!.userId;
-      const { storefront_id, service_id, start_datetime, client_notes } = req.body;
+      const {
+        storefront_id,
+        service_id,
+        start_datetime,
+        client_notes,
+        service_location_type,
+        client_address
+      } = req.body;
 
       const appointment = await AppointmentService.createAppointment(
         clientId,
         storefront_id,
         service_id,
         start_datetime,
-        client_notes
+        client_notes,
+        service_location_type || 'at_vendor',
+        client_address
       );
 
       const response: ApiResponse<Appointment> = {
@@ -446,6 +487,104 @@ router.get(
         success: true,
         data: appointments,
         message: `Found ${appointments.length} appointments`,
+      };
+
+      res.json(response);
+    } catch (error) {
+      handleServiceError(error, res, next);
+    }
+  }
+);
+
+// ============================================================================
+// APPROVAL WORKFLOW ROUTES
+// ============================================================================
+
+/**
+ * POST /appointments/:id/approve
+ *
+ * Approve a pending appointment request (vendor only).
+ * Transitions the appointment from 'pending' to 'confirmed'.
+ *
+ * Body:
+ * - vendor_notes: Optional. Notes to send to the client
+ *
+ * Response:
+ * - 200: Appointment approved successfully
+ * - 400: Appointment not in pending state
+ * - 401: Not authenticated
+ * - 403: Not the owner of the storefront
+ * - 404: Appointment not found
+ */
+router.post(
+  '/appointments/:id/approve',
+  validateAppointmentId,
+  validateApprovalNotes,
+  handleValidationErrors,
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const appointmentId = parseInt(req.params.id, 10);
+      const vendorId = req.user!.userId;
+      const { vendor_notes } = req.body;
+
+      const appointment = await AppointmentService.approveRequest(
+        appointmentId,
+        vendorId,
+        vendor_notes
+      );
+
+      const response: ApiResponse<Appointment> = {
+        success: true,
+        data: appointment,
+        message: 'Appointment approved successfully',
+      };
+
+      res.json(response);
+    } catch (error) {
+      handleServiceError(error, res, next);
+    }
+  }
+);
+
+/**
+ * POST /appointments/:id/decline
+ *
+ * Decline a pending appointment request (vendor only).
+ * Transitions the appointment from 'pending' to 'declined'.
+ *
+ * Body:
+ * - reason: Optional. Reason for declining (visible to client)
+ *
+ * Response:
+ * - 200: Appointment declined successfully
+ * - 400: Appointment not in pending state
+ * - 401: Not authenticated
+ * - 403: Not the owner of the storefront
+ * - 404: Appointment not found
+ */
+router.post(
+  '/appointments/:id/decline',
+  validateAppointmentId,
+  validateApprovalNotes,
+  handleValidationErrors,
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const appointmentId = parseInt(req.params.id, 10);
+      const vendorId = req.user!.userId;
+      const { reason } = req.body;
+
+      const appointment = await AppointmentService.declineRequest(
+        appointmentId,
+        vendorId,
+        reason
+      );
+
+      const response: ApiResponse<Appointment> = {
+        success: true,
+        data: appointment,
+        message: 'Appointment declined',
       };
 
       res.json(response);

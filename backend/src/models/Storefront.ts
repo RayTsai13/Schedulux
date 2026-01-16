@@ -92,7 +92,6 @@ export class StorefrontModel {
    */
   static async create(vendorId: number, storefrontData: CreateStorefrontRequest): Promise<Storefront> {
     // Destructure the incoming data object to extract individual fields
-    // The = 'UTC' sets a default value if timezone is not provided
     const {
       name,
       description,
@@ -100,16 +99,29 @@ export class StorefrontModel {
       phone,
       email,
       timezone = 'UTC',  // Default timezone to UTC if not specified
-      business_hours
+      business_hours,
+      // Marketplace fields with defaults
+      profile_type = 'business',
+      location_type = 'fixed',
+      service_radius,
+      service_area_city,
+      avatar_url
     } = storefrontData;
 
     // Insert new storefront and return the complete record (RETURNING *)
     // PostgreSQL's RETURNING clause gives us the inserted row with auto-generated fields
+    // Note: is_verified is NOT included - defaults to false, admin-only field
     const result = await query(`
-      INSERT INTO storefronts (vendor_id, name, description, address, phone, email, timezone, business_hours)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO storefronts (
+        vendor_id, name, description, address, phone, email, timezone, business_hours,
+        profile_type, location_type, service_radius, service_area_city, avatar_url
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
-    `, [vendorId, name, description, address, phone, email, timezone, business_hours]);
+    `, [
+      vendorId, name, description, address, phone, email, timezone, business_hours,
+      profile_type, location_type, service_radius ?? null, service_area_city ?? null, avatar_url ?? null
+    ]);
 
     // Return the newly created storefront (first and only row from INSERT)
     return result.rows[0];

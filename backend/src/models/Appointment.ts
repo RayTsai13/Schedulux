@@ -19,6 +19,9 @@ export interface CreateAppointmentData {
   status?: 'pending' | 'confirmed';
   client_notes?: string;
   price_quoted?: number;
+  // Marketplace location fields
+  service_location_type?: 'at_vendor' | 'at_client';
+  client_address?: string;
 }
 
 export interface AppointmentQueryOptions {
@@ -233,6 +236,9 @@ export class AppointmentModel {
       status = 'pending',
       client_notes,
       price_quoted,
+      // Marketplace location fields
+      service_location_type = 'at_vendor',
+      client_address,
     } = data;
 
     const result = await query(
@@ -240,9 +246,10 @@ export class AppointmentModel {
       INSERT INTO appointments (
         client_id, storefront_id, service_id, slot_id,
         requested_start_datetime, requested_end_datetime,
-        status, client_notes, price_quoted
+        status, client_notes, price_quoted,
+        service_location_type, client_address
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `,
       [
@@ -255,6 +262,8 @@ export class AppointmentModel {
         status,
         client_notes ?? null,
         price_quoted ?? null,
+        service_location_type,
+        client_address ?? null,
       ]
     );
 
@@ -279,6 +288,9 @@ export class AppointmentModel {
       status = 'pending',
       client_notes,
       price_quoted,
+      // Marketplace location fields
+      service_location_type = 'at_vendor',
+      client_address,
     } = data;
 
     const result = await client.query(
@@ -286,9 +298,10 @@ export class AppointmentModel {
       INSERT INTO appointments (
         client_id, storefront_id, service_id, slot_id,
         requested_start_datetime, requested_end_datetime,
-        status, client_notes, price_quoted
+        status, client_notes, price_quoted,
+        service_location_type, client_address
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `,
       [
@@ -301,6 +314,8 @@ export class AppointmentModel {
         status,
         client_notes ?? null,
         price_quoted ?? null,
+        service_location_type,
+        client_address ?? null,
       ]
     );
 

@@ -63,7 +63,34 @@ const validateCreate = [
   body('timezone')
     .optional()
     .isLength({ min: 1, max: 50 })
-    .withMessage('Timezone must be a valid timezone string')
+    .withMessage('Timezone must be a valid timezone string'),
+
+  // Marketplace fields
+  body('profile_type')
+    .optional()
+    .isIn(['individual', 'business'])
+    .withMessage('profile_type must be individual or business'),
+
+  body('location_type')
+    .optional()
+    .isIn(['fixed', 'mobile', 'hybrid'])
+    .withMessage('location_type must be fixed, mobile, or hybrid'),
+
+  body('service_radius')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('service_radius must be between 1 and 100 miles'),
+
+  body('service_area_city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('service_area_city must be less than 100 characters'),
+
+  body('avatar_url')
+    .optional()
+    .isURL()
+    .withMessage('avatar_url must be a valid URL')
 ];
 
 /**
@@ -107,7 +134,34 @@ const validateUpdate = [
   body('is_active')
     .optional()
     .isBoolean()
-    .withMessage('is_active must be a boolean')
+    .withMessage('is_active must be a boolean'),
+
+  // Marketplace fields
+  body('profile_type')
+    .optional()
+    .isIn(['individual', 'business'])
+    .withMessage('profile_type must be individual or business'),
+
+  body('location_type')
+    .optional()
+    .isIn(['fixed', 'mobile', 'hybrid'])
+    .withMessage('location_type must be fixed, mobile, or hybrid'),
+
+  body('service_radius')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('service_radius must be between 1 and 100 miles'),
+
+  body('service_area_city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('service_area_city must be less than 100 characters'),
+
+  body('avatar_url')
+    .optional()
+    .isURL()
+    .withMessage('avatar_url must be a valid URL')
 ];
 
 // ============================================================================

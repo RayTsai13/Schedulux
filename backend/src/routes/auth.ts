@@ -37,10 +37,8 @@ const validateRegistration = [
   
   // Password strength validation
   body('password')
-    .isLength({ min: 8, max: 128 })  // Reasonable length limits
-    .withMessage('Password must be between 8 and 128 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+    .isLength({ min: 6, max: 128 })  // Reasonable length limits
+    .withMessage('Password must be between 6 and 128 characters'),
   
   // Name validation (required, trimmed, reasonable length)
   body('first_name')

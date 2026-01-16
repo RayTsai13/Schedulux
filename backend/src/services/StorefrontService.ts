@@ -42,16 +42,52 @@ export class StorefrontService {
   /**
    * Create a new storefront for a vendor
    *
+   * Validation rules based on location_type:
+   * - 'fixed': Address is REQUIRED (brick-and-mortar business)
+   * - 'mobile': Address is OPTIONAL, service_radius and service_area_city are REQUIRED
+   * - 'hybrid': Both address (optional) and service_radius/service_area_city are applicable
+   *
    * @param vendorId - The ID of the vendor creating the storefront
    * @param data - Storefront creation data
    * @returns Promise<Storefront> - The newly created storefront
    */
   static async create(vendorId: number, data: CreateStorefrontRequest): Promise<Storefront> {
+    // Basic validation
     if (!data.name || data.name.trim().length === 0) {
       throw new Error('Storefront name is required');
     }
 
-    return await StorefrontModel.create(vendorId, data);
+    // Determine effective location type (default to 'fixed')
+    const locationType = data.location_type || 'fixed';
+
+    // Validation based on location_type
+    if (locationType === 'fixed') {
+      // Fixed locations MUST have an address
+      if (!data.address || data.address.trim().length === 0) {
+        throw new Error('Address is required for fixed-location storefronts');
+      }
+    }
+
+    if (locationType === 'mobile' || locationType === 'hybrid') {
+      // Mobile/hybrid vendors MUST specify service area
+      if (!data.service_radius || data.service_radius < 1) {
+        throw new Error('Service radius is required for mobile/hybrid vendors');
+      }
+      if (!data.service_area_city || data.service_area_city.trim().length === 0) {
+        throw new Error('Service area city is required for mobile/hybrid vendors');
+      }
+    }
+
+    // Profile type validation (informational, name semantics)
+    // If profile_type is 'individual', name represents the person's name
+    // If profile_type is 'business', name represents the brand/business name
+    // No enforcement needed, but could log for analytics
+
+    // Remove is_verified if present (admin-only field)
+    const sanitizedData = { ...data };
+    delete (sanitizedData as any).is_verified;
+
+    return await StorefrontModel.create(vendorId, sanitizedData);
   }
 
   /**
@@ -79,6 +115,11 @@ export class StorefrontService {
   /**
    * Update a storefront with ownership verification
    *
+   * Validation rules based on location_type (same as create):
+   * - 'fixed': Address is REQUIRED
+   * - 'mobile': service_radius and service_area_city are REQUIRED
+   * - 'hybrid': service_radius and service_area_city are REQUIRED
+   *
    * @param storefrontId - The ID of the storefront to update
    * @param vendorId - The ID of the vendor requesting the update
    * @param data - Partial storefront data to update
@@ -91,10 +132,38 @@ export class StorefrontService {
     data: UpdateStorefrontRequest
   ): Promise<Storefront> {
     // Verify ownership before allowing update
-    await this.verifyOwnership(storefrontId, vendorId);
+    const storefront = await this.verifyOwnership(storefrontId, vendorId);
+
+    // Determine the effective location type after update
+    const newLocationType = data.location_type ?? storefront.location_type;
+
+    // Validate based on location_type
+    if (newLocationType === 'fixed') {
+      // For fixed locations, address is required
+      const newAddress = data.address ?? storefront.address;
+      if (!newAddress || newAddress.trim().length === 0) {
+        throw new Error('Address is required for fixed-location storefronts');
+      }
+    }
+
+    if (newLocationType === 'mobile' || newLocationType === 'hybrid') {
+      // For mobile/hybrid, service area is required
+      const newRadius = data.service_radius ?? storefront.service_radius;
+      const newCity = data.service_area_city ?? storefront.service_area_city;
+      if (!newRadius || newRadius < 1) {
+        throw new Error('Service radius is required for mobile/hybrid vendors');
+      }
+      if (!newCity || newCity.trim().length === 0) {
+        throw new Error('Service area city is required for mobile/hybrid vendors');
+      }
+    }
+
+    // Remove is_verified if present (admin-only field)
+    const sanitizedData = { ...data };
+    delete (sanitizedData as any).is_verified;
 
     // Perform the update
-    const updated = await StorefrontModel.update(storefrontId, data);
+    const updated = await StorefrontModel.update(storefrontId, sanitizedData);
 
     if (!updated) {
       throw new Error('Failed to update storefront');

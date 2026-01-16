@@ -15,11 +15,7 @@ const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().optional(),
   password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/\d/, 'Password must contain at least one number')
-    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character'),
+    .min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
   role: z.enum(['vendor', 'client'], { message: 'Please select a role' }),
   agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms and conditions'),
