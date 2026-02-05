@@ -105,7 +105,12 @@ export class StorefrontModel {
       location_type = 'fixed',
       service_radius,
       service_area_city,
-      avatar_url
+      avatar_url,
+      // Geolocation fields (for marketplace discovery)
+      latitude,
+      longitude,
+      city,
+      state
     } = storefrontData;
 
     // Insert new storefront and return the complete record (RETURNING *)
@@ -114,13 +119,15 @@ export class StorefrontModel {
     const result = await query(`
       INSERT INTO storefronts (
         vendor_id, name, description, address, phone, email, timezone, business_hours,
-        profile_type, location_type, service_radius, service_area_city, avatar_url
+        profile_type, location_type, service_radius, service_area_city, avatar_url,
+        latitude, longitude, city, state
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
     `, [
       vendorId, name, description, address, phone, email, timezone, business_hours,
-      profile_type, location_type, service_radius ?? null, service_area_city ?? null, avatar_url ?? null
+      profile_type, location_type, service_radius ?? null, service_area_city ?? null, avatar_url ?? null,
+      latitude ?? null, longitude ?? null, city ?? null, state ?? null
     ]);
 
     // Return the newly created storefront (first and only row from INSERT)
@@ -201,5 +208,36 @@ export class StorefrontModel {
     // Return true if we actually deleted something (result has rows)
     // If the storefront was already deleted or didn't exist, result.rows.length will be 0
     return result.rows.length > 0;
+  }
+
+  /**
+   * Find a storefront by ID without ownership check (public view)
+   *
+   * Used for public marketplace pages where any user can view active storefronts
+   *
+   * @param id - The storefront ID
+   * @returns Promise<Storefront | null> - The storefront if found and active, null otherwise
+   */
+  static async findPublicById(id: number): Promise<Storefront | null> {
+    const result = await query(
+      'SELECT * FROM storefronts WHERE id = $1 AND deleted_at IS NULL AND is_active = TRUE',
+      [id]
+    );
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Search storefronts for marketplace discovery (public, no auth)
+   *
+   * This method is called by MarketplaceService to execute the complex geographic
+   * search query. The actual query building is done in MarketplaceService.
+   *
+   * @param sqlQuery - Pre-built SQL query string
+   * @param params - Query parameters
+   * @returns Promise<any[]> - Raw database rows (to be mapped by MarketplaceService)
+   */
+  static async searchPublic(sqlQuery: string, params: any[]): Promise<any[]> {
+    const result = await query(sqlQuery, params);
+    return result.rows;
   }
 }

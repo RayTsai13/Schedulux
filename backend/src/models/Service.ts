@@ -110,4 +110,34 @@ export class ServiceModel {
 
     return result.rows.length > 0;
   }
+
+  /**
+   * Get price summary and category information for a storefront's services
+   *
+   * Used by MarketplaceService to display price ranges and service counts
+   * in search results.
+   *
+   * @param storefrontId - The storefront ID
+   * @returns Promise with min/max prices, service count, and unique categories
+   */
+  static async getPriceSummary(storefrontId: number): Promise<{
+    min_price: number | null;
+    max_price: number | null;
+    categories: string[];
+    count: number;
+  }> {
+    const result = await query(`
+      SELECT
+        MIN(price) as min_price,
+        MAX(price) as max_price,
+        COUNT(*) as count,
+        ARRAY_AGG(DISTINCT category) FILTER (WHERE category IS NOT NULL) as categories
+      FROM services
+      WHERE storefront_id = $1
+        AND is_active = TRUE
+        AND deleted_at IS NULL
+    `, [storefrontId]);
+
+    return result.rows[0];
+  }
 }

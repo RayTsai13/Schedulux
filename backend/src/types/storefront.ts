@@ -24,6 +24,15 @@ export interface Storefront {
   service_area_city?: string; // For "Serves within X miles of [City]"
   avatar_url?: string;
   is_verified: boolean; // Admin-only, read-only for vendors
+  // Geolocation fields (for marketplace discovery)
+  latitude?: number; // Geographic latitude for distance-based search
+  longitude?: number; // Geographic longitude for distance-based search
+  city?: string; // City name for text-based fallback search
+  state?: string; // State/province for text-based fallback search
+  // Visual portfolio fields
+  layout_mode: string; // 'list' | 'grid'
+  theme_color: string;
+  instagram_handle: string | null;
   // Timestamps
   created_at: Date;
   updated_at: Date;
@@ -44,6 +53,11 @@ export interface CreateStorefrontRequest {
   service_radius?: number;
   service_area_city?: string;
   avatar_url?: string;
+  // Geolocation fields (for marketplace discovery)
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
   // NOTE: is_verified is NOT included - admin-only
 }
 
@@ -62,5 +76,14 @@ export interface UpdateStorefrontRequest {
   service_radius?: number;
   service_area_city?: string;
   avatar_url?: string;
+  // Geolocation fields (for marketplace discovery)
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
+  // Visual portfolio fields
+  layout_mode?: string;
+  theme_color?: string;
+  instagram_handle?: string | null;
   // NOTE: is_verified is NOT included - admin-only
 }

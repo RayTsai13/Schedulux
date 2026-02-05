@@ -83,6 +83,16 @@ export class StorefrontService {
     // If profile_type is 'business', name represents the brand/business name
     // No enforcement needed, but could log for analytics
 
+    // Geolocation validation (V1: optional, V2: auto-geocode)
+    // Log warning if fixed-location storefront has no coordinates (won't appear in geographic search)
+    if (locationType === 'fixed') {
+      if (!data.latitude || !data.longitude) {
+        console.warn(
+          `[StorefrontService] Fixed-location storefront '${data.name}' created without coordinates - will not appear in geographic marketplace search. Consider adding latitude/longitude or city/state for discoverability.`
+        );
+      }
+    }
+
     // Remove is_verified if present (admin-only field)
     const sanitizedData = { ...data };
     delete (sanitizedData as any).is_verified;

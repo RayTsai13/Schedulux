@@ -41,3 +41,4 @@ AGENTS.md
 .claude/
 *.claude.md
 claude-sessions/
+docs/project-manifesto.md

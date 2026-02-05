@@ -287,59 +287,6 @@ const StorefrontFormModal = ({ isOpen, onClose }) => {
 
 **Verdict:** Hybrid approach provides the best balance for a SaaS scheduling platform.
 
-### Component Library Alternatives Considered
-
-**shadcn/ui** ✅ Selected
-- Copies code to project (no external dependency)
-- Tailwind-based (matches our stack)
-- Accessible (Radix UI primitives)
-- Can modify source directly
-- MIT License (free commercial use)
-
-**HeroUI/NextUI** ❌ Rejected
-- External npm dependency (breaking changes risk)
-- Larger bundle size (~200KB vs 20KB)
-- Less control (theme config only)
-- Still missing scheduler component
-- Would conflict with existing custom components
-
-**Material-UI** ❌ Rejected
-- Heavy bundle size (300KB+)
-- Material Design doesn't match brand
-- Overkill for needs
-- Difficult to customize
-
-**Chakra UI** ❌ Rejected
-- External dependency
-- Different styling paradigm
-- Not needed - Tailwind already in use
-
-**Headless UI** ⚠️ Alternative
-- Similar to shadcn (Tailwind-based)
-- Could work but less comprehensive
-- shadcn/ui preferred for better DX
-
-### Future Component Strategy
-
-**When adding new features, ask:**
-
-1. **Does this solve a unique business problem?**
-   → Build custom component
-
-2. **Is this a standard form/UI element?**
-   → Use shadcn/ui component
-
-3. **Is this a complex solved problem? (calendar, charts, etc.)**
-   → Find specialized library (react-big-calendar, recharts)
-
-4. **Can I build it in <2 hours?**
-   → Consider custom if it provides differentiation
-
-5. **Will this be used across multiple features?**
-   → Invest in quality custom component
-
-**Result:** Fast development without sacrificing competitive advantage.
-
 ## 🎨 Frontend Development Progress (January 2026)
 
 ### Major Frontend Milestones Achieved

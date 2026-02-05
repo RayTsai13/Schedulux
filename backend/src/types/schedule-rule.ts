@@ -27,6 +27,7 @@ export interface ScheduleRule {
   max_concurrent_appointments: number;
 
   // Metadata
+  name: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: Date;
@@ -54,6 +55,7 @@ export interface CreateScheduleRuleRequest {
   max_concurrent_appointments?: number;
 
   // Metadata
+  name?: string;
   notes?: string;
 }
 
@@ -77,6 +79,7 @@ export interface UpdateScheduleRuleRequest {
   max_concurrent_appointments?: number;
 
   // Metadata
+  name?: string | null;
   notes?: string | null;
   is_active?: boolean;
 }

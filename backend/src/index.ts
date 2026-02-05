@@ -237,6 +237,7 @@ import serviceRoutes from './routes/services';
 import scheduleRuleRoutes from './routes/schedule-rules';
 import availabilityRoutes from './routes/availability';
 import appointmentRoutes from './routes/appointments';
+import marketplaceRoutes from './routes/marketplace';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
@@ -258,6 +259,10 @@ app.use('/api', availabilityRoutes);
 // Appointment routes - handles booking management
 // Note: Routes are mounted at /api for /appointments and /storefronts/:id/appointments
 app.use('/api', appointmentRoutes);
+
+// Marketplace routes - public discovery endpoints (no auth required)
+// Note: Routes are mounted at /api/marketplace for public storefront search
+app.use('/api/marketplace', marketplaceRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {

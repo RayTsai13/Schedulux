@@ -90,7 +90,30 @@ const validateCreate = [
   body('avatar_url')
     .optional()
     .isURL()
-    .withMessage('avatar_url must be a valid URL')
+    .withMessage('avatar_url must be a valid URL'),
+
+  // Geolocation fields (Phase 3: Marketplace Discovery)
+  body('latitude')
+    .optional()
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('Latitude must be between -90 and 90'),
+
+  body('longitude')
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('Longitude must be between -180 and 180'),
+
+  body('city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('City must be less than 100 characters'),
+
+  body('state')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('State must be less than 50 characters')
 ];
 
 /**
@@ -161,7 +184,30 @@ const validateUpdate = [
   body('avatar_url')
     .optional()
     .isURL()
-    .withMessage('avatar_url must be a valid URL')
+    .withMessage('avatar_url must be a valid URL'),
+
+  // Geolocation fields (Phase 3: Marketplace Discovery)
+  body('latitude')
+    .optional()
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('Latitude must be between -90 and 90'),
+
+  body('longitude')
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('Longitude must be between -180 and 180'),
+
+  body('city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('City must be less than 100 characters'),
+
+  body('state')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('State must be less than 50 characters')
 ];
 
 // ============================================================================

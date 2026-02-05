@@ -9,6 +9,8 @@ export interface Service {
   price?: number; // numeric(10,2), can be NULL
   category?: string;
   is_active: boolean;
+  image_url: string | null;
+  is_featured: boolean;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
@@ -21,6 +23,8 @@ export interface CreateServiceRequest {
   buffer_time_minutes?: number;
   price?: number;
   category?: string;
+  image_url?: string;
+  is_featured?: boolean;
 }
 
 export interface UpdateServiceRequest {
@@ -31,4 +35,6 @@ export interface UpdateServiceRequest {
   price?: number;
   category?: string;
   is_active?: boolean;
+  image_url?: string | null;
+  is_featured?: boolean;
 }

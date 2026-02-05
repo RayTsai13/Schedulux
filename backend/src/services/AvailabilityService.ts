@@ -123,7 +123,8 @@ export class AvailabilityService {
         rules,
         existingAppointments,
         slotDuration,
-        service.duration_minutes
+        service.duration_minutes,
+        0 // V1: No travel buffer yet, V2: Calculate dynamically based on appointment locations
       );
       allSlots.push(...daySlots);
       currentDate = addDays(currentDate, 1);
@@ -241,6 +242,9 @@ export class AvailabilityService {
 
   /**
    * Generate available slots for a single day
+   *
+   * @param travelBuffer - Minutes to add for travel between appointments (default: 0)
+   *                       V1: Always 0 (future-proofing for V2 dynamic travel time calculation)
    */
   private static generateSlotsForDay(
     date: Date,
@@ -248,7 +252,8 @@ export class AvailabilityService {
     allRules: ScheduleRule[],
     allAppointments: any[],
     slotDuration: number,
-    displayDuration: number
+    displayDuration: number,
+    travelBuffer: number = 0
   ): AvailableSlot[] {
     // Get effective time blocks for this day
     const timeBlocks = this.getEffectiveTimeBlocksForDate(date, timezone, allRules);

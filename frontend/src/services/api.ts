@@ -499,6 +499,15 @@ export interface Storefront {
   service_area_city?: string; // For "Serves within X miles of [City]"
   avatar_url?: string;
   is_verified: boolean; // Admin-only, read-only for vendors
+  // Geolocation fields
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
+  // Visual portfolio fields
+  layout_mode: string;
+  theme_color: string;
+  instagram_handle: string | null;
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -528,6 +537,15 @@ export interface CreateStorefrontRequest {
   service_radius?: number;
   service_area_city?: string;
   avatar_url?: string;
+  // Geolocation fields
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
+  // Visual portfolio fields
+  layout_mode?: string;
+  theme_color?: string;
+  instagram_handle?: string;
   // NOTE: is_verified is NOT included - admin-only
 }
 
@@ -650,6 +668,8 @@ export interface Service {
   price?: number;
   category?: string;
   is_active: boolean;
+  image_url: string | null;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -662,6 +682,8 @@ export interface CreateServiceRequest {
   buffer_time_minutes?: number;
   price?: number;
   category?: string;
+  image_url?: string;
+  is_featured?: boolean;
 }
 
 export interface UpdateServiceRequest {
@@ -672,6 +694,8 @@ export interface UpdateServiceRequest {
   price?: number;
   category?: string;
   is_active?: boolean;
+  image_url?: string | null;
+  is_featured?: boolean;
 }
 
 export const serviceApi = {
@@ -811,6 +835,7 @@ export interface ScheduleRule {
   end_time: string;
   is_available: boolean;
   max_concurrent_appointments: number;
+  name: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
@@ -830,6 +855,7 @@ export interface CreateScheduleRuleRequest {
   end_time: string;
   is_available?: boolean;
   max_concurrent_appointments?: number;
+  name?: string;
   notes?: string;
 }
 
@@ -845,6 +871,7 @@ export interface UpdateScheduleRuleRequest {
   end_time?: string;
   is_available?: boolean;
   max_concurrent_appointments?: number;
+  name?: string | null;
   notes?: string | null;
   is_active?: boolean;
 }

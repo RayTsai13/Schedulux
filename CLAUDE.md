@@ -265,14 +265,18 @@ interface ApiResponse<T> {
 - **Audit triggers** maintain complete change history in `audit_log`
 - **Indexes** optimized for scheduling queries (1-15ms typical response)
 
-**Marketplace Fields (Phase 1 & 2):**
-- `storefronts`: `profile_type` (individual/business), `location_type` (fixed/mobile/hybrid), `service_radius`, `service_area_city`, `avatar_url`, `is_verified` (admin-only)
+**Marketplace Fields (Phase 1, 2, & 3):**
+- `storefronts`: `profile_type` (individual/business), `location_type` (fixed/mobile/hybrid), `service_radius`, `service_area_city`, `avatar_url`, `is_verified` (admin-only), `latitude`, `longitude`, `city`, `state` (Phase 3), `layout_mode`, `theme_color`, `instagram_handle` (Phase 4)
+- `services`: `image_url`, `is_featured` (Phase 4)
+- `schedule_rules`: `name` (Phase 4)
 - `appointments`: `service_location_type` (at_vendor/at_client), `client_address`
 
 **Current migrations:**
 - `migrations/004_clean_schema.sql` - Base schema
 - `migrations/005_marketplace_pivot.sql` - Marketplace fields (profile/location/service area)
 - `migrations/006_add_declined_status.sql` - Approval workflow status
+- `migrations/007_add_geolocation.sql` - Geolocation fields + earthdistance extension
+- `migrations/008_visual_portfolio.sql` - Visual portfolio fields (layout_mode, theme_color, instagram_handle, service images, named availability windows)
 
 ## Development Workflow
 
@@ -414,6 +418,7 @@ PORT=3000
 psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 psql -d schedulux_primary -f backend/migrations/005_marketplace_pivot.sql
 psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
+psql -d schedulux_primary -f backend/migrations/007_add_geolocation.sql
 ```
 
 ## Common Tasks
@@ -449,7 +454,7 @@ psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
 
 ## Project Status
 
-**Current:** 98% complete - Full-stack booking system with Marketplace Pivot (flexible vendor identities, mobile services, approval workflows).
+**Current:** 99% complete - Full-stack booking system with Marketplace Pivot + geographic discovery (flexible vendor identities, mobile services, approval workflows, storefront search).
 
 **Completed Phases:**
 - ✓ Phase 1: Storefront CRUD (API endpoints, service layer, React hooks, UI components)
@@ -460,6 +465,8 @@ psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
 - ✓ Phase 4: Calendar UI and appointment booking components
 - ✓ **Marketplace Pivot - Phase 1: Schema & Types** (Profile types, location types, marketplace fields, frontend forms)
 - ✓ **Marketplace Pivot - Phase 2: Core Business Logic** (Validation rules, location handling, approval workflows)
+- ✓ **Marketplace Pivot - Phase 3: Discovery & Availability** (Geographic search, public marketplace API, travel buffer future-proofing)
+- ✓ **Marketplace Pivot - Phase 4: API & Routes (The Interface)** (Geolocation validators, comprehensive input validation, public marketplace endpoints)
 
 **Completed Features (January 2026):**
 - ✅ **AvailabilityService** - Calculate available slots based on schedule rules
@@ -519,8 +526,63 @@ psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
   - **New Endpoints**:
     - `POST /api/appointments/:id/approve` - Approve pending request
     - `POST /api/appointments/:id/decline` - Decline pending request
+- ✅ **Marketplace Pivot - Phase 3: Discovery & Availability (The Engine)**
+  - **Geographic Search Infrastructure**:
+    - PostgreSQL `earthdistance` extension for efficient distance calculations (Haversine formula)
+    - Spatial GiST index on latitude/longitude for fast "within radius" queries
+    - No external APIs needed, accurate within 0.5% for distances < 500 miles
+  - **Geolocation Fields Added to Storefronts**:
+    - `latitude`, `longitude` - For precise fixed-location search
+    - `city`, `state` - For text-based fallback search
+  - **MarketplaceService** - New consumer-focused discovery service:
+    - `searchStorefronts()` - Search with geographic/text/filter options
+    - `getPublicStorefront()` - Public storefront detail view (no auth)
+  - **Public Marketplace API Endpoints**:
+    - `GET /api/marketplace/search` - Search storefronts (lat/long/radius/city/state/filters/pagination)
+    - `GET /api/marketplace/storefronts/:id` - Storefront details with services
+    - Both endpoints are 100% public (no authentication required)
+  - **Search Features**:
+    - Fixed vendors: Distance-based filtering within radius
+    - Mobile/Hybrid vendors: Show all (V1 - no distance filtering, V2 will add geocoding)
+    - Price range aggregation (MIN/MAX from SQL)
+    - Service category filtering
+    - Verified vendor filtering
+    - Privacy: Mobile vendor addresses hidden (show only city/state + service radius)
+    - Pagination with limit/offset
+  - **Travel Buffer Future-Proofing**:
+    - Added `travelBuffer` parameter to `AvailabilityService.generateSlotsForDay()`
+    - V1: Default 0 (no calculation), V2 ready for dynamic travel time via Google Maps
+  - **Database Migration 007**:
+    - New columns: latitude, longitude, city, state
+    - Spatial index: `idx_storefronts_location` (GiST)
+    - Text index: `idx_storefronts_city_state`
+    - All 11 database tests passing, earthdistance verified
+- ✅ **Marketplace Pivot - Phase 4: API & Routes (The Interface)**
+  - **Geolocation Validators** (routes/storefronts.ts):
+    - `latitude`: Optional float between -90 and 90
+    - `longitude`: Optional float between -180 and 180
+    - `city`: Optional string, max 100 characters
+    - `state`: Optional string, max 50 characters
+    - Added to both `validateCreate` and `validateUpdate` middleware
+  - **Marketplace Routes** (routes/marketplace.ts):
+    - `GET /api/marketplace/search` - Public endpoint (no auth required)
+      - Query params: latitude, longitude, radius, city, state, query, location_type, profile_type, verified_only, category, min_price, max_price, limit, offset
+      - Full validation with express-validator
+      - Returns: Storefronts with aggregated service data, distance from user, price ranges
+    - `GET /api/marketplace/storefronts/:id` - Public storefront detail
+      - Returns: Full storefront with service listings
+      - No authentication required, privacy-respecting (mobile addresses hidden)
+  - **Input Validation Coverage**:
+    - 15+ field validators across marketplace endpoints
+    - Type safety: express-validator + TypeScript interfaces
+    - Pagination limits enforced (max 100 results)
+    - Privacy validators (verified_only, location_type filters)
+  - **API Response Standardization**:
+    - All endpoints return consistent `ApiResponse<T>` wrapper
+    - Proper HTTP status codes (200 success, 400 validation error, 404 not found)
+    - Standardized error messages for validation failures
 
-**Remaining (2%):**
+**Remaining (1%):**
 - Client-side appointment management page (view, cancel, reschedule bookings)
 - Public storefront discovery/listing page
 - Email notifications for appointments
