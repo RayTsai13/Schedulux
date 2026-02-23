@@ -17,13 +17,18 @@ export default function AppScaffold({ children, showNav = true }: AppScaffoldPro
             <div className="font-bold text-xl">Schedulux</div>
 
             {/* Nav Actions - Right */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
+              <a href="/explore" className="text-v3-secondary hover:text-v3-primary font-medium transition-colors">
+                Explore
+              </a>
+              <div className="flex items-center gap-4">
               <UniversalButton variant="ghost" size="sm">
                 Login
               </UniversalButton>
               <UniversalButton variant="primary" size="sm">
                 Sign Up
               </UniversalButton>
+              </div>
             </div>
           </div>
         </nav>

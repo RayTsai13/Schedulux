@@ -1290,7 +1290,69 @@ export const marketplaceApi = {
       };
     }
   },
+
+  search: async (params: MarketplaceSearchParams): Promise<ApiResponse<MarketplaceSearchResponse>> => {
+    try {
+      const response = await apiClient.get('/marketplace/search', { params });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to search storefronts.',
+      };
+    }
+  },
 };
+
+// ================================================================
+// MARKETPLACE SEARCH TYPES
+// ================================================================
+
+export interface MarketplaceStorefront {
+  id: number;
+  name: string;
+  description?: string;
+  avatar_url?: string;
+  profile_type: 'individual' | 'business';
+  location_type: 'fixed' | 'mobile' | 'hybrid';
+  is_verified: boolean;
+  city?: string;
+  state?: string;
+  address?: string;
+  service_radius?: number;
+  service_area_city?: string;
+  service_count: number;
+  price_range?: { min: number; max: number };
+  service_categories: string[];
+  distance_miles?: number; // Only present if lat/long used
+}
+
+export interface MarketplaceSearchParams {
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  city?: string;
+  state?: string;
+  query?: string;
+  location_type?: 'fixed' | 'mobile' | 'hybrid';
+  profile_type?: 'individual' | 'business';
+  verified_only?: boolean;
+  category?: string;
+  min_price?: number;
+  max_price?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export interface MarketplaceSearchResponse {
+  storefronts: MarketplaceStorefront[];
+  total_count: number;
+  query: MarketplaceSearchParams;
+}
 
 // ================================================================
 // EXPORT CONFIGURED AXIOS INSTANCE

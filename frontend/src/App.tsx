@@ -6,6 +6,7 @@ import UniversalButton from './components/universal/UniversalButton';
 import DropCard from './components/booking/DropCard';
 import PortfolioCard from './components/booking/PortfolioCard';
 import VendorProfilePage from './pages/VendorProfilePage';
+import ExplorePage from './pages/ExplorePage';
 
 function App() {
   return (
@@ -161,6 +162,7 @@ function App() {
               </div>
             </AppScaffold>
           } />
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
         </Routes>
         <Toaster position="top-right" richColors />
