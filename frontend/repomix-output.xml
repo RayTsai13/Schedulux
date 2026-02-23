@@ -1,0 +1,3276 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  components/
+    ui/
+      button.tsx
+      index.ts
+      input.tsx
+      label.tsx
+      Modal.tsx
+      select.tsx
+      textarea.tsx
+  config/
+    queryClient.ts
+  hooks/
+    useAppointments.ts
+    useAuth.tsx
+    useAvailability.ts
+    useScheduleRules.ts
+    useServices.ts
+    useStorefronts.ts
+  lib/
+    utils.ts
+  services/
+    api.ts
+  stores/
+    index.ts
+    useCalendarStore.ts
+    useStorefrontStore.ts
+    useUIStore.ts
+  App.tsx
+  index.css
+  main.tsx
+  vite-env.d.ts
+components.json
+eslint.config.js
+index.html
+package.json
+postcss.config.js
+tailwind.config.js
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/components/ui/button.tsx">
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+</file>
+
+<file path="src/components/ui/index.ts">
+export * from './button';
+export * from './input';
+export * from './label';
+export * from './select';
+export * from './textarea';
+export * from './Modal';
+</file>
+
+<file path="src/components/ui/input.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }
+</file>
+
+<file path="src/components/ui/label.tsx">
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+)
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+))
+Label.displayName = LabelPrimitive.Root.displayName
+
+export { Label }
+</file>
+
+<file path="src/components/ui/Modal.tsx">
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Focus trap
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      const handleTab = (e: KeyboardEvent) => {
+        if (e.key === 'Tab') {
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              lastElement?.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              firstElement?.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleTab);
+      firstElement?.focus();
+
+      return () => document.removeEventListener('keydown', handleTab);
+    }
+  }, [isOpen]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    xl: 'max-w-6xl',
+  };
+
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal */}
+      <div
+        ref={modalRef}
+        className={`relative bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+};
+
+export default Modal;
+</file>
+
+<file path="src/components/ui/select.tsx">
+"use client"
+
+import * as React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import { cn } from "@/lib/utils"
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
+
+const Select = SelectPrimitive.Root
+
+const SelectGroup = SelectPrimitive.Group
+
+const SelectValue = SelectPrimitive.Value
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDownIcon className="h-4 w-4 opacity-50" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+))
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronUpIcon className="h-4 w-4" />
+  </SelectPrimitive.ScrollUpButton>
+))
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronDownIcon className="h-4 w-4" />
+  </SelectPrimitive.ScrollDownButton>
+))
+SelectScrollDownButton.displayName =
+  SelectPrimitive.ScrollDownButton.displayName
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-select-content-transform-origin]",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+))
+SelectContent.displayName = SelectPrimitive.Content.displayName
+
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-sm font-semibold", className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
+
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <CheckIcon className="h-4 w-4" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+))
+SelectItem.displayName = SelectPrimitive.Item.displayName
+
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+))
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+}
+</file>
+
+<file path="src/components/ui/textarea.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.ComponentProps<"textarea">
+>(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
+
+export { Textarea }
+</file>
+
+<file path="src/config/queryClient.ts">
+import { QueryClient } from '@tanstack/react-query';
+
+/**
+ * TanStack Query Client Configuration
+ *
+ * This configures how React Query handles server state caching,
+ * refetching, and error handling across the entire application.
+ */
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data is considered fresh for 5 minutes
+      // During this time, React Query won't refetch automatically
+      staleTime: 1000 * 60 * 5, // 5 minutes
+
+      // Keep data in cache for 10 minutes even when unused
+      // This allows instant display when navigating back to a page
+      gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+
+      // Don't refetch when user switches back to browser tab
+      // You can enable this for real-time data if needed
+      refetchOnWindowFocus: false,
+
+      // Retry failed requests 1 time before showing error
+      retry: 1,
+
+      // Don't refetch on component mount if data is still fresh
+      refetchOnMount: false,
+    },
+    mutations: {
+      // Retry failed mutations once (e.g., network issues)
+      retry: 1,
+    },
+  },
+});
+</file>
+
+<file path="src/hooks/useAppointments.ts">
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  appointmentApi,
+  bookingApi,
+  type AppointmentStatus,
+  type CreateAppointmentRequest,
+} from '../services/api';
+import { toast } from 'sonner';
+
+/**
+ * TanStack Query Hooks for Appointment Management
+ */
+
+// Query Keys
+export const appointmentKeys = {
+  all: ['appointments'] as const,
+  storefront: (storefrontId: number) => ['appointments', 'storefront', storefrontId] as const,
+  client: () => ['appointments', 'client'] as const,
+  detail: (id: number) => ['appointments', 'detail', id] as const,
+};
+
+/**
+ * Fetch appointments for a storefront (vendor calendar view)
+ * Supports filtering by status and date range
+ */
+export function useStorefrontAppointments(
+  storefrontId: number | null,
+  params?: { status?: string; start_date?: string; end_date?: string }
+) {
+  return useQuery({
+    queryKey: [...appointmentKeys.storefront(storefrontId!), params],
+    queryFn: async () => {
+      const response = await appointmentApi.getByStorefront(storefrontId!, params);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch appointments');
+      }
+      return response.data || [];
+    },
+    enabled: !!storefrontId,
+  });
+}
+
+/**
+ * Fetch appointments for the current client
+ */
+export function useClientAppointments(params?: { status?: string; upcoming?: boolean }) {
+  return useQuery({
+    queryKey: [...appointmentKeys.client(), params],
+    queryFn: async () => {
+      const response = await appointmentApi.getClientAppointments(params);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch appointments');
+      }
+      return response.data || [];
+    },
+  });
+}
+
+/**
+ * Fetch a single appointment by ID
+ */
+export function useAppointment(id: number | null) {
+  return useQuery({
+    queryKey: appointmentKeys.detail(id!),
+    queryFn: async () => {
+      const response = await appointmentApi.getById(id!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch appointment');
+      }
+      return response.data!;
+    },
+    enabled: !!id,
+  });
+}
+
+/**
+ * Update appointment status mutation
+ */
+export function useUpdateAppointmentStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { status: AppointmentStatus; vendor_notes?: string; internal_notes?: string };
+    }) => appointmentApi.updateStatus(id, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        // Invalidate all appointment queries to refresh data
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.detail(variables.id) });
+        toast.success('Appointment updated successfully!');
+      } else {
+        toast.error(response.message || 'Failed to update appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update appointment');
+    },
+  });
+}
+
+/**
+ * Cancel appointment mutation (convenience wrapper)
+ */
+export function useCancelAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+      appointmentApi.cancel(id, reason),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        toast.success('Appointment cancelled successfully!');
+      } else {
+        toast.error(response.message || 'Failed to cancel appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to cancel appointment');
+    },
+  });
+}
+
+/**
+ * Confirm appointment mutation (vendor only)
+ */
+export function useConfirmAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, vendorNotes }: { id: number; vendorNotes?: string }) =>
+      appointmentApi.confirm(id, vendorNotes),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        toast.success('Appointment confirmed!');
+      } else {
+        toast.error(response.message || 'Failed to confirm appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to confirm appointment');
+    },
+  });
+}
+
+/**
+ * Complete appointment mutation (vendor only)
+ */
+export function useCompleteAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, internalNotes }: { id: number; internalNotes?: string }) =>
+      appointmentApi.complete(id, internalNotes),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        toast.success('Appointment marked as completed!');
+      } else {
+        toast.error(response.message || 'Failed to complete appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to complete appointment');
+    },
+  });
+}
+
+/**
+ * Create/book a new appointment (client booking)
+ */
+export function useCreateAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateAppointmentRequest) => bookingApi.create(data),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        // Invalidate all appointment queries to refresh lists
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        toast.success('Appointment booked successfully!');
+      } else {
+        toast.error(response.message || 'Failed to book appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to book appointment');
+    },
+  });
+}
+</file>
+
+<file path="src/hooks/useAuth.tsx">
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { authApi, User } from '../services/api';
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user is authenticated on app load
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = authApi.getToken();
+        const storedUser = authApi.getCurrentUser();
+
+        if (token && storedUser) {
+          // Verify token is still valid by calling /me endpoint
+          const response = await authApi.me();
+          if (response.success && response.data) {
+            setUser(response.data);
+          } else {
+            // Token is invalid, clear storage
+            authApi.logout();
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        authApi.logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await authApi.login({ email, password });
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    authApi.logout();
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await authApi.me();
+      if (response.success && response.data) {
+        setUser(response.data);
+      }
+    } catch (error) {
+      console.error('Refresh user error:', error);
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    logout,
+    refreshUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+</file>
+
+<file path="src/hooks/useAvailability.ts">
+import { useQuery } from '@tanstack/react-query';
+import { availabilityApi, type AvailabilityResponse } from '../services/api';
+
+/**
+ * TanStack Query Hook for Fetching Availability
+ *
+ * Fetches available appointment slots for a storefront/service.
+ * This is a public endpoint - no authentication required.
+ */
+
+// Query Keys
+export const availabilityKeys = {
+  all: ['availability'] as const,
+  slots: (storefrontId: number, serviceId: number, startDate: string, endDate: string) =>
+    ['availability', storefrontId, serviceId, startDate, endDate] as const,
+};
+
+interface UseAvailabilityParams {
+  storefrontId: number | null;
+  serviceId: number | null;
+  startDate: string; // YYYY-MM-DD format
+  endDate: string;   // YYYY-MM-DD format
+}
+
+/**
+ * Fetch available slots for a service within a date range
+ */
+export function useAvailability({
+  storefrontId,
+  serviceId,
+  startDate,
+  endDate,
+}: UseAvailabilityParams) {
+  return useQuery({
+    queryKey: availabilityKeys.slots(storefrontId!, serviceId!, startDate, endDate),
+    queryFn: async (): Promise<AvailabilityResponse> => {
+      const response = await availabilityApi.getSlots(storefrontId!, {
+        service_id: serviceId!,
+        start_date: startDate,
+        end_date: endDate,
+      });
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch availability');
+      }
+      return response.data!;
+    },
+    enabled: !!storefrontId && !!serviceId && !!startDate && !!endDate,
+    // Availability data can change frequently, so keep it fresh
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
+  });
+}
+</file>
+
+<file path="src/hooks/useScheduleRules.ts">
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  scheduleRuleApi,
+  type ScheduleRule,
+  type CreateScheduleRuleRequest,
+  type UpdateScheduleRuleRequest,
+} from '../services/api';
+import { toast } from 'sonner';
+
+/**
+ * TanStack Query Hooks for Schedule Rule Management
+ */
+
+// Query Keys
+export const scheduleRuleKeys = {
+  all: (storefrontId: number) => ['scheduleRules', storefrontId] as const,
+  detail: (id: number) => ['scheduleRules', 'detail', id] as const,
+};
+
+/**
+ * Fetch all schedule rules for a storefront (including inactive)
+ */
+export function useScheduleRules(storefrontId: number | null) {
+  return useQuery({
+    queryKey: scheduleRuleKeys.all(storefrontId!),
+    queryFn: async () => {
+      const response = await scheduleRuleApi.getAllByStorefront(storefrontId!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch schedule rules');
+      }
+      return response.data || [];
+    },
+    enabled: !!storefrontId,
+  });
+}
+
+/**
+ * Fetch a single schedule rule by ID
+ */
+export function useScheduleRule(id: number | null) {
+  return useQuery({
+    queryKey: scheduleRuleKeys.detail(id!),
+    queryFn: async () => {
+      const response = await scheduleRuleApi.getById(id!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch schedule rule');
+      }
+      return response.data!;
+    },
+    enabled: !!id,
+  });
+}
+
+/**
+ * Create a new schedule rule
+ */
+export function useCreateScheduleRule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ storefrontId, data }: { storefrontId: number; data: CreateScheduleRuleRequest }) =>
+      scheduleRuleApi.create(storefrontId, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(variables.storefrontId) });
+        toast.success('Schedule rule created successfully!');
+      } else {
+        toast.error(response.message || 'Failed to create schedule rule');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create schedule rule');
+    },
+  });
+}
+
+/**
+ * Update a schedule rule
+ */
+export function useUpdateScheduleRule(storefrontId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateScheduleRuleRequest }) =>
+      scheduleRuleApi.update(id, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        if (storefrontId) {
+          queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(storefrontId) });
+        }
+        queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.detail(variables.id) });
+        toast.success('Schedule rule updated successfully!');
+      } else {
+        toast.error(response.message || 'Failed to update schedule rule');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update schedule rule');
+    },
+  });
+}
+
+/**
+ * Delete a schedule rule
+ */
+export function useDeleteScheduleRule(storefrontId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => scheduleRuleApi.delete(id),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        if (storefrontId) {
+          queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(storefrontId) });
+        }
+        toast.success('Schedule rule deleted successfully!');
+      } else {
+        toast.error(response.message || 'Failed to delete schedule rule');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete schedule rule');
+    },
+  });
+}
+
+// Helper function to format rule for display
+export function formatScheduleRule(rule: ScheduleRule): string {
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
+  const timeRange = `${formatTime(rule.start_time)} - ${formatTime(rule.end_time)}`;
+  const availability = rule.is_available ? '' : ' (Closed)';
+
+  switch (rule.rule_type) {
+    case 'weekly':
+      return `${dayNames[rule.day_of_week!]} ${timeRange}${availability}`;
+    case 'daily':
+      return `${rule.specific_date} ${timeRange}${availability}`;
+    case 'monthly':
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[rule.month! - 1]}${rule.year ? ` ${rule.year}` : ''} ${timeRange}${availability}`;
+    default:
+      return timeRange;
+  }
+}
+</file>
+
+<file path="src/hooks/useServices.ts">
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  serviceApi,
+  type Service,
+  type CreateServiceRequest,
+  type UpdateServiceRequest,
+} from '../services/api';
+import { toast } from 'sonner';
+
+/**
+ * TanStack Query Hooks for Service Management
+ */
+
+// Query Keys
+export const serviceKeys = {
+  all: (storefrontId: number) => ['services', storefrontId] as const,
+  detail: (id: number) => ['services', 'detail', id] as const,
+};
+
+/**
+ * Fetch all services for a storefront (including inactive)
+ */
+export function useServices(storefrontId: number | null) {
+  return useQuery({
+    queryKey: serviceKeys.all(storefrontId!),
+    queryFn: async () => {
+      const response = await serviceApi.getAllByStorefront(storefrontId!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch services');
+      }
+      return response.data || [];
+    },
+    enabled: !!storefrontId,
+  });
+}
+
+/**
+ * Fetch a single service by ID
+ */
+export function useService(id: number | null) {
+  return useQuery({
+    queryKey: serviceKeys.detail(id!),
+    queryFn: async () => {
+      const response = await serviceApi.getById(id!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch service');
+      }
+      return response.data!;
+    },
+    enabled: !!id,
+  });
+}
+
+/**
+ * Create a new service
+ */
+export function useCreateService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ storefrontId, data }: { storefrontId: number; data: CreateServiceRequest }) =>
+      serviceApi.create(storefrontId, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: serviceKeys.all(variables.storefrontId) });
+        toast.success('Service created successfully!');
+      } else {
+        toast.error(response.message || 'Failed to create service');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create service');
+    },
+  });
+}
+
+/**
+ * Update a service
+ */
+export function useUpdateService(storefrontId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateServiceRequest }) =>
+      serviceApi.update(id, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        if (storefrontId) {
+          queryClient.invalidateQueries({ queryKey: serviceKeys.all(storefrontId) });
+        }
+        queryClient.invalidateQueries({ queryKey: serviceKeys.detail(variables.id) });
+        toast.success('Service updated successfully!');
+      } else {
+        toast.error(response.message || 'Failed to update service');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update service');
+    },
+  });
+}
+
+/**
+ * Delete a service
+ */
+export function useDeleteService(storefrontId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => serviceApi.delete(id),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        if (storefrontId) {
+          queryClient.invalidateQueries({ queryKey: serviceKeys.all(storefrontId) });
+        }
+        toast.success('Service deleted successfully!');
+      } else {
+        toast.error(response.message || 'Failed to delete service');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete service');
+    },
+  });
+}
+</file>
+
+<file path="src/hooks/useStorefronts.ts">
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { storefrontApi, type Storefront, type CreateStorefrontRequest, type UpdateStorefrontRequest } from '../services/api';
+import { toast } from 'sonner';
+
+/**
+ * TanStack Query Hooks for Storefront Management
+ *
+ * These hooks provide a clean interface for managing storefront data
+ * with automatic caching, loading states, and error handling.
+ */
+
+// Query Keys - Centralized for consistency
+export const storefrontKeys = {
+  all: ['storefronts'] as const,
+  detail: (id: number) => ['storefronts', id] as const,
+};
+
+/**
+ * Fetch all storefronts for the current vendor
+ */
+export function useStorefronts() {
+  return useQuery({
+    queryKey: storefrontKeys.all,
+    queryFn: async () => {
+      const response = await storefrontApi.getAll();
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch storefronts');
+      }
+      return response.data || [];
+    },
+  });
+}
+
+/**
+ * Fetch a single storefront by ID
+ */
+export function useStorefront(id: number | null) {
+  return useQuery({
+    queryKey: storefrontKeys.detail(id!),
+    queryFn: async () => {
+      const response = await storefrontApi.getById(id!);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch storefront');
+      }
+      return response.data!;
+    },
+    enabled: !!id, // Only run query if id is provided
+  });
+}
+
+/**
+ * Create a new storefront
+ */
+export function useCreateStorefront() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateStorefrontRequest) => storefrontApi.create(data),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        // Invalidate and refetch storefronts list
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
+        toast.success('Storefront created successfully!');
+      } else {
+        toast.error(response.message || 'Failed to create storefront');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create storefront');
+    },
+  });
+}
+
+/**
+ * Update an existing storefront
+ */
+export function useUpdateStorefront() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateStorefrontRequest }) =>
+      storefrontApi.update(id, data),
+
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        // Invalidate both the list and the specific storefront
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.detail(variables.id) });
+        toast.success('Storefront updated successfully!');
+      } else {
+        toast.error(response.message || 'Failed to update storefront');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update storefront');
+    },
+  });
+}
+
+/**
+ * Delete a storefront
+ */
+export function useDeleteStorefront() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => storefrontApi.delete(id),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        // Invalidate storefronts list
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
+        toast.success('Storefront deleted successfully!');
+      } else {
+        toast.error(response.message || 'Failed to delete storefront');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete storefront');
+    },
+  });
+}
+</file>
+
+<file path="src/lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+</file>
+
+<file path="src/services/api.ts">
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
+
+// ================================================================
+// BASE API CONFIGURATION
+// ================================================================
+
+// Base URL for all API requests - points to your Express.js backend server
+// This is automatically prepended to all relative URLs in API calls
+const API_BASE_URL = 'http://localhost:3000/api';
+
+// Create a configured axios instance that will be used for all HTTP requests
+// This centralizes configuration and allows us to add interceptors
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,           // All requests will start with this URL
+  headers: {
+    'Content-Type': 'application/json',  // Tell server we're sending JSON data
+  },
+  timeout: 10000,                  // Cancel request if it takes longer than 10 seconds
+});
+
+// ================================================================
+// REQUEST INTERCEPTOR - AUTOMATIC AUTHENTICATION
+// ================================================================
+
+// This interceptor runs BEFORE every HTTP request is sent
+// It automatically adds authentication headers to all requests
+apiClient.interceptors.request.use(
+  (config) => {
+    // Retrieve the stored JWT token from browser's localStorage
+    // This token was saved when user successfully logged in
+    const token = localStorage.getItem('auth_token');
+    
+    if (token) {
+      // If token exists, add it to the Authorization header
+      // Backend will receive: "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+      // This proves the user is authenticated for protected routes
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Return the modified config so the request can proceed
+    return config;
+  },
+  (error) => {
+    // If there's an error in the request setup phase, reject the promise
+    // This handles issues like network problems before request is sent
+    return Promise.reject(error);
+  }
+);
+
+// ================================================================
+// RESPONSE INTERCEPTOR - AUTOMATIC ERROR HANDLING
+// ================================================================
+
+// This interceptor runs AFTER every HTTP response is received
+// It provides centralized error handling, especially for authentication issues
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => {
+    // If response is successful (status 200-299), just return it unchanged
+    // The calling code will receive the response data normally
+    return response;
+  },
+  (error) => {
+    // Handle error responses (status 400-599)
+    
+    // Check if the error is a 401 Unauthorized response
+    // This typically means the user's token has expired or is invalid
+    if (error.response?.status === 401) {
+      // Unauthorized - user's session has expired or token is invalid
+      
+      // Clear all stored authentication data from browser storage
+      localStorage.removeItem('auth_token');    // Remove JWT token
+      localStorage.removeItem('user_data');     // Remove cached user info
+      
+      // Forcefully redirect user to login page
+      // This ensures they can't access protected content
+      window.location.href = '/login';
+    }
+    
+    // For all other errors, pass them through to the calling code
+    // The calling code can then handle specific error cases
+    return Promise.reject(error);
+  }
+);
+
+// ================================================================
+// TYPE DEFINITIONS - API RESPONSE CONTRACTS
+// ================================================================
+
+// Standard API response structure that your backend returns
+// This ensures type safety and consistent error handling
+export interface ApiResponse<T> {
+  success: boolean;    // Indicates if the operation was successful
+  data?: T;           // Contains the actual response data (only present on success)
+  error?: string;     // Brief error identifier (only present on failure)  
+  message?: string;   // Human-readable error/success message
+}
+
+// User data structure as returned by the backend
+// This matches your backend User model/type
+export interface User {
+  id: number;           // Unique user identifier from database
+  email: string;        // User's email address (used for login)
+  first_name: string;   // User's first name
+  last_name: string;    // User's last name
+  role: 'vendor' | 'client';  // User type: service provider or customer
+  phone?: string;       // Optional phone number
+  timezone?: string;    // User's timezone for appointment scheduling
+  created_at: string;   // When the user account was created (ISO string)
+  updated_at: string;   // When the user account was last modified (ISO string)
+}
+
+// Data structure for login requests sent to backend
+export interface LoginRequest {
+  email: string;        // User's email address
+  password: string;     // User's password (plain text, will be hashed by backend)
+}
+
+// Data structure for user registration requests sent to backend
+export interface RegisterRequest {
+  email: string;        // Must be unique and valid email format
+  password: string;     // Must meet password strength requirements
+  first_name: string;   // Required field
+  last_name: string;    // Required field
+  role: 'vendor' | 'client';  // Must specify user type
+  phone?: string;       // Optional contact number
+  timezone?: string;    // Optional timezone (auto-detected if not provided)
+}
+
+// Response structure for successful authentication (login/register)
+// Contains both user data and JWT token for future requests
+export interface AuthResponse {
+  user: User;          // Complete user profile data
+  token: string;       // JWT token for authenticating future requests
+}
+
+// ================================================================
+// AUTHENTICATION API FUNCTIONS
+// ================================================================
+
+// Collection of functions for user authentication and account management
+// These functions handle communication with your backend auth endpoints
+export const authApi = {
+  
+  // ================================================================
+  // USER REGISTRATION
+  // ================================================================
+  
+  /**
+   * Registers a new user account
+   * 
+   * HTTP Request Flow:
+   * POST /api/auth/register
+   * Body: { email, password, first_name, last_name, role, phone?, timezone? }
+   * 
+   * Backend Processing:
+   * 1. Validates input data (email format, password strength, etc.)
+   * 2. Checks if email already exists in database
+   * 3. Hashes the password using bcrypt
+   * 4. Creates new user record in database
+   * 5. Generates JWT token for the new user
+   * 6. Returns user data + token
+   * 
+   * Frontend Processing:
+   * 1. Sends HTTP request with user data
+   * 2. If successful, stores token and user data in localStorage
+   * 3. Returns structured response to calling component
+   * 
+   * @param userData - User registration information
+   * @returns Promise<ApiResponse<AuthResponse>> - Contains user data and auth token
+   */
+  register: async (userData: RegisterRequest): Promise<ApiResponse<AuthResponse>> => {
+    try {
+      // Send POST request to registration endpoint
+      // Axios automatically converts userData object to JSON
+      const response = await apiClient.post('/auth/register', userData);
+      
+      // If registration successful, store authentication data locally
+      if (response.data.success && response.data.data) {
+        // Store JWT token for future authenticated requests
+        // This token proves the user is logged in
+        localStorage.setItem('auth_token', response.data.data.token);
+        
+        // Cache user profile data to avoid repeated API calls
+        // This allows immediate access to user info without server requests
+        localStorage.setItem('user_data', JSON.stringify(response.data.data.user));
+      }
+      
+      // Return the backend response to the calling component
+      return response.data;
+      
+    } catch (error: any) {
+      // Handle network errors and HTTP error responses
+      
+      if (error.response?.data) {
+        // Backend returned an error response (400, 422, 500, etc.)
+        // Return the error message from backend
+        return error.response.data;
+      }
+      
+      // Network error (no internet, server down, etc.)
+      // Return a user-friendly error message
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to connect to server. Please try again.',
+      };
+    }
+  },
+
+  // ================================================================
+  // USER LOGIN
+  // ================================================================
+  
+  /**
+   * Authenticates existing user with email and password
+   * 
+   * HTTP Request Flow:
+   * POST /api/auth/login
+   * Body: { email, password }
+   * 
+   * Backend Processing:
+   * 1. Finds user by email in database
+   * 2. Compares provided password with hashed password using bcrypt
+   * 3. If passwords match, generates JWT token
+   * 4. Returns user data + token
+   * 
+   * Frontend Processing:
+   * 1. Sends credentials to backend
+   * 2. If successful, stores token and user data
+   * 3. User is now authenticated for protected routes
+   * 
+   * @param credentials - User's email and password
+   * @returns Promise<ApiResponse<AuthResponse>> - Contains user data and auth token
+   */
+  login: async (credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
+    try {
+      // Send POST request to login endpoint
+      const response = await apiClient.post('/auth/login', credentials);
+      
+      // If login successful, store authentication data locally
+      if (response.data.success && response.data.data) {
+        // Store JWT token - this will be automatically added to future requests
+        // by the request interceptor we configured above
+        localStorage.setItem('auth_token', response.data.data.token);
+        
+        // Cache user profile data for immediate access
+        localStorage.setItem('user_data', JSON.stringify(response.data.data.user));
+      }
+      
+      return response.data;
+      
+    } catch (error: any) {
+      // Handle authentication errors (wrong password, user not found, etc.)
+      
+      if (error.response?.data) {
+        // Backend returned specific error (invalid credentials, account locked, etc.)
+        return error.response.data;
+      }
+      
+      // Network or server error
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to connect to server. Please try again.',
+      };
+    }
+  },
+
+  // ================================================================
+  // GET CURRENT USER PROFILE
+  // ================================================================
+  
+  /**
+   * Fetches current user's profile data from backend
+   * This is used to verify the user's token is still valid
+   * and to refresh user data if needed
+   * 
+   * HTTP Request Flow:
+   * GET /api/auth/me
+   * Headers: { Authorization: "Bearer <token>" }
+   * 
+   * Backend Processing:
+   * 1. Extracts JWT token from Authorization header
+   * 2. Verifies token signature and expiration
+   * 3. Decodes user ID from token payload
+   * 4. Fetches current user data from database
+   * 5. Returns user profile
+   * 
+   * Frontend Usage:
+   * - Called when app starts to verify stored token is still valid
+   * - Called to refresh user data after profile updates
+   * - If this fails with 401, user will be automatically logged out
+   * 
+   * @returns Promise<ApiResponse<User>> - Current user's profile data
+   */
+  me: async (): Promise<ApiResponse<User>> => {
+    try {
+      // Send GET request to /me endpoint
+      // Authorization header is automatically added by request interceptor
+      const response = await apiClient.get('/auth/me');
+      return response.data;
+      
+    } catch (error: any) {
+      // Handle token validation errors
+      
+      if (error.response?.data) {
+        // Backend returned error (token expired, invalid, user not found, etc.)
+        return error.response.data;
+      }
+      
+      // Network error
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch user profile.',
+      };
+    }
+  },
+
+  // ================================================================
+  // USER LOGOUT
+  // ================================================================
+  
+  /**
+   * Logs out the current user by clearing all stored authentication data
+   * 
+   * Process:
+   * 1. Removes JWT token from localStorage
+   * 2. Removes cached user data from localStorage
+   * 3. Redirects to login page
+   * 
+   * Note: This is a client-side logout only. The JWT token itself
+   * cannot be invalidated on the server (stateless design), but removing
+   * it from the client prevents further authenticated requests.
+   * 
+   * For additional security, you could:
+   * - Maintain a blacklist of tokens on the server
+   * - Use short-lived tokens with refresh token mechanism
+   * - Send logout request to server to log the action
+   */
+  logout: (): void => {
+    // Clear all authentication data from browser storage
+    localStorage.removeItem('auth_token');    // Remove JWT token
+    localStorage.removeItem('user_data');     // Remove cached user profile
+    
+    // Redirect to login page
+    // This ensures user can't access protected content
+    window.location.href = '/login';
+  },
+
+  // ================================================================
+  // UTILITY FUNCTIONS FOR CLIENT-SIDE AUTH STATE
+  // ================================================================
+  
+  /**
+   * Checks if user is currently authenticated (has valid token stored)
+   * 
+   * This is a simple client-side check that only verifies a token exists.
+   * It does NOT verify the token is valid or hasn't expired.
+   * For server-side verification, use the me() function.
+   * 
+   * Usage: Quick check for showing/hiding UI elements
+   * 
+   * @returns boolean - True if auth token exists in localStorage
+   */
+  isAuthenticated: (): boolean => {
+    const token = localStorage.getItem('auth_token');
+    return !!token;  // Convert to boolean (null/undefined becomes false)
+  },
+
+  /**
+   * Retrieves cached user data from localStorage
+   * 
+   * This returns the user profile that was stored during login/registration.
+   * The data might be stale if the user's profile was updated on another device.
+   * 
+   * For fresh data, use the me() function to fetch from server.
+   * 
+   * @returns User | null - Parsed user object or null if not found/invalid
+   */
+  getCurrentUser: (): User | null => {
+    const userData = localStorage.getItem('user_data');
+    
+    if (userData) {
+      try {
+        // Parse JSON string back into User object
+        return JSON.parse(userData);
+      } catch {
+        // If JSON parsing fails (corrupted data), return null
+        // This prevents app crashes from invalid stored data
+        return null;
+      }
+    }
+    
+    return null;  // No user data stored
+  },
+
+  /**
+   * Retrieves the stored JWT authentication token
+   * 
+   * This token is used for authenticating requests to protected endpoints.
+   * The request interceptor automatically adds this to request headers.
+   * 
+   * @returns string | null - JWT token or null if not stored
+   */
+  getToken: (): string | null => {
+    return localStorage.getItem('auth_token');
+  },
+};
+
+// ================================================================
+// GENERAL API FUNCTIONS
+// ================================================================
+
+// Collection of non-authentication related API functions
+// These are utility endpoints for app status and information
+export const api = {
+  
+  /**
+   * Health check endpoint to verify backend server is running
+   * 
+   * HTTP Request Flow:
+   * GET /api/health
+   * 
+   * Backend Response:
+   * Typically returns server status, uptime, database connectivity, etc.
+   * 
+   * Frontend Usage:
+   * - Check if backend is reachable before making other requests
+   * - Monitor application health in admin dashboards
+   * - Debugging connection issues
+   * 
+   * @returns Promise<any> - Server health information
+   */
+  health: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get('/health');
+      return response.data;
+    } catch (error) {
+      // Re-throw error so calling code can handle connection failures
+      throw error;
+    }
+  },
+
+  /**
+   * API information endpoint
+   * 
+   * HTTP Request Flow:
+   * GET /api/
+   * 
+   * Backend Response:
+   * Typically returns API version, available endpoints, documentation links, etc.
+   * 
+   * Frontend Usage:
+   * - Display API version in admin interfaces
+   * - Feature detection (check what endpoints are available)
+   * - Development and debugging
+   * 
+   * @returns Promise<any> - API information and metadata
+   */
+  info: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get('/');
+      return response.data;
+    } catch (error) {
+      // Re-throw error for calling code to handle
+      throw error;
+    }
+  },
+};
+
+// ================================================================
+// STOREFRONT API FUNCTIONS
+// ================================================================
+
+// Storefront-related types
+
+// Profile type: individual vendors (tutors, freelancers) vs businesses (salons, clinics)
+export type ProfileType = 'individual' | 'business';
+
+// Location type: where services are provided
+export type LocationType = 'fixed' | 'mobile' | 'hybrid';
+
+export interface Storefront {
+  id: number;
+  vendor_id: number;
+  name: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  timezone: string;
+  business_hours?: BusinessHours;
+  is_active: boolean;
+  // Marketplace fields
+  profile_type: ProfileType;
+  location_type: LocationType;
+  service_radius?: number; // Miles, only for mobile/hybrid
+  service_area_city?: string; // For "Serves within X miles of [City]"
+  avatar_url?: string;
+  is_verified: boolean; // Admin-only, read-only for vendors
+  // Geolocation fields
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
+  // Visual portfolio fields
+  layout_mode: string;
+  theme_color: string;
+  instagram_handle: string | null;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessHours {
+  [day: string]: {
+    isOpen: boolean;
+    periods: Array<{
+      start: string; // "09:00"
+      end: string;   // "17:00"
+    }>;
+  };
+}
+
+export interface CreateStorefrontRequest {
+  name: string;
+  description?: string;
+  address?: string; // Optional for mobile vendors
+  phone?: string;
+  email?: string;
+  timezone?: string;
+  business_hours?: BusinessHours;
+  // Marketplace fields (defaults applied by backend)
+  profile_type?: ProfileType;
+  location_type?: LocationType;
+  service_radius?: number;
+  service_area_city?: string;
+  avatar_url?: string;
+  // Geolocation fields
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  state?: string;
+  // Visual portfolio fields
+  layout_mode?: string;
+  theme_color?: string;
+  instagram_handle?: string;
+  // NOTE: is_verified is NOT included - admin-only
+}
+
+export interface UpdateStorefrontRequest extends Partial<CreateStorefrontRequest> {
+  is_active?: boolean;
+}
+
+export const storefrontApi = {
+  /**
+   * Get all storefronts for the current vendor
+   */
+  getAll: async (): Promise<ApiResponse<Storefront[]>> => {
+    try {
+      const response = await apiClient.get('/storefronts');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch storefronts.',
+      };
+    }
+  },
+
+  /**
+   * Get a single storefront by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch storefront.',
+      };
+    }
+  },
+
+  /**
+   * Create a new storefront
+   */
+  create: async (data: CreateStorefrontRequest): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.post('/storefronts', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create storefront.',
+      };
+    }
+  },
+
+  /**
+   * Update an existing storefront
+   */
+  update: async (
+    id: number,
+    data: UpdateStorefrontRequest
+  ): Promise<ApiResponse<Storefront>> => {
+    try {
+      const response = await apiClient.put(`/storefronts/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update storefront.',
+      };
+    }
+  },
+
+  /**
+   * Delete a storefront (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/storefronts/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete storefront.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// SERVICE API FUNCTIONS
+// ================================================================
+
+// Service-related types (matches backend exactly)
+export interface Service {
+  id: number;
+  storefront_id: number;
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  buffer_time_minutes: number;
+  price?: number;
+  category?: string;
+  is_active: boolean;
+  image_url: string | null;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+export interface CreateServiceRequest {
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  buffer_time_minutes?: number;
+  price?: number;
+  category?: string;
+  image_url?: string;
+  is_featured?: boolean;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  description?: string;
+  duration_minutes?: number;
+  buffer_time_minutes?: number;
+  price?: number;
+  category?: string;
+  is_active?: boolean;
+  image_url?: string | null;
+  is_featured?: boolean;
+}
+
+export const serviceApi = {
+  /**
+   * Get all active services for a storefront (public)
+   */
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<Service[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/services`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch services.',
+      };
+    }
+  },
+
+  /**
+   * Get all services including inactive (vendor only)
+   */
+  getAllByStorefront: async (storefrontId: number): Promise<ApiResponse<Service[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/services/all`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch services.',
+      };
+    }
+  },
+
+  /**
+   * Get a single service by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.get(`/services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch service.',
+      };
+    }
+  },
+
+  /**
+   * Create a new service
+   */
+  create: async (storefrontId: number, data: CreateServiceRequest): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.post(`/storefronts/${storefrontId}/services`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create service.',
+      };
+    }
+  },
+
+  /**
+   * Update a service
+   */
+  update: async (id: number, data: UpdateServiceRequest): Promise<ApiResponse<Service>> => {
+    try {
+      const response = await apiClient.put(`/services/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update service.',
+      };
+    }
+  },
+
+  /**
+   * Delete a service (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete service.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// SCHEDULE RULE API FUNCTIONS
+// ================================================================
+
+// Schedule rule types (matches backend exactly)
+export type RuleType = 'weekly' | 'daily' | 'monthly';
+
+export interface ScheduleRule {
+  id: number;
+  storefront_id: number;
+  service_id: number | null;
+  rule_type: RuleType;
+  priority: number;
+  day_of_week: number | null;
+  specific_date: string | null;
+  month: number | null;
+  year: number | null;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  max_concurrent_appointments: number;
+  name: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateScheduleRuleRequest {
+  service_id?: number | null;
+  rule_type: RuleType;
+  priority?: number;
+  day_of_week?: number;
+  specific_date?: string;
+  month?: number;
+  year?: number;
+  start_time: string;
+  end_time: string;
+  is_available?: boolean;
+  max_concurrent_appointments?: number;
+  name?: string;
+  notes?: string;
+}
+
+export interface UpdateScheduleRuleRequest {
+  service_id?: number | null;
+  rule_type?: RuleType;
+  priority?: number;
+  day_of_week?: number | null;
+  specific_date?: string | null;
+  month?: number | null;
+  year?: number | null;
+  start_time?: string;
+  end_time?: string;
+  is_available?: boolean;
+  max_concurrent_appointments?: number;
+  name?: string | null;
+  notes?: string | null;
+  is_active?: boolean;
+}
+
+export const scheduleRuleApi = {
+  /**
+   * Get all active schedule rules for a storefront (public)
+   */
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<ScheduleRule[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/rules`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rules.',
+      };
+    }
+  },
+
+  /**
+   * Get all schedule rules including inactive (vendor only)
+   */
+  getAllByStorefront: async (storefrontId: number): Promise<ApiResponse<ScheduleRule[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/rules/all`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rules.',
+      };
+    }
+  },
+
+  /**
+   * Get a single schedule rule by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.get(`/rules/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Create a new schedule rule
+   */
+  create: async (storefrontId: number, data: CreateScheduleRuleRequest): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.post(`/storefronts/${storefrontId}/rules`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to create schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Update a schedule rule
+   */
+  update: async (id: number, data: UpdateScheduleRuleRequest): Promise<ApiResponse<ScheduleRule>> => {
+    try {
+      const response = await apiClient.put(`/rules/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update schedule rule.',
+      };
+    }
+  },
+
+  /**
+   * Delete a schedule rule (soft delete)
+   */
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/rules/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to delete schedule rule.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// APPOINTMENT API FUNCTIONS
+// ================================================================
+
+// Appointment-related types (matches backend exactly)
+export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show' | 'declined';
+
+// Service location type: where the appointment takes place
+export type ServiceLocationType = 'at_vendor' | 'at_client';
+
+export interface Appointment {
+  id: number;
+  client_id: number;
+  storefront_id: number;
+  service_id: number;
+  slot_id?: number | null;
+  requested_start_datetime: string;
+  requested_end_datetime: string;
+  confirmed_start_datetime?: string | null;
+  confirmed_end_datetime?: string | null;
+  status: AppointmentStatus;
+  client_notes?: string | null;
+  vendor_notes?: string | null;
+  internal_notes?: string | null;
+  price_quoted?: number | null;
+  price_final?: number | null;
+  // Marketplace location fields
+  service_location_type: ServiceLocationType;
+  client_address?: string | null; // Required when service_location_type = 'at_client'
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+}
+
+export interface UpdateAppointmentStatusRequest {
+  status: AppointmentStatus;
+  vendor_notes?: string;
+  internal_notes?: string;
+}
+
+export const appointmentApi = {
+  /**
+   * Get appointments for a storefront (vendor only)
+   * Supports filtering by status and date range
+   */
+  getByStorefront: async (
+    storefrontId: number,
+    params?: { status?: string; start_date?: string; end_date?: string }
+  ): Promise<ApiResponse<Appointment[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/appointments`, { params });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointments.',
+      };
+    }
+  },
+
+  /**
+   * Get appointments for the current client
+   */
+  getClientAppointments: async (
+    params?: { status?: string; upcoming?: boolean }
+  ): Promise<ApiResponse<Appointment[]>> => {
+    try {
+      const response = await apiClient.get('/appointments', { params });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointments.',
+      };
+    }
+  },
+
+  /**
+   * Get a single appointment by ID
+   */
+  getById: async (id: number): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.get(`/appointments/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch appointment.',
+      };
+    }
+  },
+
+  /**
+   * Update appointment status (vendor: confirm, cancel, complete, no_show; client: cancel only)
+   */
+  updateStatus: async (
+    id: number,
+    data: UpdateAppointmentStatusRequest
+  ): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.patch(`/appointments/${id}/status`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to update appointment.',
+      };
+    }
+  },
+
+  /**
+   * Cancel an appointment (convenience method)
+   */
+  cancel: async (id: number, reason?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'cancelled',
+      internal_notes: reason,
+    });
+  },
+
+  /**
+   * Confirm an appointment (vendor only)
+   */
+  confirm: async (id: number, vendorNotes?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'confirmed',
+      vendor_notes: vendorNotes,
+    });
+  },
+
+  /**
+   * Complete an appointment (vendor only)
+   */
+  complete: async (id: number, internalNotes?: string): Promise<ApiResponse<Appointment>> => {
+    return appointmentApi.updateStatus(id, {
+      status: 'completed',
+      internal_notes: internalNotes,
+    });
+  },
+};
+
+// ================================================================
+// AVAILABILITY API FUNCTIONS (PUBLIC - No auth required)
+// ================================================================
+
+export interface AvailableSlot {
+  start_datetime: string;
+  end_datetime: string;
+  local_date: string;
+  local_start_time: string;
+  local_end_time: string;
+  available_capacity: number;
+}
+
+export interface AvailabilityResponse {
+  storefront_id: number;
+  service_id: number;
+  timezone: string;
+  service: {
+    name: string;
+    duration_minutes: number;
+    buffer_time_minutes: number;
+    price: number | null;
+  };
+  slots: AvailableSlot[];
+}
+
+export interface CreateAppointmentRequest {
+  storefront_id: number;
+  service_id: number;
+  start_datetime: string;
+  client_notes?: string;
+  // Marketplace location fields
+  service_location_type?: ServiceLocationType; // Default: 'at_vendor'
+  client_address?: string; // Required when service_location_type = 'at_client'
+}
+
+export const availabilityApi = {
+  /**
+   * Get available appointment slots for a service (PUBLIC endpoint)
+   */
+  getSlots: async (
+    storefrontId: number,
+    params: { service_id: number; start_date: string; end_date: string }
+  ): Promise<ApiResponse<AvailabilityResponse>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/availability`, { params });
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: ApiResponse<AvailabilityResponse> } };
+      if (axiosError.response?.data) {
+        return axiosError.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch availability.',
+      };
+    }
+  },
+};
+
+// Add createAppointment to appointmentApi
+export const bookingApi = {
+  /**
+   * Create/book a new appointment
+   */
+  create: async (data: CreateAppointmentRequest): Promise<ApiResponse<Appointment>> => {
+    try {
+      const response = await apiClient.post('/appointments', data);
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: ApiResponse<Appointment> } };
+      if (axiosError.response?.data) {
+        return axiosError.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to book appointment.',
+      };
+    }
+  },
+};
+
+// ================================================================
+// EXPORT CONFIGURED AXIOS INSTANCE
+// ================================================================
+
+// Export the configured axios instance for use in other parts of the application
+// This allows other modules to make custom API calls while still benefiting from:
+// - Automatic authentication headers
+// - Centralized error handling
+// - Base URL configuration
+// - Request/response interceptors
+export default apiClient;
+</file>
+
+<file path="src/stores/index.ts">
+/**
+ * Zustand Stores - Central Export
+ *
+ * This file provides a single import point for all Zustand stores.
+ *
+ * Usage:
+ * import { useStorefrontStore, useCalendarStore, useUIStore } from '@/stores';
+ */
+
+export { useStorefrontStore } from './useStorefrontStore';
+export { useCalendarStore } from './useCalendarStore';
+export { useUIStore } from './useUIStore';
+</file>
+
+<file path="src/stores/useCalendarStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+/**
+ * Calendar Store - Manages calendar view state
+ *
+ * This store tracks the calendar's current view mode, selected date,
+ * and filters. Persists user preferences to localStorage.
+ *
+ * Usage:
+ * const { calendarView, setCalendarView, selectedDate } = useCalendarStore();
+ */
+
+type CalendarView = 'day' | 'week' | 'month';
+type AppointmentStatus = 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled';
+
+interface CalendarFilters {
+  status: AppointmentStatus;
+  serviceId: number | null;
+  clientId: number | null;
+}
+
+interface CalendarStore {
+  // Current calendar view mode
+  calendarView: CalendarView;
+
+  // Currently selected/viewed date
+  selectedDate: Date;
+
+  // Active filters
+  filters: CalendarFilters;
+
+  // Actions
+  setCalendarView: (view: CalendarView) => void;
+  setSelectedDate: (date: Date) => void;
+  setFilters: (filters: Partial<CalendarFilters>) => void;
+  resetFilters: () => void;
+
+  // Navigation helpers
+  goToToday: () => void;
+  goToNextPeriod: () => void;
+  goToPreviousPeriod: () => void;
+}
+
+const defaultFilters: CalendarFilters = {
+  status: 'all',
+  serviceId: null,
+  clientId: null,
+};
+
+export const useCalendarStore = create<CalendarStore>()(
+  persist(
+    (set, get) => ({
+      calendarView: 'week',
+      selectedDate: new Date(),
+      filters: defaultFilters,
+
+      setCalendarView: (view) => set({ calendarView: view }),
+
+      setSelectedDate: (date) => set({ selectedDate: date }),
+
+      setFilters: (newFilters) =>
+        set((state) => ({
+          filters: { ...state.filters, ...newFilters },
+        })),
+
+      resetFilters: () => set({ filters: defaultFilters }),
+
+      goToToday: () => set({ selectedDate: new Date() }),
+
+      goToNextPeriod: () => {
+        const { calendarView, selectedDate } = get();
+        const newDate = new Date(selectedDate);
+
+        if (calendarView === 'day') {
+          newDate.setDate(newDate.getDate() + 1);
+        } else if (calendarView === 'week') {
+          newDate.setDate(newDate.getDate() + 7);
+        } else {
+          // month
+          newDate.setMonth(newDate.getMonth() + 1);
+        }
+
+        set({ selectedDate: newDate });
+      },
+
+      goToPreviousPeriod: () => {
+        const { calendarView, selectedDate } = get();
+        const newDate = new Date(selectedDate);
+
+        if (calendarView === 'day') {
+          newDate.setDate(newDate.getDate() - 1);
+        } else if (calendarView === 'week') {
+          newDate.setDate(newDate.getDate() - 7);
+        } else {
+          // month
+          newDate.setMonth(newDate.getMonth() - 1);
+        }
+
+        set({ selectedDate: newDate });
+      },
+    }),
+    {
+      name: 'schedulux-calendar', // localStorage key
+      partialize: (state) => ({
+        // Only persist these fields (not selectedDate - always start fresh)
+        calendarView: state.calendarView,
+        filters: state.filters,
+      }),
+    }
+  )
+);
+</file>
+
+<file path="src/stores/useStorefrontStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+/**
+ * Storefront Store - Manages currently selected storefront
+ *
+ * This store tracks which storefront the vendor is currently working with.
+ * Persists to localStorage so selection survives page refreshes.
+ *
+ * Usage:
+ * const { selectedStorefrontId, setSelectedStorefront } = useStorefrontStore();
+ */
+
+interface StorefrontStore {
+  // Currently selected storefront ID (null if none selected)
+  selectedStorefrontId: number | null;
+
+  // Set the currently selected storefront
+  setSelectedStorefront: (id: number | null) => void;
+
+  // Clear the selection
+  clearSelection: () => void;
+}
+
+export const useStorefrontStore = create<StorefrontStore>()(
+  persist(
+    (set) => ({
+      selectedStorefrontId: null,
+
+      setSelectedStorefront: (id) => set({ selectedStorefrontId: id }),
+
+      clearSelection: () => set({ selectedStorefrontId: null }),
+    }),
+    {
+      name: 'schedulux-storefront', // localStorage key
+    }
+  )
+);
+</file>
+
+<file path="src/stores/useUIStore.ts">
+import { create } from 'zustand';
+
+/**
+ * UI Store - Manages global UI state
+ *
+ * This store tracks ephemeral UI state like modals, sidebars, and dialogs.
+ * Does NOT persist to localStorage (resets on page refresh).
+ *
+ * Usage:
+ * const { isCreateModalOpen, openCreateModal } = useUIStore();
+ */
+
+type ModalType =
+  | 'createAppointment'
+  | 'editAppointment'
+  | 'createStorefront'
+  | 'editStorefront'
+  | 'createService'
+  | 'editService'
+  | 'createClient'
+  | null;
+
+interface UIStore {
+  // Active modal (null if no modal open)
+  activeModal: ModalType;
+
+  // Data passed to the modal (e.g., appointment ID for edit modal)
+  modalData: any;
+
+  // Sidebar state
+  isSidebarOpen: boolean;
+
+  // Loading overlay (for global operations)
+  isGlobalLoading: boolean;
+  globalLoadingMessage: string;
+
+  // Actions
+  openModal: (modal: ModalType, data?: any) => void;
+  closeModal: () => void;
+  toggleSidebar: () => void;
+  setSidebarOpen: (isOpen: boolean) => void;
+  setGlobalLoading: (isLoading: boolean, message?: string) => void;
+}
+
+export const useUIStore = create<UIStore>((set) => ({
+  activeModal: null,
+  modalData: null,
+  isSidebarOpen: true,
+  isGlobalLoading: false,
+  globalLoadingMessage: '',
+
+  openModal: (modal, data = null) =>
+    set({ activeModal: modal, modalData: data }),
+
+  closeModal: () => set({ activeModal: null, modalData: null }),
+
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+
+  setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+
+  setGlobalLoading: (isLoading, message = 'Loading...') =>
+    set({ isGlobalLoading: isLoading, globalLoadingMessage: message }),
+}));
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { AuthProvider } from './hooks/useAuth';
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+              <div className="text-center space-y-4">
+                <h1 className="text-6xl font-bold text-slate-900">
+                  Schedulux V3
+                </h1>
+                <p className="text-xl text-slate-600">
+                  Frontend reset complete. Ready for redesign.
+                </p>
+                <div className="text-sm text-slate-500 font-mono">
+                  React Router • TanStack Query • Zustand
+                </div>
+              </div>
+            </div>
+          } />
+        </Routes>
+        <Toaster position="top-right" richColors />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
+</file>
+
+<file path="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+</file>
+
+<file path="src/main.tsx">
+// ================================================================
+// REACT APPLICATION ENTRY POINT
+// ================================================================
+
+// Import React's StrictMode component for development-time checks
+// StrictMode enables additional warnings and checks to help catch bugs early
+import { StrictMode } from 'react';
+
+// Import createRoot from React 18's new concurrent rendering API
+// This replaces the legacy ReactDOM.render() method and enables React 18 features
+import { createRoot } from 'react-dom/client';
+
+// Import TanStack Query for server state management
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+// Import our main App component - the root of our component tree
+// This contains all routing, authentication, and page components
+import App from './App.tsx';
+
+// Import TanStack Query client configuration
+import { queryClient } from './config/queryClient';
+
+// Import global CSS styles that apply to the entire application
+// This includes Tailwind CSS utilities and custom global styles
+import './index.css';
+
+// ================================================================
+// REACT APPLICATION INITIALIZATION
+// ================================================================
+
+/**
+ * Bootstrap the React application and mount it to the DOM
+ * 
+ * Process Flow:
+ * 1. Find the HTML element with id="root" in public/index.html
+ * 2. Create a React root using React 18's createRoot API
+ * 3. Render the App component tree into that DOM element
+ * 4. React takes control of that element and all its children
+ * 
+ * DOM Structure After Rendering:
+ * <div id="root">
+ *   <!-- React-generated content starts here -->
+ *   <App>
+ *     <AuthProvider>
+ *       <Router>
+ *         <Routes>
+ *           <!-- Your page components render here -->
+ *         </Routes>
+ *       </Router>
+ *     </AuthProvider>
+ *   </App>
+ *   <!-- React-generated content ends here -->
+ * </div>
+ */
+
+// Find the root DOM element where React will mount the application
+// The "!" (non-null assertion) tells TypeScript we're confident this element exists
+// This element is defined in public/index.html: <div id="root"></div>
+createRoot(document.getElementById('root')!).render(
+  
+  // Wrap the entire app in StrictMode for development benefits:
+  // - Detects unsafe lifecycles and legacy API usage
+  // - Warns about deprecated findDOMNode usage
+  // - Helps identify side effects by double-invoking functions
+  // - Validates that hooks follow the rules of hooks
+  // Note: StrictMode only runs checks in development, not production
+  <StrictMode>
+
+    {/* TanStack Query Provider - Manages all server state (API data) */}
+    {/* This wraps the app to enable useQuery/useMutation hooks everywhere */}
+    <QueryClientProvider client={queryClient}>
+
+      {/* Render the main App component */}
+      {/* This component contains all routing logic, authentication providers, */}
+      {/* and serves as the entry point to your entire component tree */}
+      <App />
+
+      {/* React Query DevTools - Only visible in development */}
+      {/* Provides UI to inspect queries, mutations, and cache */}
+      <ReactQueryDevtools initialIsOpen={false} />
+
+    </QueryClientProvider>
+
+  </StrictMode>
+);
+</file>
+
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "src/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  }
+}
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  }
+);
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Schedulux - Smart Scheduling for Small Businesses</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "schedulux-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-icons": "^1.3.2",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@supabase/supabase-js": "^2.57.4",
+    "@tanstack/react-query": "^5.87.4",
+    "@tanstack/react-query-devtools": "^5.90.2",
+    "@types/react-datepicker": "^6.2.0",
+    "axios": "^1.12.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.34.3",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-big-calendar": "^1.19.4",
+    "react-datepicker": "^8.7.0",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.62.0",
+    "react-router-dom": "^7.9.1",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "vaul": "^1.1.2",
+    "zod": "^4.1.8",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-big-calendar": "^1.16.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  }
+}
+</file>
+
+<file path="postcss.config.js">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
+      },
+      colors: {
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        chart: {
+          '1': 'hsl(var(--chart-1))',
+          '2': 'hsl(var(--chart-2))',
+          '3': 'hsl(var(--chart-3))',
+          '4': 'hsl(var(--chart-4))',
+          '5': 'hsl(var(--chart-5))'
+        }
+      }
+    }
+  },
+  plugins: [],
+};
+</file>
+
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  },
+});
+</file>
+
+</files>

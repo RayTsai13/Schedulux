@@ -10,7 +10,8 @@
     "test:connection": "npx ts-node scripts/test-connection.ts",
     "test:auth": "npx ts-node scripts/test-auth.ts",
     "db:test": "node scripts/test-database.js",
-    "db:check": "node scripts/test-database.js"
+    "db:check": "node scripts/test-database.js",
+    "seed:heroes": "npx ts-node scripts/seed-heroes.ts"
   },
   "keywords": [],
   "author": "",

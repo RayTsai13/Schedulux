@@ -63,12 +63,15 @@ backend/                      # Node.js/Express REST API
 frontend/                     # React 18 SPA (Vite build tool)
 ├── src/
 │   ├── components/         # Reusable UI components
-│   │   ├── ui/            # shadcn/ui wrapped components (Button, Input, etc.)
-│   │   └── vendor/        # Business-specific components (StorefrontFormModal, ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor)
-│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts, useServices, useScheduleRules, useAvailability, useAppointments)
+│   │   ├── ui/            # shadcn/ui wrapped components (Button, Input, Modal, etc.)
+│   │   ├── universal/     # V3 design system (UniversalButton, UniversalCard)
+│   │   ├── booking/       # Client booking components (BookingModal, PortfolioCard, ProfileHeader, booking wizard steps)
+│   │   ├── layout/        # Layout components (AppScaffold, Header)
+│   │   └── vendor/        # Vendor-specific components (StorefrontFormModal, ServiceManager, HoursManager, TimezoneSelector, BusinessHoursEditor)
+│   ├── hooks/             # Custom React hooks (useAuth, useStorefronts, useServices, useScheduleRules, useAvailability, useAppointments, useMarketplace)
 │   ├── pages/             # Route-level page components
 │   │   ├── auth/          # Login, Signup pages
-│   │   ├── booking/       # Client-side appointment booking flow (BookingPage)
+│   │   ├── VendorProfilePage.tsx  # Public vendor profile with booking modal
 │   │   └── vendor/        # Storefront, Service, Appointment management
 │   ├── services/          # Axios API client with interceptors
 │   ├── stores/            # Zustand state management (UI, Calendar, etc.)
@@ -90,6 +93,7 @@ frontend/                     # React 18 SPA (Vite build tool)
 | **Frontend Data Fetching** | TanStack React Query 5 | Server state management, caching, background sync |
 | **Frontend Styling** | TailwindCSS + shadcn/ui | Utility-first CSS, pre-built accessible components |
 | **Frontend Forms** | React Hook Form + Zod | Client-side validation, type-safe form handling |
+| **Frontend Calendar** | react-datepicker + date-fns | Date selection UI with availability filtering |
 | **Backend Framework** | Express.js + TypeScript | Middleware-based architecture |
 | **Backend Authentication** | JWT + bcryptjs | Token-based, 10-second expiration in dev |
 | **Backend Validation** | express-validator + Zod | Server-side input sanitization |
@@ -145,13 +149,52 @@ React Query handles server state (async data fetching), Zustand handles UI state
 
 #### Component Organization
 - **Page Components** (`pages/`) - Handle routing, fetch data, manage layout
+  - `VendorProfilePage.tsx` - Public vendor profile with integrated BookingModal
 - **Reusable Components** (`components/`) - Pure functions, receive props, no side effects
-- **UI Components** (`components/ui/`) - Wrapped shadcn/ui components with custom styling
+  - `booking/` - Client booking flow components (BookingModal, wizard steps, PortfolioCard, ProfileHeader)
+  - `universal/` - V3 design system components (UniversalButton, UniversalCard)
+  - `layout/` - Layout components (AppScaffold, Header)
+  - `vendor/` - Vendor-specific management components
+- **UI Components** (`components/ui/`) - Wrapped shadcn/ui components with custom styling (Modal, Button, Input, etc.)
 
 #### State Management Strategy
 - **Server State** (API data) → Use React Query hooks (`useQuery`, `useMutation`)
 - **UI State** (modals open/closed, selected filters) → Use Zustand `create()` stores
 - **Form State** → Use React Hook Form + Zod validation
+- **Wizard State** (multi-step flows) → Use component-local `useState` for simpler flows (e.g., BookingModal)
+
+#### Booking Modal Pattern (Multi-Step Wizard)
+The BookingModal demonstrates the recommended pattern for multi-step flows:
+
+```typescript
+// BookingModal.tsx - Orchestrator Component
+interface BookingState {
+  currentStep: 1 | 2 | 3 | 4;
+  selectedService: Service | null;
+  selectedDate: Date | null;
+  selectedSlot: AvailableSlot | null;
+  // ... other wizard state
+}
+
+// Component-local state (simpler than Zustand for self-contained flows)
+const [state, setState] = useState<BookingState>(initialState);
+
+// Step-specific child components receive props + callbacks
+<BookingStepService
+  services={services}
+  selectedServiceId={state.selectedService?.id}
+  onSelectService={(service) => setState(prev => ({ ...prev, selectedService: service }))}
+/>
+```
+
+**Key Design Decisions:**
+- **Local State Over Zustand**: Booking wizard is self-contained, no need for global state
+- **Progressive Disclosure**: Only show relevant fields at each step (e.g., address input only if mobile service + at_client)
+- **Step Validation**: "Next" button disabled until current step requirements met
+- **Pre-selection Support**: Can skip Step 1 if user clicked "Book Now" on specific service
+- **Authentication Deferral**: Allow browsing services/times before requiring login
+- **State Persistence**: Save to sessionStorage on login redirect (future: restore after auth)
+- **Error Recovery**: Clear error messages, allow retry, return to previous step if needed
 
 #### API Service Pattern
 ```typescript
@@ -190,6 +233,9 @@ const useStorefronts = () => {
   - Client: `useClientAppointments()` - Filter by status, date range
   - Mutations: `useConfirmAppointment()`, `useCancelAppointment()`, `useCompleteAppointment()`
 - **`useCreateAppointment()`** - Book/create appointments with race condition prevention
+- **`useMarketplace()`** - Public marketplace data (no authentication required)
+  - `usePublicStorefront(id)` - Fetch public storefront details with services for booking
+  - Used in VendorProfilePage for displaying vendor info and integrating BookingModal
 
 All hooks follow the same pattern:
 - Read operations use `useQuery` for caching and background sync
@@ -582,10 +628,60 @@ psql -d schedulux_primary -f backend/migrations/007_add_geolocation.sql
     - Proper HTTP status codes (200 success, 400 validation error, 404 not found)
     - Standardized error messages for validation failures
 
-**Remaining (1%):**
+**Completed Features (February 2026):**
+- ✅ **Desktop Booking Modal** - Complete client booking flow for VendorProfilePage
+  - **BookingModal Component** (Orchestrator):
+    - 4-step wizard: Service Selection → Date/Time → Confirm → Success
+    - Progress indicator with visual feedback
+    - Authentication check with login redirect
+    - Error handling and loading states
+    - Auto-saves booking state to sessionStorage for post-login resume
+  - **BookingStepService** (Step 1):
+    - Service grid display using PortfolioCard
+    - Visual selection state with ring indicator
+    - Supports pre-selected services (skips step 1 if user clicked specific service)
+    - Empty state handling
+  - **BookingStepDateTime** (Step 2):
+    - Calendar UI with react-datepicker
+    - Availability filtering (only dates with slots are selectable)
+    - Time slot grid with capacity indicators
+    - Real-time availability fetching via useAvailability hook
+    - Week-based date range queries for optimal performance
+  - **BookingStepConfirm** (Step 3):
+    - Booking summary card with all details
+    - Location type selector (mobile/hybrid vendors only)
+    - Client address input (required for at_client bookings)
+    - Optional notes field
+    - Form validation (address required for mobile services)
+    - Error message display
+  - **BookingSuccess** (Step 4):
+    - Success confirmation with green checkmark
+    - Appointment details display (confirmation #, date/time, location)
+    - Pending status indicator for approval workflow
+    - Action buttons (View My Appointments, Done)
+  - **VendorProfilePage Integration**:
+    - Services grid with PortfolioCard for each service
+    - "Book Now" button on each service card (opens modal with pre-selection)
+    - General "Book an Appointment" CTA (opens modal without pre-selection)
+    - Modal state management for seamless UX
+  - **Design & UX**:
+    - Desktop-first with responsive mobile adaptation
+    - V3 design system (UniversalButton, UniversalCard, V3 colors)
+    - Accessibility features (keyboard navigation, focus management, ARIA labels)
+    - Smooth step transitions with progress indicator
+    - Loading states throughout the flow
+  - **Key Features**:
+    - Authentication-aware (redirects to login if needed, preserves booking state)
+    - Location type handling (auto-correction for fixed vendors, address validation for mobile)
+    - Timezone-aware slot display (uses local browser timezone)
+    - Real-time availability checking (prevents double bookings)
+    - Error recovery (clear messages, retry options)
+
+**Remaining (<1%):**
 - Client-side appointment management page (view, cancel, reschedule bookings)
-- Public storefront discovery/listing page
+- Public storefront discovery/listing page (marketplace homepage)
 - Email notifications for appointments
 - Admin dashboard for system-wide analytics
+- Booking state restoration after login (sessionStorage integration)
 
 See `docs/project-analysis.md` for detailed feature breakdown and roadmap.

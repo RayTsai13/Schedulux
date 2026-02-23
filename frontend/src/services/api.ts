@@ -1235,6 +1235,64 @@ export const bookingApi = {
 };
 
 // ================================================================
+// MARKETPLACE API (Public endpoints - no authentication required)
+// ================================================================
+
+export interface PublicStorefrontDetail {
+  storefront: {
+    id: number;
+    name: string;
+    description?: string;
+    avatar_url?: string;
+    profile_type: string;
+    location_type: string;
+    is_verified: boolean;
+    city?: string;
+    state?: string;
+    address?: string;
+    service_radius?: number;
+    service_area_city?: string;
+    instagram_handle?: string;
+    price_range?: {
+      min: number;
+      max: number;
+      currency: string;
+    };
+    service_count: string;
+    service_categories: string[];
+  };
+  services: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    duration: number;
+    price: number;
+    image_url?: string;
+  }>;
+}
+
+export const marketplaceApi = {
+  /**
+   * Get public storefront details by ID (no auth required)
+   */
+  getStorefront: async (id: number): Promise<ApiResponse<PublicStorefrontDetail>> => {
+    try {
+      const response = await apiClient.get(`/marketplace/storefronts/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to fetch storefront.',
+      };
+    }
+  },
+};
+
+// ================================================================
 // EXPORT CONFIGURED AXIOS INSTANCE
 // ================================================================
 
