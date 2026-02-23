@@ -1,19 +1,71 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './hooks/useAuth';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/auth/LoginPage';
+import VendorProfilePage from './pages/VendorProfilePage';
+import ExplorePage from './pages/ExplorePage';
+import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
+import StorefrontDetailPage from './pages/vendor/StorefrontDetailPage';
+import AppointmentCalendarPage from './pages/vendor/AppointmentCalendarPage';
+import ClientAppointmentsPage from './pages/client/ClientAppointmentsPage';
 import AppScaffold from './components/layout/AppScaffold';
 import UniversalButton from './components/universal/UniversalButton';
 import DropCard from './components/booking/DropCard';
 import PortfolioCard from './components/booking/PortfolioCard';
-import VendorProfilePage from './pages/VendorProfilePage';
-import ExplorePage from './pages/ExplorePage';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={
+          {/* Homepage - Smart redirect based on auth */}
+          <Route path="/" element={<HomePage />} />
+
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
+
+          {/* Protected Vendor Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute requireRole="vendor">
+                <VendorDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/storefront/:id"
+            element={
+              <ProtectedRoute requireRole="vendor">
+                <StorefrontDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/storefront/:id/calendar"
+            element={
+              <ProtectedRoute requireRole="vendor">
+                <AppointmentCalendarPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Client Routes */}
+          <Route
+            path="/my-appointments"
+            element={
+              <ProtectedRoute>
+                <ClientAppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Design System Test Page (kept for reference) */}
+          <Route path="/design-test" element={
             <AppScaffold>
               <div className="space-y-8">
                 {/* Test Typography */}
@@ -162,8 +214,6 @@ function App() {
               </div>
             </AppScaffold>
           } />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
         </Routes>
         <Toaster position="top-right" richColors />
       </Router>
