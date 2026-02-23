@@ -15,11 +15,14 @@ interface StorefrontCardProps {
   serviceCount: number;
   priceRange?: { min: number; max: number };
   distanceMiles?: number;
+  isOwned?: boolean;
+  serviceCategories?: string[];
 }
 
 export default function StorefrontCard({
   id, name, description, avatarUrl, locationType,
-  isVerified, location, serviceCount, priceRange, distanceMiles,
+  isVerified, location, serviceCount, priceRange, distanceMiles, isOwned = false,
+  serviceCategories = [],
 }: StorefrontCardProps) {
   const navigate = useNavigate();
 
@@ -43,8 +46,8 @@ export default function StorefrontCard({
             {isVerified && <CheckCircle className="h-5 w-5 text-blue-500 flex-shrink-0" />}
           </div>
 
-          {/* Location Type Badge */}
-          <div className="flex items-center gap-2 mb-2">
+          {/* Location Type Badge + Owned Badge */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className={`
               inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
               ${locationType === 'mobile' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}
@@ -52,6 +55,11 @@ export default function StorefrontCard({
               {locationType === 'mobile' && <Navigation className="h-3 w-3" />}
               {locationType === 'mobile' ? 'Comes to you' : 'Fixed location'}
             </span>
+            {isOwned && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-v3-accent/10 text-v3-accent border border-v3-accent/20">
+                ✓ Your Storefront
+              </span>
+            )}
           </div>
 
           {/* Location */}
@@ -69,6 +77,27 @@ export default function StorefrontCard({
         </div>
       )}
 
+      {/* Service Categories */}
+      {serviceCategories.length > 0 && (
+        <div className="px-6 pb-4">
+          <div className="flex flex-wrap gap-2">
+            {serviceCategories.slice(0, 3).map((category, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-v3-surface border border-v3-border text-v3-primary"
+              >
+                {category}
+              </span>
+            ))}
+            {serviceCategories.length > 3 && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-v3-secondary">
+                +{serviceCategories.length - 3} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="mt-auto p-6 pt-0 space-y-3">
         <div className="flex items-center justify-between text-sm">
@@ -80,8 +109,13 @@ export default function StorefrontCard({
           <div className="text-xs text-v3-secondary">{distanceMiles.toFixed(1)} miles away</div>
         )}
 
-        <UniversalButton variant="primary" size="md" onClick={() => navigate(`/book/${id}`)} className="w-full">
-          View Profile
+        <UniversalButton
+          variant={isOwned ? "outline" : "primary"}
+          size="md"
+          onClick={() => navigate(isOwned ? `/dashboard/storefront/${id}` : `/book/${id}`)}
+          className="w-full"
+        >
+          {isOwned ? 'Manage Storefront' : 'View Profile'}
         </UniversalButton>
       </div>
     </UniversalCard>

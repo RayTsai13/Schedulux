@@ -141,6 +141,7 @@ const VENDORS: VendorConfig[] = [
         description: 'Our signature precision fade with hot towel finish',
         duration_minutes: 60,
         price: 60,
+        category: 'Haircut',
         is_featured: true,
         image_url:
           'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=800&q=80',
@@ -150,6 +151,7 @@ const VENDORS: VendorConfig[] = [
         description: 'Precision beard trimming and shaping with line work',
         duration_minutes: 30,
         price: 35,
+        category: 'Beard',
         image_url:
           'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
       },
@@ -193,12 +195,14 @@ const VENDORS: VendorConfig[] = [
         description: 'Professional TV mounting with cable management',
         duration_minutes: 45,
         price: 75,
+        category: 'Installation',
       },
       {
         name: 'Furniture Assembly',
         description: 'Expert furniture assembly for all brands',
         duration_minutes: 60,
         price: 60,
+        category: 'Assembly',
       },
     ],
     scheduleRules: [
@@ -252,6 +256,7 @@ const VENDORS: VendorConfig[] = [
         description: "Pre-designed flash tattoos from this week's sheet",
         duration_minutes: 90,
         price: 150,
+        category: 'Tattoo',
         image_url:
           'https://images.unsplash.com/photo-1598371839696-5c5bb62d4982?auto=format&fit=crop&w=800&q=80',
       },

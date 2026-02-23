@@ -12,7 +12,8 @@
     "db:test": "node scripts/test-database.js",
     "db:check": "node scripts/test-database.js",
     "seed:heroes": "npx ts-node scripts/seed-heroes.ts",
-    "seed:clients": "npx ts-node scripts/seed-clients.ts"
+    "seed:clients": "npx ts-node scripts/seed-clients.ts",
+    "cleanup:storefronts": "npx ts-node scripts/cleanup-demo-storefronts.ts"
   },
   "keywords": [],
   "author": "",

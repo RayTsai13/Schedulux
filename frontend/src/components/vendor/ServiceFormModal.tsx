@@ -11,9 +11,12 @@ import type { Service } from '../../services/api';
 const serviceSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  duration_minutes: z.number().min(1, 'Duration must be at least 1 minute'),
-  buffer_time_minutes: z.number().min(0, 'Buffer time cannot be negative').optional(),
-  price: z.number().min(0, 'Price cannot be negative').optional(),
+  duration_minutes: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+  buffer_time_minutes: z.coerce.number().min(0, 'Buffer time cannot be negative').optional(),
+  price: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number().min(0, 'Price cannot be negative').optional()
+  ),
   category: z.string().optional(),
 });
 
@@ -33,7 +36,7 @@ export default function ServiceFormModal({
   service,
 }: ServiceFormModalProps) {
   const createService = useCreateService();
-  const updateService = useUpdateService();
+  const updateService = useUpdateService(storefrontId);
 
   const isEditing = !!service;
 
@@ -88,7 +91,6 @@ export default function ServiceFormModal({
       if (isEditing) {
         await updateService.mutateAsync({
           id: service.id,
-          storefrontId,
           data,
         });
       } else {

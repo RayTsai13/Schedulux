@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Loader2, X } from 'lucide-react';
 import AppScaffold from '../components/layout/AppScaffold';
@@ -6,6 +6,8 @@ import StorefrontCard from '../components/marketplace/StorefrontCard';
 import UniversalButton from '../components/universal/UniversalButton';
 import UniversalCard from '../components/universal/UniversalCard';
 import { useMarketplaceSearch, useGeolocation, useDebounce } from '../hooks/useMarketplaceSearch';
+import { useAuth } from '../hooks/useAuth';
+import { useStorefronts } from '../hooks/useStorefronts';
 
 type LocationType = 'fixed' | 'mobile' | 'hybrid';
 
@@ -14,8 +16,16 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const debouncedQuery = useDebounce(searchQuery, 500);
 
+  const { user, isAuthenticated } = useAuth();
+  const { data: myStorefronts } = useStorefronts();
   const { location, error: geoError, isLoading: geoLoading, requestLocation, clearLocation } = useGeolocation();
   const activeLocationType = searchParams.get('location_type') as LocationType | null;
+
+  // Create a Set of owned storefront IDs for quick lookup
+  const ownedStorefrontIds = useMemo(() => {
+    if (!isAuthenticated || !myStorefronts || user?.role !== 'vendor') return new Set<number>();
+    return new Set(myStorefronts.map(sf => sf.id));
+  }, [isAuthenticated, myStorefronts, user?.role]);
 
   const searchParamsObj = {
     query: debouncedQuery || undefined,
@@ -164,6 +174,8 @@ export default function ExplorePage() {
                 serviceCount={storefront.service_count}
                 priceRange={storefront.price_range}
                 distanceMiles={storefront.distance_miles}
+                isOwned={ownedStorefrontIds.has(storefront.id)}
+                serviceCategories={storefront.service_categories}
               />
             ))}
           </div>
