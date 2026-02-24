@@ -1,4 +1,5 @@
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { useState } from 'react';
+import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Loader2 } from 'lucide-react';
@@ -24,25 +25,19 @@ export default function BookingStepDateTime({
   onSelectDate,
   onSelectSlot,
 }: BookingStepDateTimeProps) {
-  // Get date range for availability query (current week or selected date's week)
-  const baseDate = selectedDate || new Date();
-  const weekStart = startOfWeek(baseDate, { weekStartsOn: 0 }); // Sunday
-  const weekEnd = endOfWeek(baseDate, { weekStartsOn: 0 }); // Saturday
+  // Track the currently visible month in the calendar (independent of selected date)
+  const [visibleMonth, setVisibleMonth] = useState<Date>(new Date());
 
-  // Fetch availability for the week
+  // Fetch availability for the entire visible month
+  const monthStart = startOfMonth(visibleMonth);
+  const monthEnd = endOfMonth(visibleMonth);
+
   const { data: availabilityData, isLoading } = useAvailability({
     storefrontId,
     serviceId,
-    startDate: format(weekStart, 'yyyy-MM-dd'),
-    endDate: format(weekEnd, 'yyyy-MM-dd'),
+    startDate: format(monthStart, 'yyyy-MM-dd'),
+    endDate: format(monthEnd, 'yyyy-MM-dd'),
   });
-
-  // Helper: Check if a date has availability
-  const hasAvailability = (date: Date): boolean => {
-    if (!availabilityData?.slots) return false;
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return availabilityData.slots.some(slot => slot.local_date === dateStr);
-  };
 
   // Helper: Get slots for a specific date
   const getSlotsForDate = (date: Date): AvailableSlot[] => {
@@ -62,11 +57,15 @@ export default function BookingStepDateTime({
         <div className="border border-v3-border rounded-2xl p-4 bg-white">
           <DatePicker
             selected={selectedDate}
-            onChange={onSelectDate}
+            onChange={(date) => { if (date) onSelectDate(date); }}
+            onMonthChange={(date) => setVisibleMonth(date)}
             minDate={new Date()}
-            maxDate={addDays(new Date(), 90)} // Allow booking up to 90 days in advance
+            maxDate={addDays(new Date(), 90)}
             inline
-            filterDate={hasAvailability}
+            highlightDates={availabilityData?.slots
+              ? [...new Set(availabilityData.slots.map(s => s.local_date))].map(d => new Date(d + 'T12:00:00'))
+              : []
+            }
             calendarClassName="custom-calendar"
           />
         </div>

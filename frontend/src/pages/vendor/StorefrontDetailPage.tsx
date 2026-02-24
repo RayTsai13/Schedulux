@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 import { useStorefront } from '../../hooks/useStorefronts';
 import { useServices, useDeleteService } from '../../hooks/useServices';
-import { useScheduleRules } from '../../hooks/useScheduleRules';
+import { useScheduleRules, useDeleteScheduleRule, formatScheduleRule } from '../../hooks/useScheduleRules';
 import AppScaffold from '../../components/layout/AppScaffold';
 import UniversalButton from '../../components/universal/UniversalButton';
 import UniversalCard from '../../components/universal/UniversalCard';
 import ServiceFormModal from '../../components/vendor/ServiceFormModal';
-import type { Service } from '../../services/api';
+import ScheduleRuleFormModal from '../../components/vendor/ScheduleRuleFormModal';
+import type { Service, ScheduleRule } from '../../services/api';
 
 export default function StorefrontDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,9 +30,12 @@ export default function StorefrontDetailPage() {
   const { data: services, isLoading: servicesLoading } = useServices(storefrontId);
   const { data: scheduleRules, isLoading: rulesLoading } = useScheduleRules(storefrontId);
   const deleteService = useDeleteService(storefrontId);
+  const deleteRule = useDeleteScheduleRule(storefrontId);
 
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [editingRule, setEditingRule] = useState<ScheduleRule | null>(null);
 
   const isLoading = storefrontLoading || servicesLoading || rulesLoading;
 
@@ -49,6 +53,22 @@ export default function StorefrontDetailPage() {
   const handleCloseModal = () => {
     setShowServiceModal(false);
     setEditingService(null);
+  };
+
+  const handleEditRule = (rule: ScheduleRule) => {
+    setEditingRule(rule);
+    setShowRuleModal(true);
+  };
+
+  const handleDeleteRule = async (ruleId: number) => {
+    if (confirm('Delete this availability rule?')) {
+      await deleteRule.mutateAsync(ruleId);
+    }
+  };
+
+  const handleCloseRuleModal = () => {
+    setShowRuleModal(false);
+    setEditingRule(null);
   };
 
   if (isLoading) {
@@ -233,9 +253,9 @@ export default function StorefrontDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold text-v3-primary">Availability</h2>
             <UniversalButton
-              variant="outline"
+              variant="primary"
               size="md"
-              onClick={() => alert('Schedule rule management coming soon!')}
+              onClick={() => setShowRuleModal(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Rule
@@ -249,11 +269,12 @@ export default function StorefrontDetailPage() {
                 No availability rules
               </h3>
               <p className="text-v3-secondary mb-4">
-                Set up when you're available for bookings
+                Set up when you're available for bookings. Add weekly recurring hours or one-off overrides.
               </p>
-              <p className="text-sm text-v3-secondary/70">
-                Schedule rule management UI coming soon. Use the seed script or API for now.
-              </p>
+              <UniversalButton variant="primary" onClick={() => setShowRuleModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Rule
+              </UniversalButton>
             </UniversalCard>
           ) : (
             <div className="space-y-3">
@@ -261,23 +282,46 @@ export default function StorefrontDetailPage() {
                 <UniversalCard key={rule.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-v3-primary">
-                        {rule.name || (
-                          rule.rule_type === 'weekly'
-                            ? `Weekly - ${rule.day_of_week}`
-                            : rule.rule_type === 'daily'
-                            ? `Daily Rule`
-                            : `Monthly Rule`
+                      <div className="flex items-center gap-2">
+                        {rule.name && (
+                          <span className="font-medium text-v3-primary">{rule.name}</span>
+                        )}
+                        <span className={
+                          'text-xs px-2 py-0.5 rounded-full font-medium ' +
+                          (rule.is_available
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-600')
+                        }>
+                          {rule.is_available ? 'Open' : 'Closed'}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-v3-accent/10 text-v3-accent font-medium">
+                          {rule.rule_type}
+                        </span>
+                      </div>
+                      <p className="text-sm text-v3-secondary mt-1">
+                        {formatScheduleRule(rule)}
+                        {rule.is_available && (
+                          <> &middot; {rule.max_concurrent_appointments} concurrent</>
                         )}
                       </p>
-                      <p className="text-sm text-v3-secondary mt-1">
-                        {rule.start_time} - {rule.end_time}
-                        {rule.specific_date && ` on ${rule.specific_date}`}
-                        {' • '}
-                        Max {rule.concurrent_bookings} booking(s)
-                        {' • '}
-                        Priority: {rule.priority}
-                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <UniversalButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditRule(rule)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </UniversalButton>
+                      <UniversalButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteRule(rule.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </UniversalButton>
                     </div>
                   </div>
                 </UniversalCard>
@@ -293,6 +337,14 @@ export default function StorefrontDetailPage() {
         onClose={handleCloseModal}
         storefrontId={storefrontId!}
         service={editingService}
+      />
+
+      {/* Schedule Rule Form Modal */}
+      <ScheduleRuleFormModal
+        isOpen={showRuleModal}
+        onClose={handleCloseRuleModal}
+        storefrontId={storefrontId!}
+        rule={editingRule}
       />
     </AppScaffold>
   );
