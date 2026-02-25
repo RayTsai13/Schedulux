@@ -6,6 +6,7 @@ import {
   type UpdateScheduleRuleRequest,
 } from '../services/api';
 import { toast } from 'sonner';
+import { availabilityKeys } from './useAvailability';
 
 /**
  * TanStack Query Hooks for Schedule Rule Management
@@ -64,6 +65,7 @@ export function useCreateScheduleRule() {
     onSuccess: (response, variables) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(variables.storefrontId) });
+        queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
         toast.success('Schedule rule created successfully!');
       } else {
         toast.error(response.message || 'Failed to create schedule rule');
@@ -92,6 +94,7 @@ export function useUpdateScheduleRule(storefrontId: number | null) {
           queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(storefrontId) });
         }
         queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.detail(variables.id) });
+        queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
         toast.success('Schedule rule updated successfully!');
       } else {
         toast.error(response.message || 'Failed to update schedule rule');
@@ -118,6 +121,7 @@ export function useDeleteScheduleRule(storefrontId: number | null) {
         if (storefrontId) {
           queryClient.invalidateQueries({ queryKey: scheduleRuleKeys.all(storefrontId) });
         }
+        queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
         toast.success('Schedule rule deleted successfully!');
       } else {
         toast.error(response.message || 'Failed to delete schedule rule');
@@ -147,11 +151,18 @@ export function formatScheduleRule(rule: ScheduleRule): string {
   switch (rule.rule_type) {
     case 'weekly':
       return `${dayNames[rule.day_of_week!]} ${timeRange}${availability}`;
-    case 'daily':
-      return `${rule.specific_date} ${timeRange}${availability}`;
-    case 'monthly':
+    case 'daily': {
+      const [year, month, day] = (rule.specific_date ?? '').split('-').map(Number);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dateLabel = rule.specific_date && year && month && day
+        ? `${monthNames[month - 1]} ${day}, ${year}`
+        : 'Unknown date';
+      return `${dateLabel} · ${timeRange}${availability}`;
+    }
+    case 'monthly': {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return `${monthNames[rule.month! - 1]}${rule.year ? ` ${rule.year}` : ''} ${timeRange}${availability}`;
+    }
     default:
       return timeRange;
   }
