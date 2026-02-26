@@ -16,6 +16,7 @@ interface BookingModalProps {
   services: PublicStorefrontDetail['services'];
   preSelectedServiceId?: number;
   preSelectedDropId?: number;
+  dropServiceId?: number | null;
 }
 
 type BookingStep = 1 | 2 | 3 | 4;
@@ -41,6 +42,7 @@ export default function BookingModal({
   services,
   preSelectedServiceId,
   preSelectedDropId,
+  dropServiceId,
 }: BookingModalProps) {
   const { isAuthenticated } = useAuth();
   const { mutateAsync: createAppointment } = useCreateAppointment();
@@ -230,7 +232,7 @@ export default function BookingModal({
       <div className="min-h-[400px]">
         {state.currentStep === 1 && (
           <BookingStepService
-            services={services}
+            services={dropServiceId ? services.filter(s => s.id === dropServiceId) : services}
             selectedServiceId={state.selectedService?.id || null}
             onSelectService={(service) =>
               setState(prev => ({ ...prev, selectedService: service }))

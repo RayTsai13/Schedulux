@@ -20,6 +20,7 @@ export default function VendorProfilePage() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [preSelectedServiceId, setPreSelectedServiceId] = useState<number | undefined>();
   const [preSelectedDropId, setPreSelectedDropId] = useState<number | undefined>();
+  const [dropServiceId, setDropServiceId] = useState<number | null | undefined>();
 
   const {
     data: storefrontData,
@@ -110,6 +111,7 @@ export default function VendorProfilePage() {
                   availableSlots={drop.max_concurrent_appointments}
                   onSelect={() => {
                     setPreSelectedDropId(drop.id);
+                    setDropServiceId(drop.service_id);
                     // If drop has a specific service, pre-select it
                     if (drop.service_id) {
                       setPreSelectedServiceId(drop.service_id);
@@ -140,6 +142,7 @@ export default function VendorProfilePage() {
                 onSelect={() => {
                   setPreSelectedServiceId(service.id);
                   setPreSelectedDropId(undefined);
+                  setDropServiceId(undefined);
                   setIsBookingModalOpen(true);
                 }}
               />
@@ -157,6 +160,7 @@ export default function VendorProfilePage() {
             onClick={() => {
               setPreSelectedServiceId(undefined);
               setPreSelectedDropId(undefined);
+              setDropServiceId(undefined);
               setIsBookingModalOpen(true);
             }}
             className="w-full"
@@ -173,11 +177,13 @@ export default function VendorProfilePage() {
           setIsBookingModalOpen(false);
           setPreSelectedServiceId(undefined);
           setPreSelectedDropId(undefined);
+          setDropServiceId(undefined);
         }}
         storefront={storefront}
         services={storefrontData.services}
         preSelectedServiceId={preSelectedServiceId}
         preSelectedDropId={preSelectedDropId}
+        dropServiceId={dropServiceId}
       />
     </AppScaffold>
   );

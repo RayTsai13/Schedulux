@@ -84,7 +84,7 @@ export default function BookingSuccess({
         <UniversalButton
           variant="primary"
           size="lg"
-          onClick={() => window.location.href = '/dashboard'}
+          onClick={() => window.location.href = '/my-appointments'}
           className="w-full"
         >
           View My Appointments

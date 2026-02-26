@@ -21,9 +21,9 @@ cd frontend && npm run lint
 backend/src/
 ├── config/       # DB connection pooling (PostgreSQL)
 ├── middleware/   # Auth, CORS, logging, validation
-├── models/       # Repository pattern (User, Storefront, Service, ScheduleRule, Appointment)
-├── routes/       # API endpoints (auth, storefronts, services, schedule-rules, availability, appointments, marketplace)
-├── services/     # Business logic (UserService, StorefrontService, ServiceService, AvailabilityService, AppointmentService, MarketplaceService)
+├── models/       # Repository pattern (User, Storefront, Service, ScheduleRule, Drop, Appointment)
+├── routes/       # API endpoints (auth, storefronts, services, schedule-rules, drops, availability, appointments, marketplace)
+├── services/     # Business logic (UserService, StorefrontService, ServiceService, DropService, AvailabilityService, AppointmentService, MarketplaceService)
 ├── types/        # TypeScript interfaces and API response types
 └── utils/        # JWT, bcrypt, password validation helpers
 
@@ -31,10 +31,10 @@ frontend/src/
 ├── components/
 │   ├── ui/       # shadcn/ui wrapped components
 │   ├── universal/ # V3 design system (UniversalButton, UniversalCard)
-│   ├── booking/  # Client booking flow (BookingModal + wizard steps, PortfolioCard, ProfileHeader)
+│   ├── booking/  # Client booking flow (BookingModal + wizard steps, PortfolioCard, ProfileHeader, DropCard)
 │   ├── layout/   # AppScaffold, Header
-│   └── vendor/   # Vendor management (StorefrontFormModal, ServiceManager, HoursManager)
-├── hooks/        # useAuth, useStorefronts, useServices, useScheduleRules, useAvailability, useAppointments, useMarketplace
+│   └── vendor/   # Vendor management (StorefrontFormModal, ServiceManager, HoursManager, DropsTab, DropFormModal)
+├── hooks/        # useAuth, useStorefronts, useServices, useScheduleRules, useDrops, useAvailability, useAppointments, useMarketplace
 ├── pages/        # Route-level components (auth/, vendor/, VendorProfilePage.tsx)
 ├── services/     # Axios API client with JWT interceptor
 ├── stores/       # Zustand (UI, Calendar state)
@@ -80,6 +80,8 @@ frontend/src/
 **Booking Modal (4-step wizard pattern):** Service → Date/Time → Confirm → Success
 - Local state over Zustand (self-contained flow)
 - Pre-selection support (skip step 1 if service already chosen)
+- Drop pre-selection support (`preSelectedDropId` prop, passes `drop_id` to appointment API)
+- Drop service filtering (`dropServiceId` prop filters step 1 to only the drop's linked service)
 - Auth check deferred until final confirmation step
 - Address input only shown for mobile/hybrid vendors
 
@@ -88,6 +90,7 @@ frontend/src/
 - `useStorefronts()` - CRUD with mutations
 - `useServices()` - per-storefront CRUD
 - `useScheduleRules()` - availability patterns CRUD
+- `useDrops(storefrontId)` / `usePublicDrops(storefrontId)` - vendor drops CRUD + public listing
 - `useAvailability(storefrontId, serviceId, startDate, endDate)` - available slots in YYYY-MM-DD range, timezone-aware
 - `useAppointments()` / `useStorefrontAppointments(id)` / `useClientAppointments()` - with confirm/cancel/complete mutations
 - `useCreateAppointment()` - race-condition-safe booking
@@ -99,7 +102,7 @@ frontend/src/
 
 ### Database Schema
 
-**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `appointments`, `appointment_slots`
+**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `drops`, `appointments`, `appointment_slots`
 
 **Key storefront fields:**
 - `profile_type`: `individual` | `business`
@@ -108,7 +111,14 @@ frontend/src/
 - `latitude`, `longitude`, `city`, `state` (geolocation)
 - `avatar_url`, `is_verified` (admin-only), `layout_mode`, `theme_color`, `instagram_handle`
 
-**Key appointment fields:** `service_location_type` (`at_vendor`/`at_client`), `client_address`
+**Key drops fields:**
+- `title`, `description`, `drop_date`, `start_time`, `end_time`
+- `service_id` (nullable — null = all services)
+- `max_concurrent_appointments`, `is_published`, `is_active`
+- Soft delete via `deleted_at`
+- Integrated into AvailabilityService as priority-100 TimeBlocks (override all rules)
+
+**Key appointment fields:** `service_location_type` (`at_vendor`/`at_client`), `client_address`, `drop_id` (nullable FK)
 
 **Appointment statuses:** `pending` → `confirmed` → `completed` | `cancelled` | `declined`
 
@@ -119,7 +129,16 @@ psql -d schedulux_primary -f backend/migrations/005_marketplace_pivot.sql
 psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
 psql -d schedulux_primary -f backend/migrations/007_add_geolocation.sql
 psql -d schedulux_primary -f backend/migrations/008_visual_portfolio.sql
+psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
 ```
+
+**Drop API endpoints:**
+- `POST /api/storefronts/:id/drops` - create (auth required)
+- `GET /api/storefronts/:id/drops` - list all (auth required, vendor)
+- `GET /api/storefronts/:id/drops/public` - list published future drops (no auth)
+- `GET /api/drops/:id` - get by ID (auth required)
+- `PUT /api/drops/:id` - update (auth required)
+- `DELETE /api/drops/:id` - soft delete (auth required)
 
 **Public marketplace endpoints (no auth):**
 - `GET /api/marketplace/search` - geographic + text + filter search with pagination
