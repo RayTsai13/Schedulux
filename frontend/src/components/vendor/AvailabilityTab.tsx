@@ -22,7 +22,7 @@ import { useStorefrontAppointments } from '../../hooks/useAppointments';
 import { formatScheduleRule } from '../../hooks/useScheduleRules';
 import UniversalButton from '../universal/UniversalButton';
 import UniversalCard from '../universal/UniversalCard';
-import type { ScheduleRule, Appointment } from '../../services/api';
+import type { ScheduleRule, Appointment, Drop } from '../../services/api';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -50,11 +50,23 @@ function rulesForDay(day: Date, rules: ScheduleRule[]): ScheduleRule[] {
   });
 }
 
-/** A bar to render inside a calendar cell representing one rule's time window */
+/** Drops that apply to a given calendar day */
+function dropsForDay(day: Date, drops: Drop[]): Drop[] {
+  const dateStr = format(day, 'yyyy-MM-dd');
+  return drops.filter((d) => {
+    const dropDate = typeof d.drop_date === 'string'
+      ? d.drop_date.substring(0, 10)
+      : format(new Date(d.drop_date), 'yyyy-MM-dd');
+    return dropDate === dateStr;
+  });
+}
+
+/** A bar to render inside a calendar cell representing a time window */
 interface TimeBar {
   topPct: number;
   heightPct: number;
   isAvailable: boolean;
+  isDrop?: boolean;
 }
 
 function timeBarsForRules(rules: ScheduleRule[]): TimeBar[] {
@@ -65,6 +77,19 @@ function timeBarsForRules(rules: ScheduleRule[]): TimeBar[] {
       topPct: (startMin / 1440) * 100,
       heightPct: ((endMin - startMin) / 1440) * 100,
       isAvailable: r.is_available,
+    };
+  });
+}
+
+function timeBarsForDrops(drops: Drop[]): TimeBar[] {
+  return drops.map((d) => {
+    const startMin = toMinutes(d.start_time);
+    const endMin = toMinutes(d.end_time);
+    return {
+      topPct: (startMin / 1440) * 100,
+      heightPct: ((endMin - startMin) / 1440) * 100,
+      isAvailable: true,
+      isDrop: true,
     };
   });
 }
@@ -92,6 +117,7 @@ const STATUS_COLOR: Record<string, string> = {
 interface AvailabilityTabProps {
   storefrontId: number;
   scheduleRules: ScheduleRule[] | undefined;
+  drops?: Drop[] | undefined;
   onAddRule: () => void;
   onEditRule: (rule: ScheduleRule) => void;
   onDeleteRule: (ruleId: number) => void;
@@ -100,6 +126,7 @@ interface AvailabilityTabProps {
 export default function AvailabilityTab({
   storefrontId,
   scheduleRules,
+  drops,
   onAddRule,
   onEditRule,
   onDeleteRule,
@@ -154,6 +181,11 @@ export default function AvailabilityTab({
     if (!selectedDay || !scheduleRules) return [];
     return rulesForDay(selectedDay, scheduleRules);
   }, [selectedDay, scheduleRules]);
+
+  const popoverDrops = useMemo(() => {
+    if (!selectedDay || !drops) return [];
+    return dropsForDay(selectedDay, drops);
+  }, [selectedDay, drops]);
 
   const popoverAppointments = useMemo<Appointment[]>(() => {
     if (!selectedDay || !appointments) return [];
@@ -211,8 +243,7 @@ export default function AvailabilityTab({
           <UniversalCard className="p-5 text-center">
             <p className="text-sm font-semibold text-v3-primary mb-1">No rules yet</p>
             <p className="text-xs text-v3-secondary mb-4">
-              Add weekly recurring hours, one-off drops, or monthly blocks to define when
-              you're open.
+              Add weekly recurring hours or monthly blocks to define your regular schedule.
             </p>
             <UniversalButton variant="primary" size="sm" onClick={onAddRule}>
               <Plus className="w-4 h-4 mr-1" />
@@ -312,11 +343,20 @@ export default function AvailabilityTab({
             const isPast = isBefore(day, today);
             const todayDay = isToday(day);
             const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
-            const applicable = inMonth && !isPast && scheduleRules
+
+            // Rule bars (right side, green/red)
+            const applicableRules = inMonth && !isPast && scheduleRules
               ? rulesForDay(day, scheduleRules)
               : [];
-            const bars = timeBarsForRules(applicable);
-            const hasRules = bars.length > 0;
+            const ruleBars = timeBarsForRules(applicableRules);
+
+            // Drop bars (left side, purple/accent)
+            const applicableDrops = inMonth && !isPast && drops
+              ? dropsForDay(day, drops)
+              : [];
+            const dropBars = timeBarsForDrops(applicableDrops);
+
+            const hasContent = ruleBars.length > 0 || dropBars.length > 0;
 
             return (
               <button
@@ -354,10 +394,10 @@ export default function AvailabilityTab({
                   <span className="absolute top-1.5 left-2 w-5 h-5 rounded-full ring-2 ring-v3-accent" />
                 )}
 
-                {/* Time-window bars */}
-                {inMonth && !isPast && bars.map((bar, i) => (
+                {/* Rule time-window bars (right side) */}
+                {inMonth && !isPast && ruleBars.map((bar, i) => (
                   <span
-                    key={i}
+                    key={`rule-${i}`}
                     className={`absolute right-1 w-1.5 rounded-full ${
                       bar.isAvailable ? 'bg-green-400' : 'bg-red-300'
                     }`}
@@ -369,8 +409,22 @@ export default function AvailabilityTab({
                   />
                 ))}
 
-                {/* "has rules" dot when bars are too thin to see */}
-                {inMonth && !isPast && hasRules && bars.every((b) => b.heightPct < 5) && (
+                {/* Drop time-window bars (left-center, purple) */}
+                {inMonth && !isPast && dropBars.map((bar, i) => (
+                  <span
+                    key={`drop-${i}`}
+                    className="absolute right-3.5 w-1.5 rounded-full bg-violet-400"
+                    style={{
+                      top: `${bar.topPct}%`,
+                      height: `${bar.heightPct}%`,
+                      minHeight: '4px',
+                    }}
+                  />
+                ))}
+
+                {/* "has content" dot when bars are too thin to see */}
+                {inMonth && !isPast && hasContent &&
+                  [...ruleBars, ...dropBars].every((b) => b.heightPct < 5) && (
                   <span className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-v3-accent" />
                 )}
               </button>
@@ -379,7 +433,7 @@ export default function AvailabilityTab({
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-5 mt-5 pt-4 border-t border-v3-border">
+        <div className="flex items-center gap-5 mt-5 pt-4 border-t border-v3-border flex-wrap">
           <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
             <span className="w-1.5 h-4 rounded-full bg-green-400 inline-block" />
             Open window
@@ -389,11 +443,15 @@ export default function AvailabilityTab({
             Closed / blocked
           </div>
           <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
+            <span className="w-1.5 h-4 rounded-full bg-violet-400 inline-block" />
+            Drop
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
             <span className="w-4 h-4 rounded-md ring-2 ring-v3-accent inline-block" />
             Today
           </div>
           <p className="ml-auto text-xs text-v3-secondary italic">
-            Bar height reflects time of day. Click a day for details.
+            Click a day for details.
           </p>
         </div>
       </UniversalCard>
@@ -412,10 +470,41 @@ export default function AvailabilityTab({
             </p>
           </div>
 
+          {/* Drops for this day */}
+          {popoverDrops.length > 0 && (
+            <div className="px-4 py-3 border-b border-v3-border">
+              <p className="text-xs font-semibold text-v3-secondary uppercase tracking-wide mb-2">
+                Drops
+              </p>
+              <div className="space-y-1.5">
+                {popoverDrops.map((drop) => (
+                  <div key={drop.id} className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-violet-500" />
+                    <span className="text-xs text-v3-primary font-medium truncate">
+                      {drop.title}
+                    </span>
+                    <span className="text-xs text-v3-secondary whitespace-nowrap">
+                      {fmt12(drop.start_time)} – {fmt12(drop.end_time)}
+                    </span>
+                    <span
+                      className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                        drop.is_published
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-zinc-100 text-zinc-500'
+                      }`}
+                    >
+                      {drop.is_published ? 'Live' : 'Draft'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Rules for this day */}
           <div className="px-4 py-3 border-b border-v3-border">
             <p className="text-xs font-semibold text-v3-secondary uppercase tracking-wide mb-2">
-              Availability
+              Regular Hours
             </p>
             {popoverRules.length === 0 ? (
               <p className="text-xs text-v3-secondary">No rules apply to this day.</p>
@@ -442,11 +531,6 @@ export default function AvailabilityTab({
                     </span>
                   </div>
                 ))}
-                {popoverRules.length > 1 && (
-                  <p className="text-xs text-v3-secondary/70 italic pt-1">
-                    Multiple rules apply — priority rules take effect at booking time.
-                  </p>
-                )}
               </div>
             )}
           </div>

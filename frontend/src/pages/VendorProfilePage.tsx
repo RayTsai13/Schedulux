@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { parseISO } from 'date-fns';
 import AppScaffold from '../components/layout/AppScaffold';
 import ProfileHeader from '../components/booking/ProfileHeader';
 import PortfolioCard from '../components/booking/PortfolioCard';
+import DropCard from '../components/booking/DropCard';
 import BookingModal from '../components/booking/BookingModal';
 import UniversalCard from '../components/universal/UniversalCard';
 import UniversalButton from '../components/universal/UniversalButton';
 import { usePublicStorefront } from '../hooks/useMarketplace';
+import { usePublicDrops } from '../hooks/useDrops';
 
 export default function VendorProfilePage() {
   const { storefrontId } = useParams<{ storefrontId: string }>();
@@ -16,6 +19,7 @@ export default function VendorProfilePage() {
   // Booking modal state
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [preSelectedServiceId, setPreSelectedServiceId] = useState<number | undefined>();
+  const [preSelectedDropId, setPreSelectedDropId] = useState<number | undefined>();
 
   const {
     data: storefrontData,
@@ -23,6 +27,8 @@ export default function VendorProfilePage() {
     isError,
     error,
   } = usePublicStorefront(id);
+
+  const { data: publicDrops } = usePublicDrops(id);
 
   // Loading State
   if (isLoading) {
@@ -85,6 +91,40 @@ export default function VendorProfilePage() {
         verified={storefront.is_verified}
       />
 
+      {/* Upcoming Drops Section */}
+      {publicDrops && publicDrops.length > 0 && (
+        <div className="max-w-4xl mx-auto mt-12 px-4">
+          <h2 className="text-3xl font-bold text-v3-primary mb-6">Upcoming Drops</h2>
+          <div className="space-y-4">
+            {publicDrops.map(drop => {
+              const dropDate = typeof drop.drop_date === 'string'
+                ? parseISO(drop.drop_date.substring(0, 10))
+                : new Date(drop.drop_date);
+
+              return (
+                <DropCard
+                  key={drop.id}
+                  title={drop.title}
+                  date={dropDate}
+                  totalSlots={drop.max_concurrent_appointments}
+                  availableSlots={drop.max_concurrent_appointments}
+                  onSelect={() => {
+                    setPreSelectedDropId(drop.id);
+                    // If drop has a specific service, pre-select it
+                    if (drop.service_id) {
+                      setPreSelectedServiceId(drop.service_id);
+                    } else {
+                      setPreSelectedServiceId(undefined);
+                    }
+                    setIsBookingModalOpen(true);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Services Section */}
       {storefrontData.services.length > 0 && (
         <div className="max-w-4xl mx-auto mt-12 px-4">
@@ -99,6 +139,7 @@ export default function VendorProfilePage() {
                 imageUrl={service.image_url || undefined}
                 onSelect={() => {
                   setPreSelectedServiceId(service.id);
+                  setPreSelectedDropId(undefined);
                   setIsBookingModalOpen(true);
                 }}
               />
@@ -115,6 +156,7 @@ export default function VendorProfilePage() {
             size="lg"
             onClick={() => {
               setPreSelectedServiceId(undefined);
+              setPreSelectedDropId(undefined);
               setIsBookingModalOpen(true);
             }}
             className="w-full"
@@ -130,10 +172,12 @@ export default function VendorProfilePage() {
         onClose={() => {
           setIsBookingModalOpen(false);
           setPreSelectedServiceId(undefined);
+          setPreSelectedDropId(undefined);
         }}
         storefront={storefront}
         services={storefrontData.services}
         preSelectedServiceId={preSelectedServiceId}
+        preSelectedDropId={preSelectedDropId}
       />
     </AppScaffold>
   );

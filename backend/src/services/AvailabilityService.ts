@@ -30,6 +30,7 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { StorefrontModel } from '../models/Storefront';
 import { ServiceModel } from '../models/Service';
 import { ScheduleRuleModel } from '../models/ScheduleRule';
+import { DropModel } from '../models/Drop';
 import { AppointmentModel } from '../models/Appointment';
 import {
   AvailableSlot,
@@ -37,7 +38,7 @@ import {
   TimeBlock,
   SlotAvailabilityResult,
 } from '../types/availability';
-import { ScheduleRule } from '../types';
+import { ScheduleRule, Drop } from '../types';
 
 export class AvailabilityService {
   /**
@@ -102,6 +103,17 @@ export class AvailabilityService {
       endDate
     );
 
+    // 4b. Fetch published drops for the date range
+    const drops = await DropModel.findActiveByDateRange(
+      storefrontId,
+      startDate,
+      endDate
+    );
+    // Filter drops by service (null service_id = applies to all)
+    const applicableDrops = drops.filter(
+      d => d.service_id === null || d.service_id === serviceId
+    );
+
     // 5. Fetch existing appointments in the range
     const rangeStart = startOfDay(startDate);
     const rangeEnd = endOfDay(endDate);
@@ -124,7 +136,8 @@ export class AvailabilityService {
         existingAppointments,
         slotDuration,
         service.duration_minutes,
-        0 // V1: No travel buffer yet, V2: Calculate dynamically based on appointment locations
+        0, // V1: No travel buffer yet, V2: Calculate dynamically based on appointment locations
+        applicableDrops
       );
       allSlots.push(...daySlots);
       currentDate = addDays(currentDate, 1);
@@ -185,13 +198,29 @@ export class AvailabilityService {
       startDatetime
     );
 
-    // 4. Check if slot falls within working hours
+    // 3b. Get drops for the date
+    const drops = await DropModel.findActiveByDateRange(
+      storefrontId,
+      startDatetime,
+      startDatetime
+    );
+    const applicableDrops = drops.filter(
+      d => d.service_id === null || d.service_id === serviceId
+    );
+
+    // 4. Check if slot falls within working hours (rules + drops)
     const localStart = toZonedTime(startDatetime, timezone);
-    const effectiveBlocks = this.getEffectiveTimeBlocksForDate(
+    const ruleBlocks = this.getEffectiveTimeBlocksForDate(
       localStart,
       timezone,
       rules
     );
+    const dropBlocks = this.getDropTimeBlocksForDate(
+      localStart,
+      timezone,
+      applicableDrops
+    );
+    const effectiveBlocks = this.mergeTimeBlocks([...ruleBlocks, ...dropBlocks]);
 
     const slotWithinWorkingHours = effectiveBlocks.some((block) => {
       return (
@@ -253,10 +282,18 @@ export class AvailabilityService {
     allAppointments: any[],
     slotDuration: number,
     displayDuration: number,
-    travelBuffer: number = 0
+    travelBuffer: number = 0,
+    allDrops: Drop[] = []
   ): AvailableSlot[] {
-    // Get effective time blocks for this day
+    // Get effective time blocks for this day (from rules)
     const timeBlocks = this.getEffectiveTimeBlocksForDate(date, timezone, allRules);
+
+    // Inject drop-based time blocks (priority: 100, overrides rules)
+    const dropBlocks = this.getDropTimeBlocksForDate(date, timezone, allDrops);
+    timeBlocks.push(...dropBlocks);
+
+    // Re-merge to resolve overlaps with drop priority
+    const mergedBlocks = this.mergeTimeBlocks(timeBlocks);
 
     // Filter appointments for this day
     const dayStart = startOfDay(date);
@@ -271,7 +308,7 @@ export class AvailabilityService {
     const now = new Date();
 
     // For each available time block, generate slots
-    for (const block of timeBlocks) {
+    for (const block of mergedBlocks) {
       if (!block.isAvailable) continue;
 
       let slotStart = block.start;
@@ -490,6 +527,54 @@ export class AvailabilityService {
     }
 
     return result;
+  }
+
+  /**
+   * Convert drops to time blocks for a specific date
+   * Drops get priority 100 (overrides all rules)
+   */
+  private static getDropTimeBlocksForDate(
+    date: Date,
+    timezone: string,
+    allDrops: Drop[]
+  ): TimeBlock[] {
+    const localDate = toZonedTime(date, timezone);
+    const dateStr = format(localDate, 'yyyy-MM-dd');
+
+    // Filter drops for this date
+    const dayDrops = allDrops.filter((drop) => {
+      const dropDate = typeof drop.drop_date === 'string'
+        ? drop.drop_date.substring(0, 10)
+        : format(new Date(drop.drop_date), 'yyyy-MM-dd');
+      return dropDate === dateStr;
+    });
+
+    return dayDrops.map((drop) => {
+      const dayStart = startOfDay(localDate);
+      const [startHour, startMin] = drop.start_time.split(':').map(Number);
+      const [endHour, endMin] = drop.end_time.split(':').map(Number);
+
+      const blockStartLocal = addMinutes(
+        addMinutes(dayStart, startHour * 60),
+        startMin
+      );
+      const blockEndLocal = addMinutes(
+        addMinutes(dayStart, endHour * 60),
+        endMin
+      );
+
+      const blockStartUtc = fromZonedTime(blockStartLocal, timezone);
+      const blockEndUtc = fromZonedTime(blockEndLocal, timezone);
+
+      return {
+        start: blockStartUtc,
+        end: blockEndUtc,
+        isAvailable: true,
+        maxConcurrent: drop.max_concurrent_appointments,
+        priority: 100,
+        dropId: drop.id,
+      };
+    });
   }
 
   /**

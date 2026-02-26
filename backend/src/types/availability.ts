@@ -54,6 +54,8 @@ export interface TimeBlock {
   priority: number;
   /** Original rule ID for debugging */
   ruleId?: number;
+  /** Drop ID if this block came from a drop */
+  dropId?: number;
 }
 
 /**

@@ -22,6 +22,7 @@ export interface CreateAppointmentData {
   // Marketplace location fields
   service_location_type?: 'at_vendor' | 'at_client';
   client_address?: string;
+  drop_id?: number | null;
 }
 
 export interface AppointmentQueryOptions {
@@ -239,6 +240,7 @@ export class AppointmentModel {
       // Marketplace location fields
       service_location_type = 'at_vendor',
       client_address,
+      drop_id,
     } = data;
 
     const result = await query(
@@ -247,9 +249,9 @@ export class AppointmentModel {
         client_id, storefront_id, service_id, slot_id,
         requested_start_datetime, requested_end_datetime,
         status, client_notes, price_quoted,
-        service_location_type, client_address
+        service_location_type, client_address, drop_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `,
       [
@@ -264,6 +266,7 @@ export class AppointmentModel {
         price_quoted ?? null,
         service_location_type,
         client_address ?? null,
+        drop_id ?? null,
       ]
     );
 
@@ -291,6 +294,7 @@ export class AppointmentModel {
       // Marketplace location fields
       service_location_type = 'at_vendor',
       client_address,
+      drop_id,
     } = data;
 
     const result = await client.query(
@@ -299,9 +303,9 @@ export class AppointmentModel {
         client_id, storefront_id, service_id, slot_id,
         requested_start_datetime, requested_end_datetime,
         status, client_notes, price_quoted,
-        service_location_type, client_address
+        service_location_type, client_address, drop_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `,
       [
@@ -316,6 +320,7 @@ export class AppointmentModel {
         price_quoted ?? null,
         service_location_type,
         client_address ?? null,
+        drop_id ?? null,
       ]
     );
 

@@ -993,6 +993,112 @@ export const scheduleRuleApi = {
 };
 
 // ================================================================
+// DROP API FUNCTIONS
+// ================================================================
+
+export interface Drop {
+  id: number;
+  storefront_id: number;
+  service_id: number | null;
+  title: string;
+  description: string | null;
+  drop_date: string;
+  start_time: string;
+  end_time: string;
+  max_concurrent_appointments: number;
+  is_published: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateDropRequest {
+  service_id?: number | null;
+  title: string;
+  description?: string;
+  drop_date: string;
+  start_time: string;
+  end_time: string;
+  max_concurrent_appointments?: number;
+  is_published?: boolean;
+}
+
+export interface UpdateDropRequest {
+  service_id?: number | null;
+  title?: string;
+  description?: string | null;
+  drop_date?: string;
+  start_time?: string;
+  end_time?: string;
+  max_concurrent_appointments?: number;
+  is_published?: boolean;
+  is_active?: boolean;
+}
+
+export const dropApi = {
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<Drop[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/drops`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to fetch drops.' };
+    }
+  },
+
+  getPublic: async (storefrontId: number): Promise<ApiResponse<Drop[]>> => {
+    try {
+      const response = await apiClient.get(`/storefronts/${storefrontId}/drops/public`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to fetch drops.' };
+    }
+  },
+
+  getById: async (id: number): Promise<ApiResponse<Drop>> => {
+    try {
+      const response = await apiClient.get(`/drops/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to fetch drop.' };
+    }
+  },
+
+  create: async (storefrontId: number, data: CreateDropRequest): Promise<ApiResponse<Drop>> => {
+    try {
+      const response = await apiClient.post(`/storefronts/${storefrontId}/drops`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to create drop.' };
+    }
+  },
+
+  update: async (id: number, data: UpdateDropRequest): Promise<ApiResponse<Drop>> => {
+    try {
+      const response = await apiClient.put(`/drops/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to update drop.' };
+    }
+  },
+
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    try {
+      const response = await apiClient.delete(`/drops/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to delete drop.' };
+    }
+  },
+};
+
+// ================================================================
 // APPOINTMENT API FUNCTIONS
 // ================================================================
 
@@ -1021,6 +1127,7 @@ export interface Appointment {
   // Marketplace location fields
   service_location_type: ServiceLocationType;
   client_address?: string | null; // Required when service_location_type = 'at_client'
+  drop_id?: number | null;
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -1184,6 +1291,7 @@ export interface CreateAppointmentRequest {
   // Marketplace location fields
   service_location_type?: ServiceLocationType; // Default: 'at_vendor'
   client_address?: string; // Required when service_location_type = 'at_client'
+  drop_id?: number | null;
 }
 
 export const availabilityApi = {

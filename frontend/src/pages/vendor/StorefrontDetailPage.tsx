@@ -4,14 +4,17 @@ import { ArrowLeft, MapPin, ExternalLink, Calendar } from 'lucide-react';
 import { useStorefront } from '../../hooks/useStorefronts';
 import { useServices, useDeleteService } from '../../hooks/useServices';
 import { useScheduleRules, useDeleteScheduleRule } from '../../hooks/useScheduleRules';
+import { useDrops, useDeleteDrop } from '../../hooks/useDrops';
 import AppScaffold from '../../components/layout/AppScaffold';
 import UniversalButton from '../../components/universal/UniversalButton';
 import ServiceFormModal from '../../components/vendor/ServiceFormModal';
 import ScheduleRuleFormModal from '../../components/vendor/ScheduleRuleFormModal';
+import DropFormModal from '../../components/vendor/DropFormModal';
 import ServicesTab from '../../components/vendor/ServicesTab';
 import AvailabilityTab from '../../components/vendor/AvailabilityTab';
+import DropsTab from '../../components/vendor/DropsTab';
 import Tabs from '../../components/ui/Tabs';
-import type { Service, ScheduleRule } from '../../services/api';
+import type { Service, ScheduleRule, Drop } from '../../services/api';
 
 export default function StorefrontDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,15 +24,19 @@ export default function StorefrontDetailPage() {
   const { data: storefront, isLoading: storefrontLoading } = useStorefront(storefrontId);
   const { data: services, isLoading: servicesLoading } = useServices(storefrontId);
   const { data: scheduleRules, isLoading: rulesLoading } = useScheduleRules(storefrontId);
+  const { data: drops, isLoading: dropsLoading } = useDrops(storefrontId);
   const deleteService = useDeleteService(storefrontId);
   const deleteRule = useDeleteScheduleRule(storefrontId);
+  const deleteDrop = useDeleteDrop(storefrontId);
 
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [showRuleModal, setShowRuleModal] = useState(false);
   const [editingRule, setEditingRule] = useState<ScheduleRule | null>(null);
+  const [showDropModal, setShowDropModal] = useState(false);
+  const [editingDrop, setEditingDrop] = useState<Drop | null>(null);
 
-  const isLoading = storefrontLoading || servicesLoading || rulesLoading;
+  const isLoading = storefrontLoading || servicesLoading || rulesLoading || dropsLoading;
 
   const handleEditService = (service: Service) => {
     setEditingService(service);
@@ -61,6 +68,22 @@ export default function StorefrontDetailPage() {
   const handleCloseRuleModal = () => {
     setShowRuleModal(false);
     setEditingRule(null);
+  };
+
+  const handleEditDrop = (drop: Drop) => {
+    setEditingDrop(drop);
+    setShowDropModal(true);
+  };
+
+  const handleDeleteDrop = async (dropId: number) => {
+    if (confirm('Delete this drop?')) {
+      await deleteDrop.mutateAsync(dropId);
+    }
+  };
+
+  const handleCloseDropModal = () => {
+    setShowDropModal(false);
+    setEditingDrop(null);
   };
 
   if (isLoading) {
@@ -152,8 +175,20 @@ export default function StorefrontDetailPage() {
 
         {/* Tabs */}
         <Tabs
-          defaultTab="services"
+          defaultTab="drops"
           tabs={[
+            {
+              id: 'drops',
+              label: 'Drops',
+              content: (
+                <DropsTab
+                  drops={drops}
+                  onAddDrop={() => setShowDropModal(true)}
+                  onEditDrop={handleEditDrop}
+                  onDeleteDrop={handleDeleteDrop}
+                />
+              ),
+            },
             {
               id: 'services',
               label: 'Services',
@@ -168,11 +203,12 @@ export default function StorefrontDetailPage() {
             },
             {
               id: 'availability',
-              label: 'Availability',
+              label: 'Regular Hours',
               content: (
                 <AvailabilityTab
                   storefrontId={storefrontId!}
                   scheduleRules={scheduleRules}
+                  drops={drops}
                   onAddRule={() => setShowRuleModal(true)}
                   onEditRule={handleEditRule}
                   onDeleteRule={handleDeleteRule}
@@ -197,6 +233,15 @@ export default function StorefrontDetailPage() {
         onClose={handleCloseRuleModal}
         storefrontId={storefrontId!}
         rule={editingRule}
+      />
+
+      {/* Drop Form Modal */}
+      <DropFormModal
+        isOpen={showDropModal}
+        onClose={handleCloseDropModal}
+        storefrontId={storefrontId!}
+        drop={editingDrop}
+        services={services}
       />
     </AppScaffold>
   );

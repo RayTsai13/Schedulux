@@ -42,7 +42,8 @@ export class AppointmentService {
     startDatetimeStr: string,
     clientNotes?: string,
     serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
-    clientAddress?: string
+    clientAddress?: string,
+    dropId?: number | null
   ): Promise<Appointment> {
     // Parse the start datetime
     const startDatetime = parseISO(startDatetimeStr);
@@ -104,7 +105,8 @@ export class AppointmentService {
       endDatetime,
       clientNotes,
       effectiveLocationType,
-      effectiveLocationType === 'at_client' ? clientAddress : undefined
+      effectiveLocationType === 'at_client' ? clientAddress : undefined,
+      dropId
     );
   }
 
@@ -119,7 +121,8 @@ export class AppointmentService {
     endDatetime: Date,
     clientNotes?: string,
     serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
-    clientAddress?: string
+    clientAddress?: string,
+    dropId?: number | null
   ): Promise<Appointment> {
     const client = await getClient();
 
@@ -162,6 +165,7 @@ export class AppointmentService {
         // Marketplace location fields
         service_location_type: serviceLocationType,
         client_address: clientAddress,
+        drop_id: dropId,
       };
 
       const appointment = await AppointmentModel.createWithClient(

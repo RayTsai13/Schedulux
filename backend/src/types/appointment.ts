@@ -41,6 +41,7 @@ export interface Appointment {
   // Marketplace location fields
   service_location_type: ServiceLocationType;
   client_address?: string; // Required when service_location_type = 'at_client'
+  drop_id?: number | null;
   // Timestamps
   created_at: Date;
   updated_at: Date;
@@ -57,4 +58,5 @@ export interface CreateAppointmentRequest {
   // Marketplace location fields
   service_location_type?: ServiceLocationType; // Default: 'at_vendor'
   client_address?: string; // Required when service_location_type = 'at_client'
+  drop_id?: number | null;
 }

@@ -5,4 +5,5 @@ export * from './service';
 export * from './schedule-rule';
 export * from './appointment';
 export * from './availability';
+export * from './drop';
 export * from './common';

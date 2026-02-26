@@ -15,6 +15,7 @@ interface BookingModalProps {
   storefront: PublicStorefrontDetail['storefront'];
   services: PublicStorefrontDetail['services'];
   preSelectedServiceId?: number;
+  preSelectedDropId?: number;
 }
 
 type BookingStep = 1 | 2 | 3 | 4;
@@ -30,6 +31,7 @@ interface BookingState {
   isSubmitting: boolean;
   error: string | null;
   createdAppointment: any | null;
+  dropId: number | null;
 }
 
 export default function BookingModal({
@@ -38,6 +40,7 @@ export default function BookingModal({
   storefront,
   services,
   preSelectedServiceId,
+  preSelectedDropId,
 }: BookingModalProps) {
   const { isAuthenticated } = useAuth();
   const { mutateAsync: createAppointment } = useCreateAppointment();
@@ -56,6 +59,7 @@ export default function BookingModal({
     isSubmitting: false,
     error: null,
     createdAppointment: null,
+    dropId: preSelectedDropId ?? null,
   });
 
   // Reset state when modal closes
@@ -73,6 +77,7 @@ export default function BookingModal({
       isSubmitting: false,
       error: null,
       createdAppointment: null,
+      dropId: preSelectedDropId ?? null,
     });
     onClose();
   };
@@ -141,6 +146,7 @@ export default function BookingModal({
         locationType: state.locationType,
         clientAddress: state.clientAddress,
         clientNotes: state.clientNotes,
+        dropId: state.dropId,
       }));
       // Redirect to login with return URL
       window.location.href = `/login?returnTo=/book/${storefront.id}`;
@@ -164,6 +170,7 @@ export default function BookingModal({
         service_location_type: state.locationType,
         client_address: state.locationType === 'at_client' ? state.clientAddress : undefined,
         client_notes: state.clientNotes || undefined,
+        drop_id: state.dropId,
       });
 
       if (response.success && response.data) {

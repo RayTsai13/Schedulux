@@ -247,7 +247,8 @@ router.post(
         start_datetime,
         client_notes,
         service_location_type,
-        client_address
+        client_address,
+        drop_id
       } = req.body;
 
       const appointment = await AppointmentService.createAppointment(
@@ -257,7 +258,8 @@ router.post(
         start_datetime,
         client_notes,
         service_location_type || 'at_vendor',
-        client_address
+        client_address,
+        drop_id
       );
 
       const response: ApiResponse<Appointment> = {
