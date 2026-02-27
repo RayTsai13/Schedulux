@@ -59,7 +59,14 @@ const validateCreate = [
     .optional()
     .trim()
     .isLength({ max: 100 })
-    .withMessage('Category must be less than 100 characters')
+    .withMessage('Category must be less than 100 characters'),
+
+  body('image_url')
+    .optional({ values: 'null' })
+    .isURL({ protocols: ['https'], require_protocol: true })
+    .withMessage('Image URL must be a valid HTTPS URL')
+    .isLength({ max: 500 })
+    .withMessage('Image URL must be less than 500 characters')
 ];
 
 const validateUpdate = [
@@ -99,7 +106,14 @@ const validateUpdate = [
   body('is_active')
     .optional()
     .isBoolean()
-    .withMessage('is_active must be a boolean')
+    .withMessage('is_active must be a boolean'),
+
+  body('image_url')
+    .optional({ values: 'null' })
+    .isURL({ protocols: ['https'], require_protocol: true })
+    .withMessage('Image URL must be a valid HTTPS URL')
+    .isLength({ max: 500 })
+    .withMessage('Image URL must be less than 500 characters')
 ];
 
 // ============================================================================

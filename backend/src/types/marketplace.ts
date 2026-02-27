@@ -109,4 +109,5 @@ export interface PublicService {
   duration_minutes: number;
   price?: number;
   category?: string;
+  image_url?: string | null;
 }

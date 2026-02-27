@@ -239,6 +239,7 @@ import availabilityRoutes from './routes/availability';
 import appointmentRoutes from './routes/appointments';
 import marketplaceRoutes from './routes/marketplace';
 import dropRoutes from './routes/drops';
+import uploadRoutes from './routes/upload';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
@@ -264,6 +265,9 @@ app.use('/api', appointmentRoutes);
 // Drop routes - vendor drop management and public drop listing
 // Note: Routes are mounted at /api for both /storefronts/:id/drops and /drops/:id
 app.use('/api', dropRoutes);
+
+// Upload routes - image upload to Cloudinary
+app.use('/api/upload', uploadRoutes);
 
 // Marketplace routes - public discovery endpoints (no auth required)
 // Note: Routes are mounted at /api/marketplace for public storefront search

@@ -53,14 +53,15 @@ export class ServiceModel {
       duration_minutes,
       buffer_time_minutes = 0,
       price,
-      category
+      category,
+      image_url
     } = serviceData;
 
     const result = await query(`
-      INSERT INTO services (storefront_id, name, description, duration_minutes, buffer_time_minutes, price, category)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO services (storefront_id, name, description, duration_minutes, buffer_time_minutes, price, category, image_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [storefrontId, name, description, duration_minutes, buffer_time_minutes, price, category]);
+    `, [storefrontId, name, description, duration_minutes, buffer_time_minutes, price, category, image_url || null]);
 
     return result.rows[0];
   }

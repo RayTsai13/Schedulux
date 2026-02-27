@@ -266,7 +266,8 @@ export class MarketplaceService {
       description: s.description,
       duration_minutes: s.duration_minutes,
       price: s.price,
-      category: s.category
+      category: s.category,
+      image_url: s.image_url
     }));
 
     return {

@@ -1463,6 +1463,38 @@ export interface MarketplaceSearchResponse {
 }
 
 // ================================================================
+// UPLOAD API - Image uploads via Cloudinary
+// ================================================================
+
+export interface UploadImageResponse {
+  url: string;
+  public_id: string;
+}
+
+export const uploadApi = {
+  uploadImage: async (file: File): Promise<ApiResponse<UploadImageResponse | null>> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const response = await apiClient.post('/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        data: null,
+        message: error.message || 'Image upload failed',
+      };
+    }
+  },
+};
+
+// ================================================================
 // EXPORT CONFIGURED AXIOS INSTANCE
 // ================================================================
 
