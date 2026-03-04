@@ -45,6 +45,7 @@ frontend/src/
 - `useAvailability(storefrontId, serviceId, startDate, endDate)` - available slots in YYYY-MM-DD range, timezone-aware
 - `useAppointments()` / `useStorefrontAppointments(id)` / `useClientAppointments()` - with confirm/cancel/complete mutations
 - `useCreateAppointment()` - race-condition-safe booking
+- `useRescheduleAppointment()` - atomic cancel+rebook mutation, invalidates appointment queries on success
 - `useMarketplace()` / `usePublicStorefront(id)` - public, no auth required
 
 ## Booking Modal (4-step wizard)
@@ -57,6 +58,23 @@ frontend/src/
 - Drop service filtering: `dropServiceId` prop filters step 1 to only the drop's linked service
 - Auth check deferred until final confirmation step
 - Address input only shown for mobile/hybrid vendors
+- **SessionStorage restoration:** On open when authenticated, checks `sessionStorage.pendingBooking` for a matching storefrontId and restores service/location/notes, skipping to step 2
+
+## Reschedule Modal
+
+**File:** `components/booking/RescheduleModal.tsx`
+
+**Props:** `{ isOpen, onClose, appointment }`
+
+**Flow:** 2 steps — Pick new date/time (reuses `BookingStepDateTime`) → Confirm (old vs. new time side-by-side). Calls `useRescheduleAppointment()` on confirm.
+
+## Post-Login Booking Restoration
+
+When an unauthenticated user hits "Book Appointment":
+1. `BookingModal` saves `pendingBooking` to sessionStorage and redirects to `/login?returnTo=/book/:id`
+2. `LoginPage` reads `returnTo` param and navigates there after successful login
+3. `VendorProfilePage` checks sessionStorage on mount; if storefrontId matches, restores pre-selection and opens modal
+4. `BookingModal` checks sessionStorage on open when authenticated; restores state and skips to step 2
 
 ## Debugging
 

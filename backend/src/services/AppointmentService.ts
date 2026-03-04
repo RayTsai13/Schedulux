@@ -437,6 +437,124 @@ export class AppointmentService {
     });
   }
 
+  /**
+   * Reschedule an appointment atomically (cancel old + create new in one transaction)
+   *
+   * If the new slot is unavailable, the transaction rolls back and the
+   * original appointment remains untouched.
+   */
+  static async rescheduleAppointment(
+    appointmentId: number,
+    clientId: number,
+    newStartDatetimeStr: string
+  ): Promise<{ cancelled: Appointment; new: Appointment }> {
+    // Fetch original appointment
+    const original = await AppointmentModel.findById(appointmentId);
+    if (!original) {
+      throw new Error('Appointment not found');
+    }
+
+    if (original.client_id !== clientId) {
+      throw new Error('Forbidden: You do not own this appointment');
+    }
+
+    if (original.status !== 'pending' && original.status !== 'confirmed') {
+      throw new Error(`Cannot reschedule: appointment is '${original.status}'`);
+    }
+
+    const newStart = parseISO(newStartDatetimeStr);
+    if (isBefore(newStart, new Date())) {
+      throw new Error('Cannot reschedule to a time in the past');
+    }
+
+    // Fetch service for duration calculation
+    const service = await ServiceModel.findById(original.service_id);
+    if (!service) {
+      throw new Error('Service not found');
+    }
+
+    const storefront = await StorefrontModel.findById(original.storefront_id);
+    if (!storefront) {
+      throw new Error('Storefront not found');
+    }
+
+    const totalDuration = service.duration_minutes + service.buffer_time_minutes;
+    const newEnd = addMinutes(newStart, totalDuration);
+
+    // Execute in a transaction with advisory lock on the new time slot
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+
+      // Advisory lock on the new slot
+      const lockKey = this.generateLockKey(storefront.id, service.id, newStart);
+      await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
+
+      // Check availability for the new slot
+      const availabilityResult = await AvailabilityService.isSlotAvailable(
+        storefront.id,
+        service.id,
+        newStart,
+        newEnd
+      );
+
+      if (!availabilityResult.available) {
+        throw new Error(availabilityResult.reason || 'New time slot is not available');
+      }
+
+      // Cancel old appointment
+      const cancelled = await AppointmentModel.updateStatusWithClient(
+        client,
+        appointmentId,
+        'cancelled',
+        { internal_notes: `Rescheduled to new appointment` }
+      );
+
+      if (!cancelled) {
+        throw new Error('Failed to cancel original appointment');
+      }
+
+      // Create new appointment
+      const newAppointment = await AppointmentModel.createWithClient(client, {
+        client_id: clientId,
+        storefront_id: original.storefront_id,
+        service_id: original.service_id,
+        requested_start_datetime: newStart,
+        requested_end_datetime: newEnd,
+        status: 'pending',
+        client_notes: original.client_notes || undefined,
+        price_quoted: service.price ?? undefined,
+        service_location_type: original.service_location_type,
+        client_address: original.client_address || undefined,
+        drop_id: original.drop_id ?? undefined,
+      });
+
+      // Update internal notes with cross-references
+      await AppointmentModel.updateStatusWithClient(
+        client,
+        cancelled.id,
+        'cancelled',
+        { internal_notes: `Rescheduled to #${newAppointment.id}` }
+      );
+
+      await AppointmentModel.updateStatusWithClient(
+        client,
+        newAppointment.id,
+        'pending',
+        { internal_notes: `Rescheduled from #${cancelled.id}` }
+      );
+
+      await client.query('COMMIT');
+
+      return { cancelled, new: newAppointment };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   // ============================================
   // APPROVAL WORKFLOW METHODS
   // ============================================

@@ -196,7 +196,8 @@ const handleServiceError = (
       message.includes('Client address is required') ||
       message.includes('Cannot approve') ||
       message.includes('Cannot decline') ||
-      message.includes('Only vendors can')) {
+      message.includes('Only vendors can') ||
+      message.includes('Cannot reschedule')) {
     const response: ApiResponse<null> = {
       success: false,
       error: 'Bad request',
@@ -489,6 +490,58 @@ router.get(
         success: true,
         data: appointments,
         message: `Found ${appointments.length} appointments`,
+      };
+
+      res.json(response);
+    } catch (error) {
+      handleServiceError(error, res, next);
+    }
+  }
+);
+
+/**
+ * POST /appointments/:id/reschedule
+ *
+ * Reschedule an appointment (client only).
+ * Atomically cancels the old appointment and creates a new one at the specified time.
+ *
+ * Body:
+ * - start_datetime: Required. ISO 8601 datetime for the new appointment start.
+ *
+ * Response:
+ * - 200: Reschedule successful (returns cancelled + new appointment)
+ * - 400: Invalid parameters or status
+ * - 401: Not authenticated
+ * - 403: Not the client who booked it
+ * - 404: Appointment not found
+ * - 409: New slot not available
+ */
+router.post(
+  '/appointments/:id/reschedule',
+  validateAppointmentId,
+  [
+    body('start_datetime')
+      .isISO8601()
+      .withMessage('start_datetime must be a valid ISO 8601 datetime'),
+  ],
+  handleValidationErrors,
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const appointmentId = parseInt(req.params.id, 10);
+      const clientId = req.user!.userId;
+      const { start_datetime } = req.body;
+
+      const result = await AppointmentService.rescheduleAppointment(
+        appointmentId,
+        clientId,
+        start_datetime
+      );
+
+      const response: ApiResponse<{ cancelled: Appointment; new: Appointment }> = {
+        success: true,
+        data: result,
+        message: 'Appointment rescheduled successfully',
       };
 
       res.json(response);

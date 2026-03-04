@@ -50,6 +50,8 @@
 
 **Appointment statuses:** `pending` → `confirmed` → `completed` | `cancelled` | `declined`
 
+**`findByClientId()` JOINs** `services` and `storefronts` to return `service_name` and `storefront_name` alongside each appointment row.
+
 ## Migrations (apply in order)
 
 ```bash
@@ -69,6 +71,20 @@ psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
 - `GET /api/drops/:id` - get by ID (auth required)
 - `PUT /api/drops/:id` - update (auth required)
 - `DELETE /api/drops/:id` - soft delete (auth required)
+
+## Appointment API Endpoints
+
+- `POST /api/appointments` - create booking (auth required, client)
+- `GET /api/appointments` - list client's own appointments (auth required)
+- `GET /api/appointments/:id` - get single appointment (auth required, owner or vendor)
+- `PATCH /api/appointments/:id/status` - update status (auth required)
+- `POST /api/appointments/:id/reschedule` - atomic cancel+rebook (auth required, client only)
+  - Body: `{ start_datetime: string }` (ISO 8601)
+  - Returns: `{ cancelled: Appointment, new: Appointment }`
+  - Uses advisory lock — rolls back if new slot unavailable
+- `POST /api/appointments/:id/approve` - vendor approval (auth required, vendor)
+- `POST /api/appointments/:id/decline` - vendor decline (auth required, vendor)
+- `GET /api/storefronts/:storefrontId/appointments` - storefront appointments (auth required, vendor)
 
 ## Public Marketplace Endpoints (no auth)
 

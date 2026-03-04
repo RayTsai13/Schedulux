@@ -181,6 +181,32 @@ export function useCompleteAppointment() {
 }
 
 /**
+ * Reschedule an appointment (client only)
+ * Atomically cancels old appointment and creates a new one
+ */
+export function useRescheduleAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, startDatetime }: { id: number; startDatetime: string }) =>
+      appointmentApi.reschedule(id, startDatetime),
+
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+        toast.success('Appointment rescheduled successfully!');
+      } else {
+        toast.error(response.message || 'Failed to reschedule appointment');
+      }
+    },
+
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to reschedule appointment');
+    },
+  });
+}
+
+/**
  * Create/book a new appointment (client booking)
  */
 export function useCreateAppointment() {

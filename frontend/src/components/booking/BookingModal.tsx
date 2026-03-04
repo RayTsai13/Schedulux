@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
 import { useAuth } from '../../hooks/useAuth';
@@ -63,6 +63,32 @@ export default function BookingModal({
     createdAppointment: null,
     dropId: preSelectedDropId ?? null,
   });
+
+  // Restore pending booking state from sessionStorage (after login redirect)
+  useEffect(() => {
+    if (!isOpen || !isAuthenticated) return;
+    const pending = sessionStorage.getItem('pendingBooking');
+    if (!pending) return;
+    try {
+      const booking = JSON.parse(pending);
+      if (booking.storefrontId !== storefront.id) return;
+      const restoredService = booking.serviceId
+        ? services.find(s => s.id === booking.serviceId) || null
+        : null;
+      setState(prev => ({
+        ...prev,
+        selectedService: restoredService,
+        currentStep: restoredService ? 2 : 1,
+        locationType: booking.locationType || 'at_vendor',
+        clientAddress: booking.clientAddress || '',
+        clientNotes: booking.clientNotes || '',
+        dropId: booking.dropId ?? null,
+      }));
+      sessionStorage.removeItem('pendingBooking');
+    } catch {
+      sessionStorage.removeItem('pendingBooking');
+    }
+  }, [isOpen, isAuthenticated]);
 
   // Reset state when modal closes
   const handleClose = () => {

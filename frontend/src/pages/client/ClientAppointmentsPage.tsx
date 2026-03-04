@@ -5,10 +5,12 @@ import { useClientAppointments, useUpdateAppointmentStatus } from '../../hooks/u
 import AppScaffold from '../../components/layout/AppScaffold';
 import UniversalButton from '../../components/universal/UniversalButton';
 import UniversalCard from '../../components/universal/UniversalCard';
+import RescheduleModal from '../../components/booking/RescheduleModal';
 import type { Appointment } from '../../services/api';
 
 export default function ClientAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const { data: appointments, isLoading } = useClientAppointments();
   const updateStatus = useUpdateAppointmentStatus();
 
@@ -114,11 +116,21 @@ export default function ClientAppointmentsPage() {
                 key={appointment.id}
                 appointment={appointment}
                 onCancel={handleCancelAppointment}
+                onReschedule={setRescheduleTarget}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Reschedule Modal */}
+      {rescheduleTarget && (
+        <RescheduleModal
+          isOpen={!!rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+          appointment={rescheduleTarget}
+        />
+      )}
     </AppScaffold>
   );
 }
@@ -127,9 +139,10 @@ export default function ClientAppointmentsPage() {
 interface AppointmentCardProps {
   appointment: Appointment;
   onCancel: (id: number) => void;
+  onReschedule: (appointment: Appointment) => void;
 }
 
-function AppointmentCard({ appointment, onCancel }: AppointmentCardProps) {
+function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCardProps) {
   const isPending = appointment.status === 'pending';
   const isConfirmed = appointment.status === 'confirmed';
   const isCompleted = appointment.status === 'completed';
@@ -167,10 +180,10 @@ function AppointmentCard({ appointment, onCancel }: AppointmentCardProps) {
           {/* Service Info */}
           <div>
             <h3 className="text-xl font-semibold text-v3-primary mb-1">
-              Service ID: {appointment.service_id}
+              {appointment.service_name || `Service #${appointment.service_id}`}
             </h3>
             <p className="text-sm text-v3-secondary">
-              Storefront ID: {appointment.storefront_id}
+              {appointment.storefront_name || `Storefront #${appointment.storefront_id}`}
             </p>
           </div>
 
@@ -243,13 +256,22 @@ function AppointmentCard({ appointment, onCancel }: AppointmentCardProps) {
         {/* Right: Actions */}
         <div className="flex flex-col gap-2 ml-6">
           {canCancel && !isPast && (
-            <UniversalButton
-              variant="outline"
-              size="sm"
-              onClick={() => onCancel(appointment.id)}
-            >
-              Cancel
-            </UniversalButton>
+            <>
+              <UniversalButton
+                variant="outline"
+                size="sm"
+                onClick={() => onReschedule(appointment)}
+              >
+                Reschedule
+              </UniversalButton>
+              <UniversalButton
+                variant="outline"
+                size="sm"
+                onClick={() => onCancel(appointment.id)}
+              >
+                Cancel
+              </UniversalButton>
+            </>
           )}
           {(isCompleted || isCancelled || isDeclined || isPast) && (
             <span className="text-xs text-v3-secondary text-center">

@@ -1128,6 +1128,9 @@ export interface Appointment {
   service_location_type: ServiceLocationType;
   client_address?: string | null; // Required when service_location_type = 'at_client'
   drop_id?: number | null;
+  // Joined fields
+  service_name?: string | null;
+  storefront_name?: string | null;
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -1254,6 +1257,31 @@ export const appointmentApi = {
       status: 'completed',
       internal_notes: internalNotes,
     });
+  },
+
+  /**
+   * Reschedule an appointment (client only)
+   * Atomically cancels old and creates new appointment at the specified time
+   */
+  reschedule: async (
+    id: number,
+    startDatetime: string
+  ): Promise<ApiResponse<{ cancelled: Appointment; new: Appointment }>> => {
+    try {
+      const response = await apiClient.post(`/appointments/${id}/reschedule`, {
+        start_datetime: startDatetime,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to reschedule appointment.',
+      };
+    }
   },
 };
 

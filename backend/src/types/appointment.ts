@@ -42,6 +42,9 @@ export interface Appointment {
   service_location_type: ServiceLocationType;
   client_address?: string; // Required when service_location_type = 'at_client'
   drop_id?: number | null;
+  // Joined fields (from findByClientId)
+  service_name?: string;
+  storefront_name?: string;
   // Timestamps
   created_at: Date;
   updated_at: Date;

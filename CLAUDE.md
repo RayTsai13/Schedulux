@@ -50,8 +50,6 @@ PORT=3000
 
 ## What's Left to Build
 
-- Client appointment management page (view, cancel, reschedule)
 - Marketplace homepage / storefront discovery listing
-- Booking state restoration after login redirect (sessionStorage integration)
 - Email notifications for appointments
 - Admin dashboard

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,11 +39,12 @@ export default function LoginPage() {
       if (success) {
         toast.success('Login successful!');
 
-        // Redirect based on user role after login completes
-        // Need to wait a tick for user state to update
+        // Redirect: returnTo param takes priority, then role-based default
         setTimeout(() => {
-          const currentUser = user;
-          if (currentUser?.role === 'vendor') {
+          const returnTo = searchParams.get('returnTo');
+          if (returnTo) {
+            navigate(returnTo);
+          } else if (user?.role === 'vendor') {
             navigate('/dashboard');
           } else {
             navigate('/explore');

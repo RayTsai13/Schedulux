@@ -51,31 +51,34 @@ export class AppointmentModel {
     options?: AppointmentQueryOptions
   ): Promise<Appointment[]> {
     let sql = `
-      SELECT * FROM appointments
-      WHERE client_id = $1 AND deleted_at IS NULL
+      SELECT a.*, s.name AS service_name, sf.name AS storefront_name
+      FROM appointments a
+      LEFT JOIN services s ON a.service_id = s.id
+      LEFT JOIN storefronts sf ON a.storefront_id = sf.id
+      WHERE a.client_id = $1 AND a.deleted_at IS NULL
     `;
     const params: any[] = [clientId];
     let paramIndex = 2;
 
     if (options?.status) {
-      sql += ` AND status = $${paramIndex}`;
+      sql += ` AND a.status = $${paramIndex}`;
       params.push(options.status);
       paramIndex++;
     }
 
     if (options?.startDate) {
-      sql += ` AND requested_start_datetime >= $${paramIndex}`;
+      sql += ` AND a.requested_start_datetime >= $${paramIndex}`;
       params.push(options.startDate);
       paramIndex++;
     }
 
     if (options?.endDate) {
-      sql += ` AND requested_start_datetime <= $${paramIndex}`;
+      sql += ` AND a.requested_start_datetime <= $${paramIndex}`;
       params.push(options.endDate);
       paramIndex++;
     }
 
-    sql += ' ORDER BY requested_start_datetime ASC';
+    sql += ' ORDER BY a.requested_start_datetime ASC';
 
     const result = await query(sql, params);
     return result.rows;
@@ -357,6 +360,41 @@ export class AppointmentModel {
     sql += ` WHERE id = $1 AND deleted_at IS NULL RETURNING *`;
 
     const result = await query(sql, params);
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Update appointment status using a transaction client
+   * Used within transactions (e.g., reschedule)
+   */
+  static async updateStatusWithClient(
+    client: PoolClient,
+    id: number,
+    status: string,
+    notes?: { vendor_notes?: string; internal_notes?: string }
+  ): Promise<Appointment | null> {
+    let sql = `
+      UPDATE appointments
+      SET status = $2, updated_at = CURRENT_TIMESTAMP
+    `;
+    const params: any[] = [id, status];
+    let paramIndex = 3;
+
+    if (notes?.vendor_notes !== undefined) {
+      sql += `, vendor_notes = $${paramIndex}`;
+      params.push(notes.vendor_notes);
+      paramIndex++;
+    }
+
+    if (notes?.internal_notes !== undefined) {
+      sql += `, internal_notes = $${paramIndex}`;
+      params.push(notes.internal_notes);
+      paramIndex++;
+    }
+
+    sql += ` WHERE id = $1 AND deleted_at IS NULL RETURNING *`;
+
+    const result = await client.query(sql, params);
     return result.rows[0] || null;
   }
 

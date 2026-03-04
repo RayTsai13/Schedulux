@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { parseISO } from 'date-fns';
@@ -30,6 +30,28 @@ export default function VendorProfilePage() {
   } = usePublicStorefront(id);
 
   const { data: publicDrops } = usePublicDrops(id);
+
+  // Restore pending booking from sessionStorage (after login redirect)
+  useEffect(() => {
+    if (!storefrontData || isLoading) return;
+    const pending = sessionStorage.getItem('pendingBooking');
+    if (!pending) return;
+    try {
+      const booking = JSON.parse(pending);
+      if (booking.storefrontId !== id) return;
+      // Restore pre-selection state
+      if (booking.serviceId) setPreSelectedServiceId(booking.serviceId);
+      if (booking.dropId) {
+        setPreSelectedDropId(booking.dropId);
+        const drop = publicDrops?.find(d => d.id === booking.dropId);
+        if (drop) setDropServiceId(drop.service_id);
+      }
+      setIsBookingModalOpen(true);
+      sessionStorage.removeItem('pendingBooking');
+    } catch {
+      sessionStorage.removeItem('pendingBooking');
+    }
+  }, [storefrontData, isLoading, id, publicDrops]);
 
   // Loading State
   if (isLoading) {
