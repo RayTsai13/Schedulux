@@ -18,6 +18,8 @@
 - Avoid N+1 queries; use `LIMIT`/`OFFSET` for pagination
 - Use parameterized SQL only — never string-concatenate user input
 - `is_verified` is admin-only — cannot be set by vendors via API
+- Email calls are fire-and-forget — never `await` them, never throw on email failure
+- Rate limiting: `authLimiter` (10/15min) on `/api/auth/*`, `apiLimiter` (100/15min) on `/api/*`
 
 ## Adding a New API Endpoint
 
@@ -61,6 +63,7 @@ psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
 psql -d schedulux_primary -f backend/migrations/007_add_geolocation.sql
 psql -d schedulux_primary -f backend/migrations/008_visual_portfolio.sql
 psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
+psql -d schedulux_primary -f backend/migrations/010_password_reset_tokens.sql
 ```
 
 ## Drop API Endpoints
@@ -90,6 +93,40 @@ psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
 
 - `GET /api/marketplace/search` - geographic + text + filter search with pagination
 - `GET /api/marketplace/storefronts/:id` - storefront detail with services
+
+## Admin API Endpoints
+
+- `GET /api/admin/stats` - platform stats (auth + admin role required)
+- `GET /api/admin/storefronts?limit=20&offset=0` - paginated storefront list with vendor info
+- `PATCH /api/admin/storefronts/:id/verify` - body: `{ is_verified: boolean }`
+
+## Auth API Endpoints
+
+- `POST /api/auth/register` - create account
+- `POST /api/auth/login` - login
+- `GET /api/auth/me` - current user profile
+- `POST /api/auth/forgot-password` - send reset email (always 200, no user enumeration)
+- `POST /api/auth/reset-password` - body: `{ token, password }` — updates password
+
+## Email Service
+
+**`backend/src/services/EmailService.ts`** — static methods, fire-and-forget pattern:
+
+```ts
+EmailService.sendWelcome(email, firstName)
+EmailService.sendAppointmentConfirmation(email, details)
+EmailService.sendAppointmentStatusChange(email, details)   // confirmed/cancelled/declined
+EmailService.sendNewBookingNotification(email, details)    // to vendor
+EmailService.sendPasswordReset(email, token)               // link: FRONTEND_URL/reset-password?token=
+```
+
+No-ops gracefully when `SENDGRID_API_KEY` is unset (logs to console instead).
+
+## Rate Limiting
+
+**`backend/src/middleware/rateLimiter.ts`**:
+- `authLimiter` — 10 req / 15 min per IP, applied to `/api/auth/*`
+- `apiLimiter` — 100 req / 15 min per IP, applied to `/api/*`
 
 ## Debugging
 

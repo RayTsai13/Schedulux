@@ -27,10 +27,17 @@ frontend/src/
 │   ├── universal/ # V3 design system (UniversalButton, UniversalCard)
 │   ├── booking/   # Client booking flow (BookingModal + wizard steps, PortfolioCard, ProfileHeader, DropCard)
 │   ├── layout/    # AppScaffold, Header
-│   └── vendor/    # Vendor management (StorefrontFormModal, ServiceManager, HoursManager, DropsTab, DropFormModal)
+│   ├── vendor/    # Vendor management (StorefrontFormModal, ServiceManager, HoursManager, DropsTab, DropFormModal)
+│   └── ErrorBoundary.tsx  # Class component — wraps entire app in App.tsx
 ├── hooks/         # Custom hooks (see below)
-├── pages/         # Route-level components (auth/, vendor/, VendorProfilePage.tsx)
-├── services/      # Axios API client with JWT interceptor
+├── pages/
+│   ├── auth/      # LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage
+│   ├── vendor/    # VendorDashboardPage, StorefrontDetailPage, AppointmentCalendarPage
+│   ├── client/    # ClientAppointmentsPage
+│   ├── admin/     # AdminDashboardPage
+│   ├── NotFoundPage.tsx   # 404 catch-all (last route in App.tsx)
+│   └── ...        # HomePage, ExplorePage, VendorProfilePage
+├── services/      # Axios API client with JWT interceptor (base URL from VITE_API_URL env var)
 ├── stores/        # Zustand (UI, Calendar state)
 └── App.tsx        # React Router v7 with protected routes
 ```
@@ -47,6 +54,7 @@ frontend/src/
 - `useCreateAppointment()` - race-condition-safe booking
 - `useRescheduleAppointment()` - atomic cancel+rebook mutation, invalidates appointment queries on success
 - `useMarketplace()` / `usePublicStorefront(id)` - public, no auth required
+- `useAdminStats()` / `useAdminStorefronts(limit, offset)` / `useVerifyStorefront()` - admin dashboard
 
 ## Booking Modal (4-step wizard)
 
@@ -76,7 +84,23 @@ When an unauthenticated user hits "Book Appointment":
 3. `VendorProfilePage` checks sessionStorage on mount; if storefrontId matches, restores pre-selection and opens modal
 4. `BookingModal` checks sessionStorage on open when authenticated; restores state and skips to step 2
 
+## Password Reset Pages
+
+**`ForgotPasswordPage`** (`pages/auth/ForgotPasswordPage.tsx`):
+- Zod schema: `{ email: z.string().email() }`
+- Calls `authApi.forgotPassword(email)` — always shows success message (backend prevents enumeration)
+
+**`ResetPasswordPage`** (`pages/auth/ResetPasswordPage.tsx`):
+- Reads `token` from `useSearchParams`
+- Zod schema with `.refine()` to validate password === confirmPassword
+- Calls `authApi.resetPassword(token, password)`
+
+## Environment Variables
+
+Frontend reads `VITE_API_URL` at build time (Vite replaces `import.meta.env.VITE_API_URL`). Default fallback: `http://localhost:3000/api`. Set in `frontend/.env` for local dev or as a Docker build arg for production.
+
 ## Debugging
 
 - React Query DevTools: floating button, bottom-right
-- Auth: `localStorage.getItem('authToken')` in browser console
+- Auth: `localStorage.getItem('auth_token')` in browser console
+- API base URL: `import.meta.env.VITE_API_URL` (check in browser console)
