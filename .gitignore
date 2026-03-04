@@ -30,17 +30,5 @@ Thumbs.db
 logs
 *.log
 
-# OpenSpec related files
-openspec/
-AGENTS.md
-*.spec.md
-*.proposal.md
-
-# Claude/AI related files
-.cursorrules
-.claude/
-*.claude.md
-claude-sessions/
-docs/project-manifesto.md
 
 docs/spec
