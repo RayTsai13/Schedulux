@@ -6,7 +6,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // Base URL for all API requests - points to your Express.js backend server
 // This is automatically prepended to all relative URLs in API calls
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Create a configured axios instance that will be used for all HTTP requests
 // This centralizes configuration and allows us to add interceptors
@@ -29,14 +29,14 @@ apiClient.interceptors.request.use(
     // Retrieve the stored JWT token from browser's localStorage
     // This token was saved when user successfully logged in
     const token = localStorage.getItem('auth_token');
-    
+
     if (token) {
       // If token exists, add it to the Authorization header
       // Backend will receive: "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
       // This proves the user is authenticated for protected routes
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Return the modified config so the request can proceed
     return config;
   },
@@ -61,21 +61,21 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     // Handle error responses (status 400-599)
-    
+
     // Check if the error is a 401 Unauthorized response
     // This typically means the user's token has expired or is invalid
     if (error.response?.status === 401) {
       // Unauthorized - user's session has expired or token is invalid
-      
+
       // Clear all stored authentication data from browser storage
       localStorage.removeItem('auth_token');    // Remove JWT token
       localStorage.removeItem('user_data');     // Remove cached user info
-      
+
       // Forcefully redirect user to login page
       // This ensures they can't access protected content
       window.location.href = '/login';
     }
-    
+
     // For all other errors, pass them through to the calling code
     // The calling code can then handle specific error cases
     return Promise.reject(error);
@@ -140,11 +140,11 @@ export interface AuthResponse {
 // Collection of functions for user authentication and account management
 // These functions handle communication with your backend auth endpoints
 export const authApi = {
-  
+
   // ================================================================
   // USER REGISTRATION
   // ================================================================
-  
+
   /**
    * Registers a new user account
    * 
@@ -173,30 +173,30 @@ export const authApi = {
       // Send POST request to registration endpoint
       // Axios automatically converts userData object to JSON
       const response = await apiClient.post('/auth/register', userData);
-      
+
       // If registration successful, store authentication data locally
       if (response.data.success && response.data.data) {
         // Store JWT token for future authenticated requests
         // This token proves the user is logged in
         localStorage.setItem('auth_token', response.data.data.token);
-        
+
         // Cache user profile data to avoid repeated API calls
         // This allows immediate access to user info without server requests
         localStorage.setItem('user_data', JSON.stringify(response.data.data.user));
       }
-      
+
       // Return the backend response to the calling component
       return response.data;
-      
+
     } catch (error: any) {
       // Handle network errors and HTTP error responses
-      
+
       if (error.response?.data) {
         // Backend returned an error response (400, 422, 500, etc.)
         // Return the error message from backend
         return error.response.data;
       }
-      
+
       // Network error (no internet, server down, etc.)
       // Return a user-friendly error message
       return {
@@ -210,7 +210,7 @@ export const authApi = {
   // ================================================================
   // USER LOGIN
   // ================================================================
-  
+
   /**
    * Authenticates existing user with email and password
    * 
@@ -236,27 +236,27 @@ export const authApi = {
     try {
       // Send POST request to login endpoint
       const response = await apiClient.post('/auth/login', credentials);
-      
+
       // If login successful, store authentication data locally
       if (response.data.success && response.data.data) {
         // Store JWT token - this will be automatically added to future requests
         // by the request interceptor we configured above
         localStorage.setItem('auth_token', response.data.data.token);
-        
+
         // Cache user profile data for immediate access
         localStorage.setItem('user_data', JSON.stringify(response.data.data.user));
       }
-      
+
       return response.data;
-      
+
     } catch (error: any) {
       // Handle authentication errors (wrong password, user not found, etc.)
-      
+
       if (error.response?.data) {
         // Backend returned specific error (invalid credentials, account locked, etc.)
         return error.response.data;
       }
-      
+
       // Network or server error
       return {
         success: false,
@@ -269,7 +269,7 @@ export const authApi = {
   // ================================================================
   // GET CURRENT USER PROFILE
   // ================================================================
-  
+
   /**
    * Fetches current user's profile data from backend
    * This is used to verify the user's token is still valid
@@ -299,15 +299,15 @@ export const authApi = {
       // Authorization header is automatically added by request interceptor
       const response = await apiClient.get('/auth/me');
       return response.data;
-      
+
     } catch (error: any) {
       // Handle token validation errors
-      
+
       if (error.response?.data) {
         // Backend returned error (token expired, invalid, user not found, etc.)
         return error.response.data;
       }
-      
+
       // Network error
       return {
         success: false,
@@ -320,7 +320,7 @@ export const authApi = {
   // ================================================================
   // USER LOGOUT
   // ================================================================
-  
+
   /**
    * Logs out the current user by clearing all stored authentication data
    * 
@@ -342,7 +342,7 @@ export const authApi = {
     // Clear all authentication data from browser storage
     localStorage.removeItem('auth_token');    // Remove JWT token
     localStorage.removeItem('user_data');     // Remove cached user profile
-    
+
     // Redirect to login page
     // This ensures user can't access protected content
     window.location.href = '/login';
@@ -351,7 +351,7 @@ export const authApi = {
   // ================================================================
   // UTILITY FUNCTIONS FOR CLIENT-SIDE AUTH STATE
   // ================================================================
-  
+
   /**
    * Checks if user is currently authenticated (has valid token stored)
    * 
@@ -380,7 +380,7 @@ export const authApi = {
    */
   getCurrentUser: (): User | null => {
     const userData = localStorage.getItem('user_data');
-    
+
     if (userData) {
       try {
         // Parse JSON string back into User object
@@ -391,7 +391,7 @@ export const authApi = {
         return null;
       }
     }
-    
+
     return null;  // No user data stored
   },
 
@@ -415,7 +415,7 @@ export const authApi = {
 // Collection of non-authentication related API functions
 // These are utility endpoints for app status and information
 export const api = {
-  
+
   /**
    * Health check endpoint to verify backend server is running
    * 

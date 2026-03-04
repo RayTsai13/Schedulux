@@ -34,37 +34,37 @@ const logRequest = (req: Request, res: Response, next: NextFunction) => {
   // Record when the request started (for calculating response time)
   const start = Date.now();
   const timestamp = new Date().toISOString();
-  
+
   // LOG 1: Incoming request (when it arrives)
   // This tells us someone made a request, before we process it
   console.log(`[${timestamp}] 📥 ${req.method} ${req.originalUrl} - ${req.ip || 'unknown'}`);
-  
+
   // Capture the original response.end() function
   // We need to "hijack" this function to know when the response is complete
   const originalEnd = res.end.bind(res);
-  
+
   // Override res.end() to add our logging when the response is sent
   // res.end() is called by Express when it's done sending the response
   res.end = ((...args: any[]) => {
     // Calculate how long the request took to process
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
-    
+
     // Color-code the status for quick visual scanning:
     // 🟢 = 200-299 (success)
     // 🟡 = 300-399 (redirects) 
     // 🔴 = 400+ (client/server errors)
     const statusColor = statusCode >= 400 ? '🔴' : statusCode >= 300 ? '🟡' : '🟢';
-    
+
     // LOG 2: Completed response (when we're done)
     // This tells us the final outcome and how long it took
     console.log(`[${new Date().toISOString()}] ${statusColor} ${req.method} ${req.originalUrl} - ${statusCode} - ${duration}ms`);
-    
+
     // Call the original end function to actually send the response
     // Without this, the response would never be sent to the client
     return originalEnd(...args);
   }) as any; // TypeScript assertion: Express has complex overloaded types for res.end
-  
+
   // Pass control to the next middleware in the chain
   next();
 };
@@ -86,17 +86,11 @@ const app: Application = express();
 // parseInt() converts the string to a number, || provides fallback
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-// Define allowed origins for CORS (Cross-Origin Resource Sharing)
-// In development, we allow localhost on common ports
-// In production, you should specify your actual frontend domain
-const allowedOrigins = [
-  'http://localhost:3000',    // React development server default
-  'http://localhost:3001',    // Alternative React port
-  'http://localhost:5173',    // Vite development server default
-  'http://localhost:5174',    // Vite development server alternative port
-  'http://localhost:8080',    // Vue CLI default
-  'http://127.0.0.1:3000',   // Alternative localhost format
-];
+// Read allowed origins from environment variable (comma-separated),
+// falling back to common local dev origins
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
 
 // ============================================================================
 // MIDDLEWARE SETUP
@@ -127,7 +121,7 @@ app.use(cors({
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Check if the origin is in our allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);  // Allow the request
@@ -150,7 +144,7 @@ app.use(logRequest);
 // express.json() parses incoming JSON payloads and makes them available in req.body
 // limit: '10mb' sets maximum payload size to prevent abuse
 // strict: true only accepts arrays and objects (not primitives)
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb',
   strict: true,
   // Custom error handling for JSON parsing errors
@@ -168,7 +162,7 @@ app.use(express.json({
 // express.urlencoded() parses form data (application/x-www-form-urlencoded)
 // extended: true allows rich objects and arrays to be encoded
 // This is useful for HTML forms
-app.use(express.urlencoded({ 
+app.use(express.urlencoded({
   extended: true,
   limit: '10mb'
 }));
@@ -179,11 +173,22 @@ app.use(express.urlencoded({
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Add timestamp to request object (extend the Request type if needed)
   (req as any).timestamp = new Date().toISOString();
-  
+
   // Call next() to pass control to the next middleware
   // If you don't call next(), the request will hang
   next();
 });
+
+// ============================================================================
+// RATE LIMITING
+// ============================================================================
+import { authLimiter, apiLimiter } from './middleware/rateLimiter';
+
+// General API rate limiter — 100 requests per 15 minutes per IP
+app.use('/api', apiLimiter);
+
+// Strict auth rate limiter — 10 requests per 15 minutes per IP
+app.use('/api/auth', authLimiter);
 
 // ============================================================================
 // HEALTH CHECK ROUTE
@@ -196,7 +201,7 @@ app.get('/health', async (req: Request, res: Response) => {
     // Test database connectivity
     // This ensures both the server and database are working
     await query('SELECT 1 as test');
-    
+
     // If we reach here, everything is working
     const response: ApiResponse<{ status: string; timestamp: string; uptime: number }> = {
       success: true,
@@ -207,20 +212,20 @@ app.get('/health', async (req: Request, res: Response) => {
       },
       message: 'Server and database are running correctly'
     };
-    
+
     // Send successful response with 200 status code
     res.status(200).json(response);
-    
+
   } catch (error) {
     // If database connection fails, return error response
     console.error('Health check failed:', error);
-    
+
     const errorResponse: ApiResponse<null> = {
       success: false,
       error: 'Database connection failed',
       message: 'Server is running but database is not accessible'
     };
-    
+
     // Send error response with 503 (Service Unavailable) status code
     res.status(503).json(errorResponse);
   }
@@ -288,7 +293,7 @@ app.get('/api', (req: Request, res: Response) => {
     },
     message: 'Welcome to the Schedulux API'
   };
-  
+
   res.json(response);
 });
 
@@ -304,7 +309,7 @@ app.use('*', (req: Request, res: Response) => {
     error: 'Not Found',
     message: `Route ${req.originalUrl} not found`
   };
-  
+
   // Send 404 (Not Found) status code
   res.status(404).json(errorResponse);
 });
@@ -346,7 +351,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   const errorResponse: ApiResponse<null> = {
     success: false,
     error: errorMessage,
-    message: process.env.NODE_ENV === 'production' 
+    message: process.env.NODE_ENV === 'production'
       ? 'An error occurred while processing your request'  // Generic message in production
       : err.message  // Detailed message in development
   };
@@ -363,23 +368,23 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 const gracefulShutdown = (signal: string) => {
   console.log(`\n${signal} received. Starting graceful shutdown...`);
-  
+
   // Close the server first (stop accepting new connections)
   server.close((err) => {
     if (err) {
       console.error('Error during server shutdown:', err);
       process.exit(1);  // Exit with error code
     }
-    
+
     console.log('Server closed successfully');
-    
+
     // Here you could close database connections, cleanup resources, etc.
     // For example: await database.end();
-    
+
     console.log('Graceful shutdown completed');
     process.exit(0);  // Exit successfully
   });
-  
+
   // Force shutdown after 10 seconds if graceful shutdown doesn't complete
   setTimeout(() => {
     console.error('Forced shutdown after timeout');
@@ -402,7 +407,7 @@ const server = app.listen(PORT, () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔌 API base URL: http://localhost:${PORT}/api`);
   console.log('============================================');
-  
+
   // Log some system information
   console.log(`💾 Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`);
   console.log(`⏱️  Startup time: ${Date.now() - (process.uptime() * 1000)} ms`);
