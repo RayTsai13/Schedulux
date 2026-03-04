@@ -71,8 +71,8 @@ See `plan.md` at the project root for the full implementation guide. Summary:
 
 | Feature | Phase | Status |
 |---------|-------|--------|
-| Docker + CI/CD (AWS ECS) | 1 | Not started |
-| Rate limiting (express-rate-limit) | 2 | Not started |
-| Email notifications (SendGrid) | 3 | Not started |
-| Password reset flow | 4 | Not started |
-| Error boundary + 404 page | 5 | Not started |
+| Docker + CI/CD (AWS ECS) | 1D-1G | Not started |
+| Rate limiting (express-rate-limit) | 2 | ✅ Done |
+| Email notifications (SendGrid) | 3 | ✅ Done |
+| Password reset flow | 4 | ✅ Done |
+| Error boundary + 404 page | 5 | ✅ Done |

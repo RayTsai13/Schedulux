@@ -406,6 +406,44 @@ export const authApi = {
   getToken: (): string | null => {
     return localStorage.getItem('auth_token');
   },
+
+  /**
+   * Request a password reset email
+   */
+  forgotPassword: async (email: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await apiClient.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to connect to server. Please try again.',
+      };
+    }
+  },
+
+  /**
+   * Reset password using a token
+   */
+  resetPassword: async (token: string, password: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await apiClient.post('/auth/reset-password', { token, password });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to connect to server. Please try again.',
+      };
+    }
+  },
 };
 
 // ================================================================

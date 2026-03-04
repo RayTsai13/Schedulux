@@ -14,7 +14,9 @@ import { pool, getClient, withTransaction } from '../config/database';
 import { AppointmentModel, CreateAppointmentData } from '../models/Appointment';
 import { StorefrontModel } from '../models/Storefront';
 import { ServiceModel } from '../models/Service';
+import { UserModel } from '../models/User';
 import { AvailabilityService } from './AvailabilityService';
+import { EmailService } from './EmailService';
 import { Appointment, Service, Storefront, CreateAppointmentRequest } from '../types';
 import { AppointmentQueryOptions } from '../types/availability';
 
@@ -97,7 +99,7 @@ export class AppointmentService {
 
     // Execute booking within a transaction with advisory lock
     // Note: Always starts with status 'pending' for approval workflow
-    return await this.createWithLock(
+    const appointment = await this.createWithLock(
       clientId,
       storefront,
       service,
@@ -108,6 +110,31 @@ export class AppointmentService {
       effectiveLocationType === 'at_client' ? clientAddress : undefined,
       dropId
     );
+
+    // Fire-and-forget booking emails (post-transaction)
+    const clientUser = await UserModel.findById(clientId);
+    const vendorUser = await UserModel.findById(storefront.vendor_id);
+    const dateTimeStr = startDatetime.toLocaleString();
+
+    if (clientUser) {
+      EmailService.sendAppointmentConfirmation(clientUser.email, {
+        serviceName: service.name,
+        storefrontName: storefront.name,
+        dateTime: dateTimeStr,
+        price: service.price ?? undefined,
+      });
+    }
+
+    if (vendorUser && clientUser) {
+      EmailService.sendNewBookingNotification(vendorUser.email, {
+        clientName: `${clientUser.first_name} ${clientUser.last_name}`,
+        serviceName: service.name,
+        storefrontName: storefront.name,
+        dateTime: dateTimeStr,
+      });
+    }
+
+    return appointment;
   }
 
   /**
@@ -606,7 +633,18 @@ export class AppointmentService {
       throw new Error('Failed to approve appointment');
     }
 
-    // TODO: Trigger notification to client about approval
+    // Fire-and-forget notification to client about approval
+    const clientUser = await UserModel.findById(appointment.client_id);
+    const service = await ServiceModel.findById(appointment.service_id);
+    if (clientUser && service) {
+      EmailService.sendAppointmentStatusChange(clientUser.email, {
+        serviceName: service.name,
+        storefrontName: storefront.name,
+        dateTime: new Date(appointment.requested_start_datetime).toLocaleString(),
+        newStatus: 'confirmed',
+        vendorNotes,
+      });
+    }
 
     return updated;
   }
@@ -658,7 +696,18 @@ export class AppointmentService {
       throw new Error('Failed to decline appointment');
     }
 
-    // TODO: Trigger notification to client about decline
+    // Fire-and-forget notification to client about decline
+    const clientUser = await UserModel.findById(appointment.client_id);
+    const service = await ServiceModel.findById(appointment.service_id);
+    if (clientUser && service) {
+      EmailService.sendAppointmentStatusChange(clientUser.email, {
+        serviceName: service.name,
+        storefrontName: storefront.name,
+        dateTime: new Date(appointment.requested_start_datetime).toLocaleString(),
+        newStatus: 'declined',
+        vendorNotes: reason,
+      });
+    }
 
     return updated;
   }

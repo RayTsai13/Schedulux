@@ -4,6 +4,10 @@ import { UserModel } from '../models/User';
 import { User, CreateUserRequest, LoginRequest } from '../types';
 // Import authentication utilities for password security
 import { hashPassword, verifyPassword, validatePassword } from '../utils/auth';
+// Import email service for transactional emails
+import { EmailService } from './EmailService';
+// Import password reset token model
+import { PasswordResetToken } from '../models/PasswordResetToken';
 
 /**
  * UserService - Business Logic Layer for User Operations
@@ -25,7 +29,7 @@ import { hashPassword, verifyPassword, validatePassword } from '../utils/auth';
  * business logic is separated from both presentation and data access concerns.
  */
 export class UserService {
-  
+
   /**
    * Register a new user with comprehensive validation and security
    * 
@@ -75,9 +79,14 @@ export class UserService {
       ...userData,
       password_hash
     };
-    
+
     // Pass the complete user data to the repository layer for database insertion
-    return await UserModel.create(userToCreate);
+    const newUser = await UserModel.create(userToCreate);
+
+    // Fire-and-forget welcome email (never awaited, never throws)
+    EmailService.sendWelcome(newUser.email, newUser.first_name);
+
+    return newUser;
   }
 
   /**
@@ -143,14 +152,60 @@ export class UserService {
   static async getById(id: number): Promise<User | null> {
     // Fetch user from database using repository pattern
     const user = await UserModel.findById(id);
-    
+
     // Business rule: don't return inactive users to the application layer
     // This enforces that inactive users are treated as non-existent
     if (user && !user.is_active) {
       return null;
     }
-    
+
     // Return user if found and active, null if not found or inactive
     return user;
+  }
+
+  /**
+   * Request a password reset — creates token and sends email.
+   * Silent no-op if email is not found (prevent user enumeration).
+   */
+  static async requestPasswordReset(email: string): Promise<void> {
+    const user = await UserModel.findByEmail(email);
+    if (!user) {
+      // Silently return — don't reveal whether email exists
+      return;
+    }
+
+    const token = await PasswordResetToken.create(user.id);
+
+    // Fire-and-forget email
+    EmailService.sendPasswordReset(user.email, token);
+  }
+
+  /**
+   * Reset password using a valid token.
+   * Validates new password, updates hash, marks token as used.
+   * @throws Error if token is invalid/expired or password validation fails
+   */
+  static async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Validate password strength first
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
+    }
+
+    // Find valid (unexpired, unused) token
+    const tokenRecord = await PasswordResetToken.findValidToken(token);
+    if (!tokenRecord) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    // Hash new password and update user
+    const passwordHash = await hashPassword(newPassword);
+    const updated = await UserModel.updatePassword(tokenRecord.user_id, passwordHash);
+    if (!updated) {
+      throw new Error('Failed to update password');
+    }
+
+    // Mark token as consumed
+    await PasswordResetToken.markUsed(token);
   }
 }

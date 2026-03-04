@@ -116,6 +116,15 @@ export default function LoginPage() {
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
                 )}
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm text-v3-accent hover:text-v3-accent/80 font-medium transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}

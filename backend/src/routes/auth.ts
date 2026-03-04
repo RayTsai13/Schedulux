@@ -34,34 +34,34 @@ const validateRegistration = [
     .isEmail()                    // Must be valid email format
     .normalizeEmail()             // Convert to lowercase, remove dots in Gmail, etc.
     .withMessage('Please provide a valid email address'),
-  
+
   // Password strength validation
   body('password')
     .isLength({ min: 6, max: 128 })  // Reasonable length limits
     .withMessage('Password must be between 6 and 128 characters'),
-  
+
   // Name validation (required, trimmed, reasonable length)
   body('first_name')
     .trim()                       // Remove leading/trailing whitespace
     .isLength({ min: 1, max: 50 })  // Ensure not empty, reasonable max
     .withMessage('First name is required and must be less than 50 characters'),
-  
+
   body('last_name')
     .trim()
     .isLength({ min: 1, max: 50 })
     .withMessage('Last name is required and must be less than 50 characters'),
-  
+
   // Phone validation (optional, but if provided must be valid)
   body('phone')
     .optional()                   // Field is not required
     .matches(/^\+?[1-9]\d{1,14}$/)  // International phone format
     .withMessage('Phone number must be in valid international format'),
-  
+
   // Role validation (must be one of allowed values)
   body('role')
     .isIn(['vendor', 'client'])   // Only these roles allowed for registration
     .withMessage('Role must be either vendor or client'),
-  
+
   // Timezone validation (optional, but if provided must be valid)
   body('timezone')
     .optional()
@@ -80,7 +80,7 @@ const validateLogin = [
     .isEmail()
     .normalizeEmail()
     .withMessage('Please provide a valid email address'),
-  
+
   body('password')
     .notEmpty()                   // Just ensure password is provided
     .withMessage('Password is required')
@@ -105,7 +105,7 @@ const validateLogin = [
 const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
   // Extract validation errors from request
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     // Format errors into user-friendly messages
     const errorMessages: ValidationError[] = errors.array().map(error => ({
@@ -113,7 +113,7 @@ const handleValidationErrors = (req: Request, res: Response, next: NextFunction)
       message: error.msg,
       value: error.type === 'field' ? error.value : undefined
     }));
-    
+
     // Return standardized error response
     const response: ApiResponse<ValidationError[]> = {
       success: false,
@@ -121,11 +121,11 @@ const handleValidationErrors = (req: Request, res: Response, next: NextFunction)
       error: 'Validation failed',
       message: 'Please check your input and try again'
     };
-    
+
     // 400 = Bad Request (client error due to invalid input)
     return res.status(400).json(response);
   }
-  
+
   // No validation errors, continue to next middleware/route handler
   next();
 };
@@ -149,16 +149,16 @@ const handleValidationErrors = (req: Request, res: Response, next: NextFunction)
 const generateToken = (userId: number, role: string): string => {
   // Get JWT secret from environment variables
   const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
-  
+
   // Create token payload (data encoded in the token)
   const payload = {
     userId,
     role,
     iat: Math.floor(Date.now() / 1000), // Issued at time
   };
-  
+
   // Sign the token with expiration
-  return jwt.sign(payload, secret, { 
+  return jwt.sign(payload, secret, {
     expiresIn: '24h',           // Token expires in 24 hours
     issuer: 'schedulux-api',    // Who issued this token
     audience: 'schedulux-app'   // Who the token is intended for
@@ -194,24 +194,24 @@ const sanitizeUserResponse = (user: any) => {
  * - 400 Bad Request: Validation errors or duplicate email
  * - 500 Internal Server Error: Unexpected server error
  */
-router.post('/register', 
+router.post('/register',
   validateRegistration,           // Step 1: Validate input format
   handleValidationErrors,         // Step 2: Handle validation errors
   async (req: Request, res: Response, next: NextFunction) => {  // Step 3: Route handler
     try {
       // Extract validated data from request body
       const userData: CreateUserRequest = req.body;
-      
+
       // Call business logic layer to create user
       // UserService handles password hashing, duplicate checking, etc.
       const newUser = await UserService.register(userData);
-      
+
       // Generate authentication token for immediate login
       const token = generateToken(newUser.id, newUser.role);
-      
+
       // Create safe user object (without password hash)
       const safeUser = sanitizeUserResponse(newUser);
-      
+
       // Return success response with user data and token
       const response: ApiResponse<{ user: any; token: string }> = {
         success: true,
@@ -221,10 +221,10 @@ router.post('/register',
         },
         message: 'User registered successfully'
       };
-      
+
       // 201 Created = Resource was successfully created
       res.status(201).json(response);
-      
+
     } catch (error: any) {
       // Handle business logic errors (duplicate email, etc.)
       if (error.message.includes('already exists')) {
@@ -236,7 +236,7 @@ router.post('/register',
         };
         return res.status(409).json(response);
       }
-      
+
       if (error.message.includes('Password validation failed')) {
         // 400 Bad Request = Client sent invalid data
         const response: ApiResponse<null> = {
@@ -246,7 +246,7 @@ router.post('/register',
         };
         return res.status(400).json(response);
       }
-      
+
       // Unexpected errors get passed to Express error middleware
       // This ensures consistent error handling across the application
       next(error);
@@ -269,11 +269,11 @@ router.post('/login',
     try {
       // Extract credentials from request
       const loginData: LoginRequest = req.body;
-      
+
       // Attempt authentication via service layer
       // Returns user object if successful, null if failed
       const user = await UserService.login(loginData);
-      
+
       if (!user) {
         // Authentication failed - return generic error
         // Don't specify whether email or password was wrong (security)
@@ -285,11 +285,11 @@ router.post('/login',
         // 401 Unauthorized = Authentication required/failed
         return res.status(401).json(response);
       }
-      
+
       // Authentication successful
       const token = generateToken(user.id, user.role);
       const safeUser = sanitizeUserResponse(user);
-      
+
       const response: ApiResponse<{ user: any; token: string }> = {
         success: true,
         data: {
@@ -298,10 +298,10 @@ router.post('/login',
         },
         message: 'Login successful'
       };
-      
+
       // 200 OK = Request succeeded
       res.status(200).json(response);
-      
+
     } catch (error) {
       // Pass unexpected errors to Express error middleware
       next(error);
@@ -312,22 +312,89 @@ router.post('/login',
 /**
  * GET /api/auth/me - Get Current User Profile
  */
-router.get('/me', 
+router.get('/me',
   authenticateToken,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // User is already authenticated by middleware, user info is in req.user
       const user = await UserService.getById(req.user!.userId);
-      
+
       const safeUser = sanitizeUserResponse(user);
       const response: ApiResponse<any> = {
         success: true,
         data: safeUser,
         message: 'User profile retrieved successfully'
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/auth/forgot-password - Request password reset
+ * Always returns 200 to prevent email enumeration
+ */
+router.post('/forgot-password',
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address'),
+  handleValidationErrors,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await UserService.requestPasswordReset(req.body.email);
+
+      // Always return success to prevent email enumeration
+      const response: ApiResponse<null> = {
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/auth/reset-password - Reset password with token
+ */
+router.post('/reset-password',
+  [
+    body('token').notEmpty().withMessage('Reset token is required'),
+    body('password')
+      .isLength({ min: 6, max: 128 })
+      .withMessage('Password must be between 6 and 128 characters'),
+  ],
+  handleValidationErrors,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await UserService.resetPassword(req.body.token, req.body.password);
+
+      const response: ApiResponse<null> = {
+        success: true,
+        message: 'Password has been reset successfully. You can now log in with your new password.'
+      };
+      res.status(200).json(response);
+    } catch (error: any) {
+      if (error.message.includes('Invalid or expired')) {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: 'Invalid token',
+          message: 'This reset link is invalid or has expired. Please request a new one.'
+        };
+        return res.status(400).json(response);
+      }
+
+      if (error.message.includes('Password validation failed')) {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: 'Invalid password',
+          message: error.message
+        };
+        return res.status(400).json(response);
+      }
+
       next(error);
     }
   }

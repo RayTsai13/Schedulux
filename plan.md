@@ -14,7 +14,7 @@ Schedulux is a functioning appointment marketplace (Express+TS backend, React+Vi
 
 **Goal:** Containerize both services, externalize config, set up CI/CD.
 
-### 1A. Externalize environment variables
+### 1A. Externalize environment variables ✅
 
 **`backend/src/index.ts`** — Replace hardcoded `allowedOrigins` (lines 92–99):
 ```ts
@@ -28,13 +28,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 ```
 
-### 1B. Create `.env.example` files
+### 1B. Create `.env.example` files ✅
 
 **`backend/.env.example`** — DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, NODE_ENV, PORT, ALLOWED_ORIGINS, SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME, FRONTEND_URL
 
 **`frontend/.env.example`** — VITE_API_URL
 
-### 1C. Backend build/start scripts
+### 1C. Backend build/start scripts ✅
 
 **`backend/package.json`** — Add:
 ```json
@@ -87,13 +87,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 - [ ] `docker compose build` succeeds
 - [ ] `docker compose up` → backend health check returns 200, frontend loads and calls APIs
-- [ ] `ALLOWED_ORIGINS` env var correctly restricts CORS in backend
-- [ ] `VITE_API_URL` build arg changes API base URL in frontend bundle
+- [x] `ALLOWED_ORIGINS` env var correctly restricts CORS in backend
+- [x] `VITE_API_URL` build arg changes API base URL in frontend bundle
 - [ ] GitHub Actions lint-and-build passes on PR
 
 ---
 
-## Phase 2: Rate Limiting
+## Phase 2: Rate Limiting ✅
 
 **Goal:** Protect auth endpoints from brute force, general API abuse prevention.
 
@@ -159,14 +159,14 @@ app.use('/api/auth', authLimiter);
 
 ### Verification
 
-- [ ] `POST /api/auth/login` returns 429 after 10 rapid requests
-- [ ] `GET /api/marketplace/search` returns 429 after 100 rapid requests
-- [ ] Response body matches `ApiResponse` shape: `{ success: false, data: null, message: "..." }`
-- [ ] `RateLimit-*` headers present in responses
+- [x] `POST /api/auth/login` returns 429 after 10 rapid requests
+- [x] `GET /api/marketplace/search` returns 429 after 100 rapid requests
+- [x] Response body matches `ApiResponse` shape: `{ success: false, data: null, message: "..." }`
+- [x] `RateLimit-*` headers present in responses
 
 ---
 
-## Phase 3: Email Notifications (SendGrid)
+## Phase 3: Email Notifications (SendGrid) ✅
 
 **Goal:** Transactional email for registration, appointments, and password reset.
 
@@ -234,7 +234,7 @@ Also in approve/decline/cancel handlers — send status change email to client.
 
 ---
 
-## Phase 4: Password Reset Flow
+## Phase 4: Password Reset Flow ✅
 
 **Goal:** Complete forgot/reset password, backend + frontend.
 
@@ -391,7 +391,7 @@ resetPassword: async (token: string, password: string): Promise<ApiResponse<null
 
 ---
 
-## Phase 5: Frontend Hardening
+## Phase 5: Frontend Hardening ✅
 
 **Goal:** Error boundary, 404 page, cleanup.
 
@@ -485,10 +485,10 @@ export default function NotFoundPage() {
 
 ### Verification
 
-- [ ] `/any-nonexistent-path` → 404 page with working navigation
-- [ ] Throwing error in component → ErrorBoundary fallback renders
-- [ ] All existing routes still work
-- [ ] `/design-test` no longer accessible
+- [x] `/any-nonexistent-path` → 404 page with working navigation
+- [x] Throwing error in component → ErrorBoundary fallback renders
+- [x] All existing routes still work
+- [x] `/design-test` no longer accessible
 
 ---
 

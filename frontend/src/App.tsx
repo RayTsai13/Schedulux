@@ -14,6 +14,8 @@ import AppointmentCalendarPage from './pages/vendor/AppointmentCalendarPage';
 import ClientAppointmentsPage from './pages/client/ClientAppointmentsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Protected Vendor Routes */}
             <Route

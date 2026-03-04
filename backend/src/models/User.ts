@@ -17,7 +17,7 @@ import { User, CreateUserRequest } from '../types';
  * between operations - each method performs a single database operation.
  */
 export class UserModel {
-  
+
   /**
    * Find a user by their unique ID
    * 
@@ -34,7 +34,7 @@ export class UserModel {
   static async findById(id: number): Promise<User | null> {
     // Execute SQL query with parameterized placeholder ($1) for safety
     const result = await query('SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL', [id]);
-    
+
     // PostgreSQL returns results in .rows array
     // [0] gets first result, || null handles case where no results found
     return result.rows[0] || null;
@@ -156,11 +156,11 @@ export class UserModel {
     const setClause = Object.keys(updates)
       .map((key, index) => `${key} = $${index + 2}`)
       .join(', ');
-    
+
     // Build parameter array: [id, value1, value2, ...]
     // id goes first (for $1), then all the update values
     const values = [id, ...Object.values(updates)];
-    
+
     // Execute dynamic UPDATE query
     // RETURNING * gives us back the updated record
     const result = await query(`
@@ -218,6 +218,19 @@ export class UserModel {
 
     // If any rows were affected, the deletion was successful
     // RETURNING id ensures we get back the ID only if the update succeeded
+    return result.rows.length > 0;
+  }
+
+  /**
+   * Update a user's password hash directly (used by password reset flow)
+   */
+  static async updatePassword(userId: number, passwordHash: string): Promise<boolean> {
+    const result = await query(
+      `UPDATE users SET password_hash = $2, updated_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id`,
+      [userId, passwordHash]
+    );
     return result.rows.length > 0;
   }
 }
