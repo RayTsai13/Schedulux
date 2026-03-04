@@ -50,7 +50,7 @@ export default function AppScaffold({ children, showNav = true }: AppScaffoldPro
                   <UniversalButton
                     variant="primary"
                     size="sm"
-                    onClick={() => alert('Signup coming soon! Use demo accounts.')}
+                    onClick={() => navigate('/register')}
                   >
                     Sign Up
                   </UniversalButton>
@@ -58,7 +58,14 @@ export default function AppScaffold({ children, showNav = true }: AppScaffoldPro
               ) : (
                 // Logged in - Show role-specific links + user menu
                 <div className="flex items-center gap-6">
-                  {user?.role === 'vendor' ? (
+                  {user?.role === 'admin' ? (
+                    <a
+                      href="/admin"
+                      className="text-v3-secondary hover:text-v3-primary font-medium transition-colors"
+                    >
+                      Admin
+                    </a>
+                  ) : user?.role === 'vendor' ? (
                     <a
                       href="/dashboard"
                       className="text-v3-secondary hover:text-v3-primary font-medium transition-colors"
@@ -107,7 +114,7 @@ export default function AppScaffold({ children, showNav = true }: AppScaffoldPro
                               {user?.email}
                             </p>
                             <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-v3-accent/10 text-v3-accent rounded-full">
-                              {user?.role === 'vendor' ? 'Vendor' : 'Client'}
+                              {user?.role === 'admin' ? 'Admin' : user?.role === 'vendor' ? 'Vendor' : 'Client'}
                             </span>
                           </div>
 

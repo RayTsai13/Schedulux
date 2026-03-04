@@ -4,12 +4,14 @@ import { AuthProvider } from './hooks/useAuth';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import VendorProfilePage from './pages/VendorProfilePage';
 import ExplorePage from './pages/ExplorePage';
 import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
 import StorefrontDetailPage from './pages/vendor/StorefrontDetailPage';
 import AppointmentCalendarPage from './pages/vendor/AppointmentCalendarPage';
 import ClientAppointmentsPage from './pages/client/ClientAppointmentsPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AppScaffold from './components/layout/AppScaffold';
 import UniversalButton from './components/universal/UniversalButton';
 import DropCard from './components/booking/DropCard';
@@ -25,6 +27,7 @@ function App() {
 
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
 
@@ -60,6 +63,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <ClientAppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireRole="admin">
+                <AdminDashboardPage />
               </ProtectedRoute>
             }
           />

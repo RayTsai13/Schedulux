@@ -10,6 +10,17 @@ export interface AuthenticatedRequest extends Request {
     };
 }
 
+export const requireRole = (...roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false, data: null, message: 'Insufficient permissions'
+      });
+    }
+    next();
+  };
+};
+
 export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;

@@ -193,6 +193,19 @@ export class UserModel {
    * const wasDeleted = await UserModel.softDelete(123);
    * if (wasDeleted) { console.log('User successfully deleted'); }
    */
+  static async count(): Promise<number> {
+    const result = await query('SELECT COUNT(*)::int FROM users WHERE deleted_at IS NULL', []);
+    return result.rows[0].count;
+  }
+
+  static async countByRole(): Promise<{ role: string; count: number }[]> {
+    const result = await query(
+      'SELECT role, COUNT(*)::int as count FROM users WHERE deleted_at IS NULL GROUP BY role',
+      []
+    );
+    return result.rows;
+  }
+
   static async softDelete(id: number): Promise<boolean> {
     // Set deleted_at to current timestamp to mark as deleted
     // CURRENT_TIMESTAMP is a PostgreSQL function that gets the current date/time

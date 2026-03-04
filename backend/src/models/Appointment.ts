@@ -445,6 +445,19 @@ export class AppointmentModel {
   /**
    * Soft delete an appointment
    */
+  static async countAll(): Promise<number> {
+    const result = await query('SELECT COUNT(*)::int FROM appointments', []);
+    return result.rows[0].count;
+  }
+
+  static async countByStatus(): Promise<{ status: string; count: number }[]> {
+    const result = await query(
+      'SELECT status, COUNT(*)::int as count FROM appointments GROUP BY status',
+      []
+    );
+    return result.rows;
+  }
+
   static async softDelete(id: number): Promise<boolean> {
     const result = await query(
       `

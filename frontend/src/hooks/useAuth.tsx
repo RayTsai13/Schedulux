@@ -1,11 +1,12 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { authApi, User } from '../services/api';
+import { authApi, User, RegisterRequest } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (userData: RegisterRequest) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -70,6 +71,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const register = async (userData: RegisterRequest): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authApi.register(userData);
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        return { success: true };
+      }
+      return { success: false, error: response.message || 'Registration failed' };
+    } catch (error) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      const status = axiosError.response?.status;
+      const message = axiosError.response?.data?.message;
+      if (status === 409) {
+        return { success: false, error: 'An account with this email already exists' };
+      }
+      return { success: false, error: message || 'An error occurred during registration' };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     authApi.logout();
@@ -91,6 +111,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAuthenticated: !!user,
     isLoading,
     login,
+    register,
     logout,
     refreshUser,
   };

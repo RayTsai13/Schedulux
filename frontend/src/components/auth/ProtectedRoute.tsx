@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requireRole?: 'vendor' | 'client';
+  requireRole?: 'vendor' | 'client' | 'admin';
 }
 
 export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
@@ -30,7 +30,9 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   // Check role requirement if specified
   if (requireRole && user?.role !== requireRole) {
     // If user has wrong role, redirect based on their actual role
-    if (user?.role === 'vendor') {
+    if (user?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    } else if (user?.role === 'vendor') {
       return <Navigate to="/dashboard" replace />;
     } else {
       return <Navigate to="/explore" replace />;

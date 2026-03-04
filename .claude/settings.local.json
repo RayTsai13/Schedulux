@@ -15,7 +15,8 @@
       "Bash(psql:*)",
       "Bash(ls:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ]
   }
 }

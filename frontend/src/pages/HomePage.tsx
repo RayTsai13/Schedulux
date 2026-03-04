@@ -21,6 +21,10 @@ export default function HomePage() {
     return <Navigate to="/explore" replace />;
   }
 
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
   if (user?.role === 'vendor') {
     return <Navigate to="/dashboard" replace />;
   }

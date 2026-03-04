@@ -236,6 +236,33 @@ export class StorefrontModel {
    * @param params - Query parameters
    * @returns Promise<any[]> - Raw database rows (to be mapped by MarketplaceService)
    */
+  static async findAllAdmin(limit: number, offset: number): Promise<any[]> {
+    const result = await query(`
+      SELECT s.*, u.first_name, u.last_name, u.email AS vendor_email
+      FROM storefronts s
+      JOIN users u ON s.vendor_id = u.id
+      WHERE s.deleted_at IS NULL
+      ORDER BY s.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    return result.rows;
+  }
+
+  static async countAll(): Promise<number> {
+    const result = await query('SELECT COUNT(*)::int FROM storefronts WHERE deleted_at IS NULL', []);
+    return result.rows[0].count;
+  }
+
+  static async setVerified(id: number, isVerified: boolean): Promise<any | null> {
+    const result = await query(`
+      UPDATE storefronts
+      SET is_verified = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *
+    `, [id, isVerified]);
+    return result.rows[0] || null;
+  }
+
   static async searchPublic(sqlQuery: string, params: any[]): Promise<any[]> {
     const result = await query(sqlQuery, params);
     return result.rows;

@@ -164,7 +164,7 @@ export default function LoginPage() {
             <p className="text-sm text-v3-secondary">
               Don't have an account?{' '}
               <button
-                onClick={() => toast.info('Signup coming soon! Use demo accounts for now.')}
+                onClick={() => navigate(`/register${searchParams.get('returnTo') ? `?returnTo=${searchParams.get('returnTo')}` : ''}`)}
                 className="text-v3-accent hover:text-v3-accent/80 font-medium transition-colors"
               >
                 Sign up

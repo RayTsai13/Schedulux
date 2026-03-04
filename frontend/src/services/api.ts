@@ -102,7 +102,7 @@ export interface User {
   email: string;        // User's email address (used for login)
   first_name: string;   // User's first name
   last_name: string;    // User's last name
-  role: 'vendor' | 'client';  // User type: service provider or customer
+  role: 'vendor' | 'client' | 'admin';  // User type: service provider, customer, or admin
   phone?: string;       // Optional phone number
   timezone?: string;    // User's timezone for appointment scheduling
   created_at: string;   // When the user account was created (ISO string)
@@ -1518,6 +1518,77 @@ export const uploadApi = {
         data: null,
         message: error.message || 'Image upload failed',
       };
+    }
+  },
+};
+
+// ================================================================
+// ADMIN API FUNCTIONS
+// ================================================================
+
+export interface AdminStats {
+  users: {
+    total: number;
+    byRole: Record<string, number>;
+  };
+  storefronts: {
+    total: number;
+  };
+  appointments: {
+    total: number;
+    byStatus: Record<string, number>;
+  };
+}
+
+export interface AdminStorefront {
+  id: number;
+  vendor_id: number;
+  name: string;
+  city?: string;
+  state?: string;
+  location_type: string;
+  is_verified: boolean;
+  first_name: string;
+  last_name: string;
+  vendor_email: string;
+  created_at: string;
+}
+
+export interface AdminStorefrontList {
+  storefronts: AdminStorefront[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export const adminApi = {
+  getStats: async (): Promise<ApiResponse<AdminStats>> => {
+    try {
+      const response = await apiClient.get('/admin/stats');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to fetch stats.' };
+    }
+  },
+
+  getStorefronts: async (limit = 20, offset = 0): Promise<ApiResponse<AdminStorefrontList>> => {
+    try {
+      const response = await apiClient.get('/admin/storefronts', { params: { limit, offset } });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to fetch storefronts.' };
+    }
+  },
+
+  setVerified: async (id: number, is_verified: boolean): Promise<ApiResponse<AdminStorefront>> => {
+    try {
+      const response = await apiClient.patch(`/admin/storefronts/${id}/verify`, { is_verified });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to update verification.' };
     }
   },
 };
