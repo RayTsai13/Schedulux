@@ -9,6 +9,9 @@ async function runMigrations() {
         database: process.env.DB_NAME || 'schedulux_primary',
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
+        ...(process.env.NODE_ENV === 'production' && {
+            ssl: { rejectUnauthorized: false }
+        }),
     });
 
     const client = await pool.connect();

@@ -65,19 +65,24 @@ const dbConfig: PoolConfig = {
   database: process.env.DB_NAME || 'scheduling_app_primary',  // Database name
   user: process.env.DB_USER || 'raymondtsai',         // Database username
   password: process.env.DB_PASSWORD || '',            // Database password (should be in .env)
-  
+
+  // SSL configuration — required for AWS RDS connections
+  ...(process.env.NODE_ENV === 'production' && {
+    ssl: { rejectUnauthorized: false }
+  }),
+
   // Connection pool optimization settings
   max: 20,                    // Maximum number of clients in the pool
-                             // Higher = more concurrent queries, but more memory usage
-                             // 20 is typically sufficient for small-medium applications
-  
+  // Higher = more concurrent queries, but more memory usage
+  // 20 is typically sufficient for small-medium applications
+
   idleTimeoutMillis: 30000,  // Close idle clients after 30 seconds
-                             // Prevents accumulation of unused connections
-                             // Balances connection reuse with resource cleanup
-  
+  // Prevents accumulation of unused connections
+  // Balances connection reuse with resource cleanup
+
   connectionTimeoutMillis: 2000,  // Return error after 2 seconds if connection fails
-                                  // Prevents requests from hanging indefinitely
-                                  // Fast failure allows for proper error handling
+  // Prevents requests from hanging indefinitely
+  // Fast failure allows for proper error handling
 };
 
 /**
@@ -188,25 +193,25 @@ pool.on('error', (err: Error) => {
 export async function query(text: string, params?: any[]) {
   // Record start time for performance measurement
   const start = Date.now();
-  
+
   // Execute the query using the connection pool
   // The pool automatically handles connection assignment and cleanup
   const res = await pool.query(text, params);
-  
+
   // Calculate execution time for performance monitoring
   const duration = Date.now() - start;
-  
+
   // Log query details for debugging and performance analysis
   // In production, you might want to:
   // - Only log slow queries (duration > threshold)
   // - Send metrics to monitoring system instead of console
   // - Sanitize logged query text to remove sensitive data
-  console.log('🔍 Executed query', { 
+  console.log('🔍 Executed query', {
     text,              // The SQL query that was executed
     duration,          // How long it took in milliseconds
     rows: res.rowCount // Number of rows affected/returned
   });
-  
+
   // Return the complete PostgreSQL result object
   // This includes .rows (data), .rowCount (affected rows), .fields (metadata)
   return res;
@@ -299,7 +304,7 @@ export async function withTransaction<T>(
  */
 process.on('SIGINT', () => {
   console.log('🔄 Closing database connections...');
-  
+
   // pool.end() gracefully closes all connections in the pool
   // It waits for active queries to complete before closing connections
   // Returns a Promise that resolves when all connections are closed
