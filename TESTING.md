@@ -278,36 +278,45 @@ fetch('http://localhost:3000/health')
 ## 🎯 What's Working Now
 
 ✅ **Backend:**
-- Express server with CORS
-- PostgreSQL connection
-- Authentication endpoints
-- Storefront endpoints (backend routes exist)
+- Express server with CORS, rate limiting
+- PostgreSQL connection with pooling
+- Authentication endpoints (register, login, me, forgot-password, reset-password)
+- Storefront, service, appointment, drop management APIs
+- Marketplace search with geolocation
+- Availability engine with timezone support
+- Email notifications via SendGrid (fire-and-forget, logs to console in dev)
+- Admin dashboard API
 
 ✅ **Frontend:**
-- TanStack Query configured
-- Zustand stores created
-- Storefront Management page
-- API service layer
-- Authentication flow
+- TanStack Query configured with devtools
+- Zustand stores for UI state
+- Full vendor dashboard (storefronts, services, hours, calendar, drops)
+- Client appointment management
+- Marketplace explore page with search/filters
+- 4-step booking modal with drop pre-selection
+- Reschedule modal (atomic cancel+rebook)
+- Password reset flow (forgot + reset pages)
+- Error boundary + 404 catch-all page
+- Admin dashboard with storefront verification
 
 ✅ **Integration:**
 - Frontend can call backend APIs
 - Login flow works end-to-end
-- Protected routes work
+- Protected routes work with role checks
 - Token storage and management
+- Booking flow with advisory locking
 
 ---
 
 ## 🚧 What's Next
 
-After testing successfully, we'll build:
+The core app is feature-complete. Remaining work:
 
-1. **Modal Component** - Reusable dialog wrapper
-2. **Storefront Form** - Create/edit form with validation
-3. **Business Hours Editor** - Weekly schedule builder
-4. **Service Management** - CRUD for services
-5. **Calendar View** - Custom calendar component
-6. **Appointment Booking** - Full booking flow
+1. **Docker** - Multi-stage Dockerfiles for backend + frontend
+2. **Docker Compose** - Local containerized stack
+3. **CI/CD** - GitHub Actions → AWS ECR → ECS
+
+See `plan.md` for full details.
 
 ---
 

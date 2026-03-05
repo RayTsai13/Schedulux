@@ -41,6 +41,8 @@ Schedulux is a comprehensive appointment scheduling solution designed specifical
 | **Styling** | TailwindCSS | Responsive utility-first design |
 | **Auth** | JWT + bcrypt | Secure authentication system |
 | **Validation** | Zod + express-validator | Client & server input validation |
+| **Email** | SendGrid (@sendgrid/mail) | Transactional email (fire-and-forget) |
+| **Rate Limiting** | express-rate-limit | Auth (10/15min) + API (100/15min) |
 
 ### Project Structure
 
@@ -133,6 +135,18 @@ JWT_SECRET=your-super-secret-jwt-key
 # Application Settings
 NODE_ENV=development
 PORT=3000
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Email (optional in dev — logs to console if unset)
+SENDGRID_API_KEY=
+SENDGRID_FROM_EMAIL=noreply@schedulux.com
+SENDGRID_FROM_NAME=Schedulux
+FRONTEND_URL=http://localhost:5173
+```
+
+Create a `.env` file in the frontend directory:
+```env
+VITE_API_URL=http://localhost:3000/api
 ```
 
 ## 📖 API Documentation
@@ -160,6 +174,14 @@ POST /api/auth/login
 # Get current user profile
 GET /api/auth/me
 Authorization: Bearer <jwt_token>
+
+# Request password reset (always returns 200)
+POST /api/auth/forgot-password
+{ "email": "john@example.com" }
+
+# Reset password with token
+POST /api/auth/reset-password
+{ "token": "<reset_token>", "password": "NewPass123!" }
 ```
 
 ### Development Testing
@@ -205,32 +227,41 @@ The application uses a sophisticated PostgreSQL schema optimized for scheduling 
 
 ### ✅ Completed Features
 
-**Backend (75% Complete)**
-- ✅ Express server with comprehensive security middleware
+**Backend**
+- ✅ Express server with security middleware (CORS, rate limiting)
 - ✅ PostgreSQL integration with connection pooling
-- ✅ Complete user authentication system (register/login/profile)
+- ✅ User authentication (register/login/profile/password reset)
 - ✅ JWT token generation and verification
-- ✅ Input validation and error handling
-- ✅ Repository pattern with clean service layer architecture
+- ✅ Email notifications via SendGrid (fire-and-forget, dev-friendly no-op)
+- ✅ Rate limiting (auth: 10/15min, API: 100/15min)
+- ✅ Storefront, service, appointment, and drop management APIs
+- ✅ Marketplace search with geolocation and filters
+- ✅ Availability engine with timezone-aware scheduling
+- ✅ Admin dashboard API
 
-**Frontend (75% Complete)**
-- ✅ Complete UI implementation with professional design
+**Frontend**
+- ✅ Complete UI with professional design system
 - ✅ Authentication flow with form validation
-- ✅ Multi-tab dashboard interface
-- ✅ Responsive component library
-- ✅ API service layer ready for backend integration
+- ✅ Password reset flow (forgot/reset pages)
+- ✅ Multi-tab vendor dashboard
+- ✅ Client appointment management
+- ✅ Marketplace explore page with search/filters
+- ✅ 4-step booking modal with drop pre-selection
+- ✅ Reschedule modal with atomic cancel+rebook
+- ✅ Admin dashboard with storefront verification
+- ✅ Error boundary + 404 page
+- ✅ Environment-based configuration
 
-**Database (100% Complete)**
-- ✅ Production-ready schema with advanced PostgreSQL features
-- ✅ Complete audit trail system
-- ✅ Optimized indexing for scheduling operations
+**Database**
+- ✅ Production-ready schema (10 migrations)
+- ✅ Advisory locks for race condition prevention
+- ✅ Exclusion constraints for conflict prevention
+- ✅ Optimized indexing for scheduling queries
 
-### 🔄 In Progress
+### 🔄 Remaining
 
-- Core business APIs (storefronts, services, appointments)
-- Frontend-backend integration
-- Availability calculation algorithms
-- Calendar interface implementation
+- Docker + Docker Compose containerization
+- CI/CD pipeline (GitHub Actions → AWS ECR → ECS)
 
 ## 🤝 Contributing
 
