@@ -10,7 +10,7 @@ Schedulux is a functioning appointment marketplace (Express+TS backend, React+Vi
 
 ---
 
-## Phase 1: Infrastructure — Docker, Env Vars, CI/CD
+## Phase 1: Infrastructure — Docker, Env Vars, CI/CD (1A–1C ✅ | 1D–1G remaining)
 
 **Goal:** Containerize both services, externalize config, set up CI/CD.
 
@@ -97,13 +97,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 **Goal:** Protect auth endpoints from brute force, general API abuse prevention.
 
-### 2A. Install dependency
+### 2A. Install dependency ✅
 
 ```bash
 cd backend && npm install express-rate-limit
 ```
 
-### 2B. Create rate limiter middleware
+### 2B. Create rate limiter middleware ✅
 
 **Create `backend/src/middleware/rateLimiter.ts`**:
 
@@ -138,7 +138,7 @@ export const apiLimiter = rateLimit({
 });
 ```
 
-### 2C. Apply in index.ts
+### 2C. Apply in index.ts ✅
 
 **`backend/src/index.ts`** — Add after body parsing, before routes:
 
@@ -172,13 +172,13 @@ app.use('/api/auth', authLimiter);
 
 **Depends on:** Phase 1 (env vars for SENDGRID_API_KEY, FRONTEND_URL)
 
-### 3A. Install dependency
+### 3A. Install dependency ✅
 
 ```bash
 cd backend && npm install @sendgrid/mail
 ```
 
-### 3B. Create EmailService
+### 3B. Create EmailService ✅
 
 **Create `backend/src/services/EmailService.ts`** — Static methods, follows existing service pattern:
 
@@ -196,7 +196,7 @@ EmailService
 
 **Key design: fire-and-forget** — email failures are logged but never thrown. No `await` in calling code to avoid blocking business operations. When `SENDGRID_API_KEY` is unset, methods log what they would send (dev-friendly).
 
-### 3C. Integrate into existing services
+### 3C. Integrate into existing services ✅
 
 **`backend/src/services/UserService.ts`** — In `register()` after `UserModel.create()`:
 
@@ -226,11 +226,11 @@ Also in approve/decline/cancel handlers — send status change email to client.
 
 ### Verification
 
-- [ ] Without `SENDGRID_API_KEY`: logs "would send" messages, no crashes
-- [ ] Registration sends welcome email
-- [ ] Appointment creation sends confirmation to client + notification to vendor
-- [ ] Approve/decline sends status change email
-- [ ] All emails render in Gmail/Apple Mail (inline styles)
+- [x] Without `SENDGRID_API_KEY`: logs "would send" messages, no crashes
+- [x] Registration sends welcome email
+- [x] Appointment creation sends confirmation to client + notification to vendor
+- [x] Approve/decline sends status change email
+- [ ] All emails render in Gmail/Apple Mail (inline styles) — requires live SendGrid key
 
 ---
 
@@ -240,7 +240,7 @@ Also in approve/decline/cancel handlers — send status change email to client.
 
 **Depends on:** Phase 3 (uses `EmailService.sendPasswordReset`)
 
-### 4A. Database migration
+### 4A. Database migration ✅
 
 **Create `backend/migrations/010_password_reset_tokens.sql`**:
 
@@ -258,7 +258,7 @@ CREATE INDEX idx_prt_token ON password_reset_tokens(token);
 CREATE INDEX idx_prt_user_id ON password_reset_tokens(user_id);
 ```
 
-### 4B. Backend model
+### 4B. Backend model ✅
 
 **Create `backend/src/models/PasswordResetToken.ts`**:
 
@@ -298,7 +298,7 @@ export class PasswordResetTokenModel {
 }
 ```
 
-### 4C. Backend service + routes
+### 4C. Backend service + routes ✅
 
 **Edit `backend/src/models/User.ts`** — Add:
 
@@ -324,7 +324,7 @@ static async updatePassword(userId: number, passwordHash: string): Promise<boole
 
 Both use `express-validator` + `handleValidationErrors` (matching existing route pattern). Rate limited by `authLimiter` from Phase 2.
 
-### 4D. Frontend API + pages
+### 4D. Frontend API + pages ✅
 
 **Edit `frontend/src/services/api.ts`** — Add to `authApi`:
 
@@ -379,15 +379,15 @@ resetPassword: async (token: string, password: string): Promise<ApiResponse<null
 
 ### Verification
 
-- [ ] Run migration: `psql -d schedulux_primary -f backend/migrations/010_password_reset_tokens.sql`
-- [ ] `POST /api/auth/forgot-password` with valid email → sends reset email
-- [ ] Same endpoint with unknown email → returns 200 (no user enumeration)
-- [ ] Reset link in email → `FRONTEND_URL/reset-password?token=...`
-- [ ] `POST /api/auth/reset-password` with valid token → updates password
-- [ ] Expired / used token → 400 error
-- [ ] User can log in with new password
-- [ ] Rate limiter applies to both endpoints
-- [ ] "Forgot password?" link visible on login page
+- [x] Run migration: `psql -d schedulux_primary -f backend/migrations/010_password_reset_tokens.sql`
+- [x] `POST /api/auth/forgot-password` with valid email → sends reset email
+- [x] Same endpoint with unknown email → returns 200 (no user enumeration)
+- [x] Reset link in email → `FRONTEND_URL/reset-password?token=...`
+- [x] `POST /api/auth/reset-password` with valid token → updates password
+- [x] Expired / used token → 400 error
+- [x] User can log in with new password
+- [x] Rate limiter applies to both endpoints
+- [x] "Forgot password?" link visible on login page
 
 ---
 
@@ -395,7 +395,7 @@ resetPassword: async (token: string, password: string): Promise<ApiResponse<null
 
 **Goal:** Error boundary, 404 page, cleanup.
 
-### 5A. Error boundary
+### 5A. Error boundary ✅
 
 **Create `frontend/src/components/ErrorBoundary.tsx`**:
 
@@ -440,7 +440,7 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 ```
 
-### 5B. 404 page
+### 5B. 404 page ✅
 
 **Create `frontend/src/pages/NotFoundPage.tsx`**:
 
@@ -467,7 +467,7 @@ export default function NotFoundPage() {
 }
 ```
 
-### 5C. Wire into App.tsx
+### 5C. Wire into App.tsx ✅
 
 **Edit `frontend/src/App.tsx`**:
 

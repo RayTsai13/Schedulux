@@ -1,0 +1,16 @@
+schedulux.net {
+    # Backend API
+    handle /api/* {
+        reverse_proxy backend:3000
+    }
+
+    # Health check endpoint
+    handle /health {
+        reverse_proxy backend:3000
+    }
+
+    # Frontend (everything else)
+    handle {
+        reverse_proxy frontend:8080
+    }
+}

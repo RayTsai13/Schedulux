@@ -32,3 +32,6 @@ logs
 
 
 docs/spec
+
+# Deployment (contains secrets)
+DEPLOYMENT_GUIDE.md

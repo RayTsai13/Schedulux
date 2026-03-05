@@ -15,7 +15,8 @@
     "db:check": "node scripts/test-database.js",
     "seed:heroes": "npx ts-node scripts/seed-heroes.ts",
     "seed:clients": "npx ts-node scripts/seed-clients.ts",
-    "cleanup:storefronts": "npx ts-node scripts/cleanup-demo-storefronts.ts"
+    "cleanup:storefronts": "npx ts-node scripts/cleanup-demo-storefronts.ts",
+    "migrate": "node dist/migrate.js"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +40,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-pg-migrate": "^8.0.4",
     "pg": "^8.16.3"
   },
   "devDependencies": {
