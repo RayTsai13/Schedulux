@@ -5,8 +5,6 @@
 **Current State:** Advanced Beta (Feature complete for Scheduling, Foundation ready for Marketplace)
 **Core Mission:** To transition from a utility-based "Scheduling Tool" into a growth-focused "Exposure Engine" for small service-based businesses.
 
----
-
 ## 💎 The Value Proposition
 Unlike generic schedulers (Calendly, Square Appointments) that focus solely on *logistics* (managing existing demand), Schedulux aims to solve the harder problem: **Discovery** (generating new demand).
 
@@ -23,8 +21,6 @@ Unlike generic schedulers (Calendly, Square Appointments) that focus solely on *
 - **Yield Management:** converting "dead inventory" (empty slots in the next 24h) into "Flash Deals" to attract budget-conscious discovery.
 - **Visual Discovery:** "Book the Look" — Search by portfolio/result (e.g., "Balayage") rather than just business name.
 - **Hyper-Local SEO:** Every storefront page is engineered to be a micro-site that outranks the business's own generic website.
-
----
 
 ## 🧠 Brainstorming Vectors
 *Use these prompts to generate ideas for features, pivots, and marketing strategies.*
@@ -48,17 +44,6 @@ Unlike generic schedulers (Calendly, Square Appointments) that focus solely on *
 *Most small businesses have terrible websites.*
 - **Question:** Can Schedulux be the *only* web presence a business needs?
 - **Requirement:** Needs rich media (portfolio galleries), robust SEO (Schema.org injection), and social proof (reviews) built directly into the booking flow.
-
----
-
-## 🏗️ Technical Foundation (Context for Feasibility)
-*We are not starting from scratch. We have a modern, scalable stack:*
-- **Backend:** Node.js / Express / TypeScript
-- **Database:** PostgreSQL 15 (JSONB for flexibility, Geospatial ready, complex indexing)
-- **Frontend:** React 18 / Tailwind / Vite
-- **Architecture:** Multi-tenant by design (Storefronts isolated but queryable).
-
----
 
 ## 🎯 Target Audience
 - **Primary:** High-touch service providers (Salons, Barbers, Tattoo Artists, Personal Trainers).

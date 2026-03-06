@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LandingPage from './LandingPage';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -16,11 +17,12 @@ export default function HomePage() {
     );
   }
 
-  // Redirect based on authentication and role
+  // Unauthenticated users see the landing page
   if (!isAuthenticated) {
-    return <Navigate to="/explore" replace />;
+    return <LandingPage />;
   }
 
+  // Redirect authenticated users to their role-specific pages
   if (user?.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }

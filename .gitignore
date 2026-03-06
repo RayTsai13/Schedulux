@@ -35,3 +35,4 @@ docs/spec
 
 # Deployment (contains secrets)
 DEPLOYMENT_GUIDE.md
+CICD_GUIDE.md

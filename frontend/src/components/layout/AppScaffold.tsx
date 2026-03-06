@@ -7,9 +7,10 @@ import { useAuth } from '../../hooks/useAuth';
 interface AppScaffoldProps {
   children: React.ReactNode;
   showNav?: boolean;
+  noPadding?: boolean;
 }
 
-export default function AppScaffold({ children, showNav = true }: AppScaffoldProps) {
+export default function AppScaffold({ children, showNav = true, noPadding = false }: AppScaffoldProps) {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -138,7 +139,7 @@ export default function AppScaffold({ children, showNav = true }: AppScaffoldPro
       )}
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className={noPadding ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
         {children}
       </main>
     </div>
