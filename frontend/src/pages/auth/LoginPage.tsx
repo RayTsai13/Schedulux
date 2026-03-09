@@ -140,32 +140,6 @@ export default function LoginPage() {
               </UniversalButton>
             </form>
 
-            {/* Demo Credentials Hint */}
-            <div className="mt-6 p-4 bg-v3-background rounded-xl border border-v3-border">
-              <p className="text-sm text-v3-secondary mb-3 font-medium">
-                Demo Accounts:
-              </p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-semibold text-v3-primary mb-1.5">Vendors:</p>
-                  <div className="space-y-1 text-xs text-v3-secondary">
-                    <p><span className="text-v3-primary font-mono">midnight@schedulux.dev / Hero123!</span></p>
-                    <p><span className="text-v3-primary font-mono">fixit@schedulux.dev / Hero123!</span></p>
-                    <p><span className="text-v3-primary font-mono">flash@schedulux.dev / Hero123!</span></p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-v3-primary mb-1.5">Clients:</p>
-                  <div className="space-y-1 text-xs text-v3-secondary">
-                    <p><span className="text-v3-primary font-mono">client1@schedulux.dev / Client123!</span></p>
-                    <p><span className="text-v3-primary font-mono">client2@schedulux.dev / Client123!</span></p>
-                  </div>
-                </div>
-                <p className="text-xs text-v3-secondary/70 italic pt-2 border-t border-v3-border">
-                  Run <code className="px-1.5 py-0.5 bg-v3-surface rounded font-mono">npm run seed:clients</code> in backend to create client accounts
-                </p>
-              </div>
-            </div>
           </UniversalCard>
 
           {/* Footer Links */}

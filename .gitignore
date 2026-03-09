@@ -36,3 +36,6 @@ docs/spec
 # Deployment (contains secrets)
 DEPLOYMENT_GUIDE.md
 CICD_GUIDE.md
+DEMO_ACCOUNTS.md
+
+lessons/
