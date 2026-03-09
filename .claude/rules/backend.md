@@ -32,7 +32,7 @@
 
 ## Database Schema
 
-**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `drops`, `appointments`, `appointment_slots`
+**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `drops`, `appointments`, `appointment_slots`, `password_reset_tokens`
 
 **Key storefront fields:**
 - `profile_type`: `individual` | `business`
@@ -54,8 +54,11 @@
 
 **`findByClientId()` JOINs** `services` and `storefronts` to return `service_name` and `storefront_name` alongside each appointment row.
 
-## Migrations (apply in order)
+## Migrations
 
+In production/Docker, migrations run automatically on container startup via `npm run migrate` (`backend/src/migrate.ts`).
+
+For manual application (in order):
 ```bash
 psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
 psql -d schedulux_primary -f backend/migrations/005_marketplace_pivot.sql
@@ -65,6 +68,33 @@ psql -d schedulux_primary -f backend/migrations/008_visual_portfolio.sql
 psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
 psql -d schedulux_primary -f backend/migrations/010_password_reset_tokens.sql
 ```
+
+New migrations go in `backend/migrations/` with the next number prefix (e.g. `011_...sql`). Never edit existing migration files.
+
+## Storefront & Service API Endpoints
+
+- `GET /api/storefronts` - vendor's own storefronts (auth required, vendor)
+- `POST /api/storefronts` - create storefront (auth required, vendor)
+- `GET /api/storefronts/:id` - get storefront (auth required)
+- `PUT /api/storefronts/:id` - update storefront (auth required, owner)
+- `DELETE /api/storefronts/:id` - soft delete (auth required, owner)
+- `GET /api/storefronts/:id/services` - list services (auth required)
+- `POST /api/storefronts/:id/services` - create service (auth required, owner)
+- `PUT /api/storefronts/:id/services/:serviceId` - update service (auth required, owner)
+- `DELETE /api/storefronts/:id/services/:serviceId` - soft delete service (auth required, owner)
+- `GET /api/storefronts/:id/rules` - list schedule rules (auth required)
+- `POST /api/storefronts/:id/rules` - create schedule rule (auth required, owner)
+- `PUT /api/storefronts/:id/rules/:ruleId` - update rule (auth required, owner)
+- `DELETE /api/storefronts/:id/rules/:ruleId` - delete rule (auth required, owner)
+- `GET /api/availability?storefront_id=&service_id=&start_date=&end_date=` - available slots (no auth)
+
+## Image Upload Endpoint
+
+- `POST /api/upload/service-image` - upload image to Cloudinary (auth required, vendor)
+  - Content-Type: `multipart/form-data`, field name: `image`
+  - Max size: 5MB
+  - Returns: `{ url: string, public_id: string }`
+  - Gracefully returns 503 if `CLOUDINARY_CLOUD_NAME` is not configured
 
 ## Drop API Endpoints
 
@@ -128,7 +158,20 @@ No-ops gracefully when `SENDGRID_API_KEY` is unset (logs to console instead).
 - `authLimiter` — 10 req / 15 min per IP, applied to `/api/auth/*`
 - `apiLimiter` — 100 req / 15 min per IP, applied to `/api/*`
 
+## Environment Variables
+
+Required at runtime (app exits if missing):
+- `JWT_SECRET` — signs and verifies JWTs
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — PostgreSQL connection
+
+Optional (features degrade gracefully if unset):
+- `SENDGRID_API_KEY` — emails log to console if missing
+- `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` — email sender identity
+- `FRONTEND_URL` — used in password reset email links (defaults to `http://localhost:5173`)
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — image uploads return 503 if missing
+
 ## Debugging
 
 - Console shows 🟢/🔴 per request with duration
 - API test: `curl -H "Authorization: Bearer <token>" http://localhost:3000/api/path`
+- Health check: `curl http://localhost:3000/health` (returns DB connectivity status)

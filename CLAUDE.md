@@ -33,8 +33,9 @@ docker compose up                       # Run containerized stack locally
 | Concurrency | PostgreSQL advisory locks (race condition prevention) |
 | Email | SendGrid (@sendgrid/mail) |
 | Rate Limiting | express-rate-limit |
-| Containers | Docker (multi-stage), nginx (frontend SPA serving) |
-| CI/CD | GitHub Actions → AWS ECR → ECS |
+| Image Uploads | Cloudinary (multer + cloudinary SDK) |
+| Containers | Docker (multi-stage), nginx (frontend SPA serving), Caddy (reverse proxy + auto HTTPS) |
+| CI/CD | GitHub Actions → SSH deploy to AWS EC2 |
 
 ## Environment Setup
 
@@ -45,14 +46,17 @@ DB_PORT=5432
 DB_NAME=schedulux_primary
 DB_USER=<your_db_user>
 DB_PASSWORD=<your_db_password>
-JWT_SECRET=<your-secret-key>
+JWT_SECRET=<your-secret-key>        # REQUIRED — app refuses to start if missing
 NODE_ENV=development
 PORT=3000
 ALLOWED_ORIGINS=http://localhost:5173
 SENDGRID_API_KEY=           # optional in dev — emails log to console if unset
 SENDGRID_FROM_EMAIL=noreply@schedulux.com
 SENDGRID_FROM_NAME=Schedulux
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173  # REQUIRED in prod — used in password reset emails
+CLOUDINARY_CLOUD_NAME=      # optional — image uploads return 503 if unset
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
 Copy `frontend/.env.example` → `frontend/.env`:
@@ -65,14 +69,26 @@ VITE_API_URL=http://localhost:3000/api
 - Backend patterns, DB schema, API endpoints: @.claude/rules/backend.md
 - Frontend patterns, hooks, components: @.claude/rules/frontend.md
 
-## What's Left to Build
+## Deployment
 
-See `plan.md` at the project root for the full implementation guide. Summary:
+- Full AWS EC2 + RDS setup: `DEPLOYMENT_GUIDE.md`
+- GitHub Actions CI/CD pipeline: `CICD_GUIDE.md`
+- Local Docker stack: `docker compose -f docker-compose.local.yml up`
+- Production Docker stack: `docker compose up` (requires `.env` with RDS credentials)
 
-| Feature | Phase | Status |
-|---------|-------|--------|
-| Docker + CI/CD (AWS ECS) | 1D-1G | Not started |
-| Rate limiting (express-rate-limit) | 2 | ✅ Done |
-| Email notifications (SendGrid) | 3 | ✅ Done |
-| Password reset flow | 4 | ✅ Done |
-| Error boundary + 404 page | 5 | ✅ Done |
+## Project Status
+
+| Feature | Status |
+|---------|--------|
+| Core scheduling (rules, availability, booking) | ✅ Done |
+| Rate limiting | ✅ Done |
+| Email notifications (SendGrid) | ✅ Done |
+| Password reset flow | ✅ Done |
+| Error boundary + 404 page | ✅ Done |
+| Marketplace + geolocation search | ✅ Done |
+| Drops feature | ✅ Done |
+| Admin dashboard | ✅ Done |
+| Image uploads (Cloudinary) | ✅ Done |
+| Docker + Caddy + nginx | ✅ Done |
+| CI/CD (GitHub Actions → EC2) | ✅ Done |
+| Reschedule flow | ✅ Done |

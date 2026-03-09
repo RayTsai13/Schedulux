@@ -43,6 +43,9 @@ Schedulux is a comprehensive appointment scheduling solution designed specifical
 | **Validation** | Zod + express-validator | Client & server input validation |
 | **Email** | SendGrid (@sendgrid/mail) | Transactional email (fire-and-forget) |
 | **Rate Limiting** | express-rate-limit | Auth (10/15min) + API (100/15min) |
+| **Image Uploads** | Cloudinary + multer | Service photo uploads |
+| **Containers** | Docker + Caddy + nginx | Multi-stage builds, auto-HTTPS, SPA serving |
+| **CI/CD** | GitHub Actions → AWS EC2 | Lint + build gate, SSH deploy on merge to main |
 
 ### Project Structure
 
@@ -119,7 +122,7 @@ schedulux/
 
 ### Environment Configuration
 
-Create a `.env` file in the backend directory:
+Create a `.env` file in the backend directory (copy from `backend/.env.example`):
 
 ```env
 # Database Configuration
@@ -129,7 +132,7 @@ DB_NAME=schedulux_primary
 DB_USER=your_username
 DB_PASSWORD=your_password
 
-# JWT Configuration
+# JWT Configuration (required — app refuses to start if missing)
 JWT_SECRET=your-super-secret-jwt-key
 
 # Application Settings
@@ -142,6 +145,11 @@ SENDGRID_API_KEY=
 SENDGRID_FROM_EMAIL=noreply@schedulux.com
 SENDGRID_FROM_NAME=Schedulux
 FRONTEND_URL=http://localhost:5173
+
+# Image Uploads (optional — upload endpoint returns 503 if unset)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
 Create a `.env` file in the frontend directory:
@@ -253,15 +261,25 @@ The application uses a sophisticated PostgreSQL schema optimized for scheduling 
 - ✅ Environment-based configuration
 
 **Database**
-- ✅ Production-ready schema (10 migrations)
+- ✅ Production-ready schema (10 migrations, auto-applied on container startup)
 - ✅ Advisory locks for race condition prevention
 - ✅ Exclusion constraints for conflict prevention
 - ✅ Optimized indexing for scheduling queries
+- ✅ Geolocation support (earthdistance extension, spatial indexes)
 
-### 🔄 Remaining
+**Infrastructure**
+- ✅ Docker multi-stage builds (backend + frontend)
+- ✅ Caddy reverse proxy with automatic HTTPS (Let's Encrypt)
+- ✅ nginx SPA serving with React Router fallback
+- ✅ GitHub Actions CI/CD (lint+build gate → SSH deploy to EC2)
+- ✅ AWS deployment guide (EC2 + RDS)
 
-- Docker + Docker Compose containerization
-- CI/CD pipeline (GitHub Actions → AWS ECR → ECS)
+### 🔄 Potential Future Work
+
+- Client review/rating system
+- In-app notification center
+- Vendor analytics dashboard
+- Real-time slot updates (WebSockets)
 
 ## 🤝 Contributing
 
