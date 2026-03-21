@@ -60,12 +60,12 @@ interface ScheduleRuleFormModalProps {
 }
 
 const inputClass =
-  'w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary ' +
-  'placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent';
+  'w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface ' +
+  'placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
 
 const selectClass =
-  'w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary ' +
-  'focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent';
+  'w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface ' +
+  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
 
 function buildDefaultValues(rule?: ScheduleRule | null): RuleFormData {
   if (rule) {
@@ -189,7 +189,7 @@ export default function ScheduleRuleFormModal({
 
         {/* Rule Type */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Rule Type <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -201,15 +201,15 @@ export default function ScheduleRuleFormModal({
                 className={
                   'py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ' +
                   (ruleType === type
-                    ? 'border-v3-accent bg-v3-accent/10 text-v3-accent'
-                    : 'border-v3-border text-v3-secondary hover:border-v3-accent/50')
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-outline-variant text-on-surface-variant hover:border-primary/50')
                 }
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>
-          <p className="mt-1 text-xs text-v3-secondary">
+          <p className="mt-1 text-xs text-on-surface-variant">
             {ruleType === 'weekly' && 'Repeats every week on a chosen day (e.g. regular hours)'}
             {ruleType === 'daily' && 'One-off override for a specific date (e.g. holiday closure)'}
             {ruleType === 'monthly' && 'Applies to an entire month'}
@@ -219,7 +219,7 @@ export default function ScheduleRuleFormModal({
         {/* Type-specific fields */}
         {ruleType === 'weekly' && (
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Day of Week <span className="text-red-500">*</span>
             </label>
             <Controller
@@ -235,8 +235,8 @@ export default function ScheduleRuleFormModal({
                       className={
                         'py-2 rounded-lg border text-xs font-medium transition-all ' +
                         (field.value === idx
-                          ? 'border-v3-accent bg-v3-accent text-white'
-                          : 'border-v3-border text-v3-secondary hover:border-v3-accent/50')
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-outline-variant text-on-surface-variant hover:border-primary/50')
                       }
                     >
                       {day.slice(0, 2)}
@@ -253,7 +253,7 @@ export default function ScheduleRuleFormModal({
 
         {ruleType === 'daily' && (
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Specific Date <span className="text-red-500">*</span>
             </label>
             <input
@@ -270,7 +270,7 @@ export default function ScheduleRuleFormModal({
         {ruleType === 'monthly' && (
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-v3-primary mb-2">
+              <label className="block text-sm font-medium text-on-surface mb-2">
                 Month <span className="text-red-500">*</span>
               </label>
               <Controller
@@ -294,7 +294,7 @@ export default function ScheduleRuleFormModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-v3-primary mb-2">
+              <label className="block text-sm font-medium text-on-surface mb-2">
                 Year (optional)
               </label>
               <input
@@ -310,7 +310,7 @@ export default function ScheduleRuleFormModal({
         {/* Hours */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Start Time <span className="text-red-500">*</span>
             </label>
             <input type="time" {...register('start_time')} className={inputClass} />
@@ -319,7 +319,7 @@ export default function ScheduleRuleFormModal({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               End Time <span className="text-red-500">*</span>
             </label>
             <input type="time" {...register('end_time')} className={inputClass} />
@@ -331,7 +331,7 @@ export default function ScheduleRuleFormModal({
 
         {/* Availability toggle */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">Status</label>
+          <label className="block text-sm font-medium text-on-surface mb-2">Status</label>
           <Controller
             name="is_available"
             control={control}
@@ -344,7 +344,7 @@ export default function ScheduleRuleFormModal({
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (field.value
                       ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-v3-border text-v3-secondary hover:border-green-300')
+                      : 'border-outline-variant text-on-surface-variant hover:border-green-300')
                   }
                 >
                   Open
@@ -356,7 +356,7 @@ export default function ScheduleRuleFormModal({
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (!field.value
                       ? 'border-red-400 bg-red-50 text-red-600'
-                      : 'border-v3-border text-v3-secondary hover:border-red-300')
+                      : 'border-outline-variant text-on-surface-variant hover:border-red-300')
                   }
                 >
                   Closed / Blocked
@@ -365,7 +365,7 @@ export default function ScheduleRuleFormModal({
             )}
           />
           {!isAvailable && (
-            <p className="mt-1 text-xs text-v3-secondary">
+            <p className="mt-1 text-xs text-on-surface-variant">
               This rule will block bookings during these hours, overriding regular weekly hours.
             </p>
           )}
@@ -374,7 +374,7 @@ export default function ScheduleRuleFormModal({
         {/* Max concurrent (only shown when open) */}
         {isAvailable && (
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Max Simultaneous Bookings
             </label>
             <Controller
@@ -398,7 +398,7 @@ export default function ScheduleRuleFormModal({
 
         {/* Optional name */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Label (optional)
           </label>
           <input

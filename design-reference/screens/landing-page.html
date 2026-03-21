@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#0b513d",
+              "tertiary-container": "#613b24",
+              "surface": "#fbf9f5",
+              "on-tertiary-fixed": "#311302",
+              "primary-fixed": "#b0f0d6",
+              "on-primary-container": "#80bea6",
+              "on-secondary-fixed-variant": "#394c2f",
+              "primary-container": "#064e3b",
+              "inverse-primary": "#95d3ba",
+              "error-container": "#ffdad6",
+              "on-secondary-fixed": "#0f2008",
+              "background": "#fbf9f5",
+              "surface-container-highest": "#e4e2de",
+              "surface-container-low": "#f5f3ef",
+              "primary": "#003527",
+              "inverse-on-surface": "#f2f0ed",
+              "on-primary": "#ffffff",
+              "surface-variant": "#e4e2de",
+              "on-primary-fixed": "#002117",
+              "tertiary": "#472510",
+              "surface-container-high": "#eae8e4",
+              "outline": "#707974",
+              "surface-tint": "#2b6954",
+              "on-tertiary-fixed-variant": "#643d26",
+              "secondary-fixed": "#d3e9c3",
+              "surface-bright": "#fbf9f5",
+              "error": "#ba1a1a",
+              "on-surface": "#1b1c1a",
+              "surface-dim": "#dbdad6",
+              "secondary-fixed-dim": "#b7cda8",
+              "secondary": "#516445",
+              "on-error-container": "#93000a",
+              "outline-variant": "#bfc9c3",
+              "primary-fixed-dim": "#95d3ba",
+              "surface-container": "#efeeea",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#556849",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#ffdbc9",
+              "tertiary-fixed-dim": "#f3ba9c",
+              "on-secondary": "#ffffff",
+              "on-surface-variant": "#404944",
+              "on-background": "#1b1c1a",
+              "on-tertiary-container": "#dca688",
+              "secondary-container": "#d0e7c0",
+              "on-tertiary": "#ffffff",
+              "inverse-surface": "#30312e"
+            },
+            fontFamily: {
+              "headline": ["Epilogue"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Epilogue', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto bg-[#fbf9f5]/80 dark:bg-[#1b1c1a]/80 backdrop-blur-md">
+<div class="text-xl font-bold text-[#003527] dark:text-[#fbf9f5] font-['Epilogue'] tracking-tight">The Modern Naturalist</div>
+<div class="hidden md:flex space-x-8 items-center">
+<a class="text-[#003527] dark:text-[#fbf9f5] font-semibold border-b-2 border-[#472510] pb-1 font-['Epilogue'] tracking-tight" href="#">Growth</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors font-['Epilogue'] tracking-tight" href="#">Marketplace</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors font-['Epilogue'] tracking-tight" href="#">Community</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors font-['Epilogue'] tracking-tight" href="#">About</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-md font-label font-medium hover:bg-primary-container transition-all active:scale-95 duration-200 ease-in-out">Join us</button>
+</nav>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative px-8 py-20 md:py-32 overflow-hidden">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-7 z-10">
+<span class="inline-block px-4 py-1.5 mb-6 rounded-full bg-secondary-container text-on-secondary-container font-label text-sm font-semibold uppercase tracking-wider">PNW Local Network</span>
+<h1 class="text-5xl md:text-7xl font-extrabold text-primary mb-8 leading-[1.1] tracking-tight">
+                        Rooted in Growth. <br/>
+<span class="text-tertiary">Local by Nature.</span>
+</h1>
+<p class="text-lg md:text-xl text-on-surface-variant max-w-xl mb-10 leading-relaxed">
+                        The Modern Naturalist is a bespoke sanctuary for Pacific Northwest entrepreneurs. We provide the tools, the community, and the forest floor for your small business to flourish.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-primary text-on-primary px-8 py-4 rounded-md font-bold text-lg hover:bg-primary-container transition-all shadow-lg shadow-primary/10">Start Growing</button>
+<button class="text-tertiary flex items-center gap-2 font-bold px-8 py-4 group">
+                            Explore the Directory
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="lg:col-span-5 relative">
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container-low relative">
+<img alt="Mist-covered evergreen forest in the Pacific Northwest" class="w-full h-full object-cover grayscale-[20%] sepia-[10%]" data-alt="Deep misty evergreen forest in morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUMp29AEWkc-BTwa5oLu6Ckr-_0bn8mwBjHvylBsI6eFNSCMCXIWWga0TZ4R0Gn7d48RE_CES2VIvo18Hr9PXDYyvbPM5dU82-H-_CXaH-B7e_fwp8Xhdci2myakTFl6xt4QRAVwyxEs9snk_EnfkE_bFhKfBMgDowl5-k64wG5eh_-bpQu0GV5119C5vsiJbMeX5ZNjZ3tT2BZqYzux-lS3HfndbQzOJCPLHOgqljpA7lWa-3vPyp1PkmyqOFH9wdPchBZn1diNu-"/>
+<div class="absolute bottom-6 left-6 right-6 p-6 bg-surface-container-lowest/90 backdrop-blur-md rounded-lg">
+<p class="text-sm font-label text-tertiary font-bold mb-1">CURRENTLY SPROUTING</p>
+<p class="text-lg font-headline font-bold text-primary">420+ Local Partners in Portland &amp; Seattle</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Feature Grid (Bento) -->
+<section class="py-24 px-8 bg-surface-container-low">
+<div class="max-w-7xl mx-auto">
+<div class="mb-16">
+<h2 class="text-4xl font-extrabold text-primary mb-4">Our Ecosystem</h2>
+<p class="text-on-surface-variant max-w-2xl">A curated suite of tools designed to cultivate connections and sustainable commerce across the cascades.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Tall Card -->
+<div class="md:row-span-2 bg-surface-container-lowest p-10 rounded-xl flex flex-col justify-between group hover:bg-white transition-colors">
+<div>
+<div class="w-12 h-12 bg-secondary-container rounded-full flex items-center justify-center text-on-secondary-container mb-8">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forest</span>
+</div>
+<h3 class="text-2xl font-bold text-primary mb-4">Community Directory</h3>
+<p class="text-on-surface-variant leading-relaxed">Visibility where it matters. Our directory isn't just a list—it's a curated map of sustainable local excellence.</p>
+</div>
+<div class="mt-12 overflow-hidden rounded-lg aspect-video bg-surface-container">
+<img alt="Local marketplace stall with greenery" class="w-full h-full object-cover opacity-80" data-alt="A lush artisan market stall in Seattle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGaY8_SQEtQQ5XMmoJc6R2q3sCldKwOdISLEQEh3cy_ouZ_hE9eyS8rbmhJOqIbwoU4s8RWGhTnjpNEYK-fyv2WhW8Q3_GOZEpAgfsy9l3XP6SMhYt0yCo3SgVNADaHOfje7rryazeGIBQHfL1rNZhvPHFJqVkoHMpZSvbFObczISPjVocsc8eDj6abhlWLYHp-WC48r_7Mdav8Jg4vptc3OljywAr5sUyp1Uw7dvDpH21IyDIh6gVqC3cmH36muCRk9AXM5u0XdGi"/>
+</div>
+</div>
+<!-- Wide Card -->
+<div class="md:col-span-2 bg-primary text-on-primary p-10 rounded-xl relative overflow-hidden group">
+<div class="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+<div class="flex-1">
+<h3 class="text-3xl font-bold mb-4">The Marketplace Hive</h3>
+<p class="text-on-primary/80 mb-6 max-w-md">Exchange goods and services with a community that values craft over convenience. No high fees, just high standards.</p>
+<button class="bg-surface text-primary px-6 py-2 rounded-md font-bold">Open Shop</button>
+</div>
+<div class="flex-1 hidden md:block">
+<span class="material-symbols-outlined text-[120px] opacity-20" style="font-variation-settings: 'FILL' 1;">hive</span>
+</div>
+</div>
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary-container rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
+</div>
+<!-- Small Cards -->
+<div class="bg-surface-container-lowest p-8 rounded-xl border-b-4 border-secondary-container">
+<span class="material-symbols-outlined text-tertiary mb-4" style="font-variation-settings: 'FILL' 1;">handshake</span>
+<h4 class="text-xl font-bold text-primary mb-2">Partner Onboarding</h4>
+<p class="text-sm text-on-surface-variant">Smooth integration into our network with dedicated local support.</p>
+</div>
+<div class="bg-surface-container-lowest p-8 rounded-xl border-b-4 border-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary mb-4" style="font-variation-settings: 'FILL' 1;">eco</span>
+<h4 class="text-xl font-bold text-primary mb-2">Sustainability Pact</h4>
+<p class="text-sm text-on-surface-variant">Join businesses committed to keeping the PNW green and thriving.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Voices of the PNW (Testimonials) -->
+<section class="py-24 px-8 bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+<div class="max-w-xl">
+<h2 class="text-4xl font-extrabold text-primary mb-4">Voices of the PNW</h2>
+<p class="text-on-surface-variant">Real stories from the owners who are defining the modern naturalist movement in our cities.</p>
+</div>
+<div class="flex gap-2">
+<button class="w-12 h-12 rounded-full border border-outline-variant flex items-center justify-center text-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-12 h-12 rounded-full border border-outline-variant flex items-center justify-center text-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="p-10 bg-surface-container-low rounded-xl relative">
+<span class="material-symbols-outlined text-tertiary-fixed-dim absolute top-6 right-8 text-6xl opacity-30">format_quote</span>
+<p class="text-xl font-headline italic text-primary leading-relaxed mb-8">
+                            "Finding a community that understands the unique rhythm of doing business in Oregon has been a game-changer. The Modern Naturalist isn't just a platform; it's our digital town square."
+                        </p>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-secondary-container overflow-hidden">
+<img alt="Owner of Cedar &amp; Moss" data-alt="Portrait of a small business owner" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2loeWdHwk487dFlV8g0ntL56T1rhZJeQlizcIGIdD0ZCACnKAEC46SFQKWVFaxtW4pF89QQtqM6cYjz-RYi2WEQkuU1o8HHikqtBwswhRFH3NQqXg_vbEd02LFUTJuD0C-Q0nC9sXZ4z9APH8WwmWDRSuzLeXqHAVScGBCLtjnpgdZ_1Miq411qRNImGM2q2nO4KO7T_vUJjqRWu3Ru7aH6MMIu3DPBqquiAtAfTl1eqcytf6XIvNVTbrAPQfJijGZbIaz56e5SfV"/>
+</div>
+<div>
+<p class="font-bold text-primary">Elena Rivers</p>
+<p class="text-sm text-on-surface-variant">Founder, Cedar &amp; Moss Studio</p>
+</div>
+</div>
+</div>
+<div class="p-10 bg-surface-container-low rounded-xl relative">
+<span class="material-symbols-outlined text-tertiary-fixed-dim absolute top-6 right-8 text-6xl opacity-30">format_quote</span>
+<p class="text-xl font-headline italic text-primary leading-relaxed mb-8">
+                            "The Marketplace Hive allowed us to scale our artisan coffee distribution without losing the personal touch that our customers in Ballard love. It's growth with integrity."
+                        </p>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-secondary-container overflow-hidden">
+<img alt="Founder of Sound Roast" data-alt="Small business owner smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHC-IhBPjZwZi4D9_lT5yIldUImzzmumOz8lgkFTP-xS715W-XOiF-5elynNXIHPSa0RGDWibKakGKG02_nDqMvuedHXkZCoJ_MMfHa4V8iF1V7gQqprtLFiZndNAjiA6eMiP-PitDNd_rypAN64NpwmySimxRZzzQbTtvmHtmQxeDZtDjHwiszAwjVolzQXkS66YCZuwseRFIiLf-cuszPS1tRJkMM_GZxI3ddNnGb_zGPLTj38zY4tJYhDHoHR_2R5T4x737Kltx"/>
+</div>
+<div>
+<p class="font-bold text-primary">Marcus Thorne</p>
+<p class="text-sm text-on-surface-variant">Owner, Sound Roast Coffee</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 px-8">
+<div class="max-w-7xl mx-auto rounded-3xl bg-primary-container p-12 md:p-24 text-center relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-4xl md:text-6xl font-extrabold text-on-primary mb-8 max-w-3xl mx-auto leading-tight">Ready to plant your roots in our network?</h2>
+<p class="text-on-primary/70 text-lg md:text-xl mb-12 max-w-xl mx-auto font-body">Join the hundreds of local PNW businesses already thriving within our shared ecosystem.</p>
+<div class="flex flex-col sm:flex-row gap-6 justify-center">
+<button class="bg-secondary-fixed text-on-secondary-fixed px-10 py-4 rounded-md font-bold text-lg hover:bg-secondary-fixed-dim transition-all">Become a Partner</button>
+<button class="bg-transparent border-2 border-on-primary/30 text-on-primary px-10 py-4 rounded-md font-bold text-lg hover:bg-on-primary/10 transition-all">View the Pact</button>
+</div>
+</div>
+<!-- Decorative Gradients -->
+<div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary to-transparent opacity-50"></div>
+<div class="absolute -bottom-24 -right-24 w-96 h-96 bg-tertiary-container rounded-full blur-3xl opacity-30"></div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 px-8 grid grid-cols-1 md:grid-cols-4 gap-12 border-t border-[#bfc9c3]/15 bg-[#f5f3ef] dark:bg-[#1b1c1a]">
+<div class="md:col-span-1">
+<div class="text-lg font-bold text-[#003527] dark:text-[#fbf9f5] mb-6 font-['Epilogue']">The Modern Naturalist</div>
+<p class="text-[#404944] dark:text-[#bfc9c3] font-['Manrope'] text-sm leading-relaxed">
+                © 2024 The Modern Naturalist. Rooted in the Pacific Northwest. Our mission is to preserve the independent spirit of our local economy.
+            </p>
+</div>
+<div class="flex flex-col space-y-4">
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] font-['Manrope'] text-sm uppercase tracking-wider">Navigation</h4>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Local Directory</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Sustainability Pact</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Partner Onboarding</a>
+</div>
+<div class="flex flex-col space-y-4">
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] font-['Manrope'] text-sm uppercase tracking-wider">Legal</h4>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Privacy Policy</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Terms of Growth</a>
+</div>
+<div class="flex flex-col space-y-4">
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] font-['Manrope'] text-sm uppercase tracking-wider">Connect</h4>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all font-['Manrope'] text-sm" href="#">Contact Support</a>
+<div class="flex gap-4 mt-2">
+<span class="material-symbols-outlined text-[#003527] dark:text-[#fbf9f5]">hub</span>
+<span class="material-symbols-outlined text-[#003527] dark:text-[#fbf9f5]">potted_plant</span>
+</div>
+</div>
+</footer>
+</body></html>

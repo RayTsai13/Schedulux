@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vendor Dashboard | PNW Collective</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#472510",
+              "secondary-fixed-dim": "#b7cda8",
+              "on-primary-container": "#80bea6",
+              "inverse-on-surface": "#f2f0ed",
+              "on-primary-fixed-variant": "#0b513d",
+              "on-primary": "#ffffff",
+              "on-primary-fixed": "#002117",
+              "surface-bright": "#fbf9f5",
+              "surface-container-high": "#eae8e4",
+              "surface-dim": "#dbdad6",
+              "tertiary-fixed-dim": "#f3ba9c",
+              "outline-variant": "#bfc9c3",
+              "on-surface": "#1b1c1a",
+              "on-surface-variant": "#404944",
+              "on-error": "#ffffff",
+              "surface-variant": "#e4e2de",
+              "on-secondary-fixed": "#0f2008",
+              "error": "#ba1a1a",
+              "surface-container-lowest": "#ffffff",
+              "on-background": "#1b1c1a",
+              "tertiary-fixed": "#ffdbc9",
+              "surface-container": "#efeeea",
+              "secondary-fixed": "#d3e9c3",
+              "primary": "#003527",
+              "on-secondary-container": "#556849",
+              "on-tertiary-fixed-variant": "#643d26",
+              "primary-container": "#064e3b",
+              "surface-tint": "#2b6954",
+              "on-tertiary-fixed": "#311302",
+              "surface-container-low": "#f5f3ef",
+              "surface": "#fbf9f5",
+              "primary-fixed-dim": "#95d3ba",
+              "on-secondary-fixed-variant": "#394c2f",
+              "on-error-container": "#93000a",
+              "primary-fixed": "#b0f0d6",
+              "inverse-surface": "#30312e",
+              "tertiary-container": "#613b24",
+              "secondary-container": "#d0e7c0",
+              "on-secondary": "#ffffff",
+              "error-container": "#ffdad6",
+              "inverse-primary": "#95d3ba",
+              "outline": "#707974",
+              "on-tertiary-container": "#dca688",
+              "on-tertiary": "#ffffff",
+              "secondary": "#516445",
+              "surface-container-highest": "#e4e2de",
+              "background": "#fbf9f5"
+            },
+            fontFamily: {
+              "headline": ["Epilogue"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'Epilogue', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen sticky left-0 top-0 p-6 bg-[#f5f3ef] dark:bg-[#1b1c1a] w-64 shrink-0">
+<div class="flex flex-col gap-1 mb-10 px-4">
+<span class="text-xl font-bold text-[#003527] dark:text-[#fbf9f5] font-headline">PNW Collective</span>
+<span class="text-xs font-label text-on-surface-variant tracking-wider uppercase">Small Business Hub</span>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 bg-[#d0e7c0] dark:bg-[#064e3b] text-[#003527] dark:text-[#ffffff] rounded-lg px-4 py-3 font-semibold translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-label">Overview</span>
+</a>
+<a class="flex items-center gap-3 text-[#404944] dark:text-[#bfc9c3] px-4 py-3 hover:bg-[#d0e7c0]/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="text-sm font-label">Analytics</span>
+</a>
+<a class="flex items-center gap-3 text-[#404944] dark:text-[#bfc9c3] px-4 py-3 hover:bg-[#d0e7c0]/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-sm font-label">Artisans</span>
+</a>
+<a class="flex items-center gap-3 text-[#404944] dark:text-[#bfc9c3] px-4 py-3 hover:bg-[#d0e7c0]/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="text-sm font-label">Calendar</span>
+</a>
+<a class="flex items-center gap-3 text-[#404944] dark:text-[#bfc9c3] px-4 py-3 hover:bg-[#d0e7c0]/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-sm font-label">Customers</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant/15 flex flex-col gap-2">
+<button class="mb-4 bg-primary text-on-primary px-4 py-3 rounded-md font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Add New Service
+            </button>
+<a class="flex items-center gap-3 text-[#404944] dark:text-[#bfc9c3] px-4 py-2 text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 text-error px-4 py-2 text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 pb-24 lg:pb-0">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-8 py-6 max-w-screen-2xl mx-auto bg-[#fbf9f5] dark:bg-[#1b1c1a]">
+<div class="flex items-baseline gap-4">
+<h1 class="text-2xl font-bold tracking-tight text-[#003527] dark:text-[#fbf9f5] font-headline">Dashboard</h1>
+<span class="text-on-surface-variant text-sm font-body hidden md:inline">Welcome back, Cedar Glen Flora</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<input class="bg-surface-container-low border-none border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm font-body px-4 py-2 w-64 transition-all" placeholder="Search insights..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-[#404944] dark:text-[#bfc9c3]">
+<button class="material-symbols-outlined hover:text-primary transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined hover:text-primary transition-colors" data-icon="settings">settings</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
+<img alt="User profile avatar" data-alt="Close up portrait of a florist smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf5IhesRj-eopQL95JqJJkKb5ahWfzoOoQh5wBl31int38H73Nq38xJRsUkI77Q0LfxCXiq1-dxvR_nMCP3oUwtFsPqsdWWzRDY_Eg_5L9KialULdNxQDhpOUwp2hI6SMNMZjtO-e1mQ5rGndpe6hnU1NH0oPk3v-LJO6E7HENcwtK0sCZdXe9RDycLkdW-6gQ_wdruIQp29TcTcIhJ3whPn5Z8vKWjTFUMmWL0PT1lcp_eusx92hE1XSH7aWEpifZeH-K7qTQOVzv"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="px-8 py-4 max-w-screen-2xl mx-auto w-full space-y-12">
+<!-- Metric Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+<!-- Total Impact Value -->
+<div class="col-span-1 md:col-span-2 bg-primary p-8 rounded-xl flex flex-col justify-between text-on-primary min-h-[200px] relative overflow-hidden group">
+<div class="relative z-10">
+<span class="text-on-primary-container text-xs font-label tracking-widest uppercase">Total Impact Value</span>
+<h2 class="text-5xl font-bold font-headline mt-2 tracking-tight">$42,890</h2>
+<div class="flex items-center gap-2 mt-4 text-on-primary-container text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span>12% increase from last quarter</span>
+</div>
+</div>
+<div class="absolute right-0 bottom-0 opacity-10 group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[160px]" data-icon="eco">eco</span>
+</div>
+</div>
+<!-- Active Subscribers -->
+<div class="bg-surface-container-lowest p-8 rounded-xl flex flex-col justify-between min-h-[200px] border-b-2 border-outline-variant/15">
+<div>
+<span class="text-on-surface-variant text-xs font-label tracking-widest uppercase">Active Subscribers</span>
+<h2 class="text-4xl font-bold font-headline mt-2 text-primary">842</h2>
+</div>
+<div class="flex -space-x-3 overflow-hidden mt-4">
+<img alt="Subscriber" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" data-alt="Portrait of a female artisan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3dbaf6mz3YaCKd9NIj1830_aEzhS-5xJlsANSv8LH0VsdIyBrYTf0jRH1NtYUYXoLXJKWKrooJ-ioq1JtxBZbh-NelCnsxr-ah_EMDkOhMu6ZubfPNMiXSKBe6-Jolbh1lN93_0Nqn8xJaOlEISByjTfyVUFTx0TZ7uuhUkBlfpUmrn_Ga-F_vnYlvvl-t7TasxyJ54j5Od1hkvjt_7qPlfCzsY97fmHVfwIiw6BhMIPn0kVaup5jlD4GkJ8DHigPidxZ5WjH9Fqh"/>
+<img alt="Subscriber" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" data-alt="Portrait of a young male customer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNCYK5bvZfeNj5fh7U6J46SSPAQFj8f5iiV7ZEw_FBOng5Hlgh8iqcYbqt_4MK782YMCnv8fQWsvMSuM4h1gte-hxSQKNgpFbdHmwCp4_BAvur0ZRuK-J8KAaJjO7LUC4oa-JxTIqv87r_0b3iPEvPbf--qRsM3BX8jZ2wBICMU4dPBlTxEI2VKI_2W838DX4u5P8q2O6z2vF6oUGP0pZ5Y7F-koSElSTJ2_B94PZLP2wDdA3skpYoHTLhzZ2D0qYXY74ZVcysx68K"/>
+<img alt="Subscriber" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" data-alt="Portrait of a woman wearing a hat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdGIcGmqyk5A7lbsb3I2PJ-6LBRrW8hkW1AOnoUhJT45QTuWgOzySgHJVTHcNjjWeDHW8eOda2up28gLuXQfkxpfGHhhNL2YPWr5bNNHSqaKEzPr-g5GE6k0H2V5mAPZ-mjEHgvngnzOA3W3izeSWFSt__RwqvgRGjbrHxckQmlKRRWsS73x6RVl6hLGSkXjGyg7fTErtdYqZ-MJxDbrMNVksWTVvqvFiKZvd9nFIFunG24QKTyZSZfv6y70znTAg0rydUe2O4Dk45"/>
+<div class="flex items-center justify-center h-8 w-8 rounded-full bg-secondary-container text-[10px] font-bold text-on-secondary-container ring-2 ring-white">+839</div>
+</div>
+</div>
+<!-- Community Reach -->
+<div class="bg-surface-container-low p-8 rounded-xl flex flex-col justify-between min-h-[200px]">
+<div>
+<span class="text-on-surface-variant text-xs font-label tracking-widest uppercase">Local Reach</span>
+<h2 class="text-4xl font-bold font-headline mt-2 text-primary">12k</h2>
+</div>
+<p class="text-on-surface-variant text-xs font-body leading-relaxed">Unique monthly visits from the Olympic Peninsula area.</p>
+</div>
+</section>
+<!-- Main Dashboard Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Performance & Highlights -->
+<div class="lg:col-span-8 space-y-12">
+<div>
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-2xl font-bold font-headline text-primary">Revenue Trend</h3>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold uppercase tracking-wider">Weekly</span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Monthly</span>
+</div>
+</div>
+<div class="aspect-[16/7] bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden">
+<!-- Mock Chart Visualization -->
+<div class="absolute inset-x-8 bottom-8 top-16 flex items-end justify-between gap-4">
+<div class="w-full bg-secondary-container/30 h-[40%] rounded-t-sm"></div>
+<div class="w-full bg-secondary-container/40 h-[60%] rounded-t-sm"></div>
+<div class="w-full bg-secondary-container/30 h-[50%] rounded-t-sm"></div>
+<div class="w-full bg-primary h-[85%] rounded-t-sm"></div>
+<div class="w-full bg-secondary-container/40 h-[70%] rounded-t-sm"></div>
+<div class="w-full bg-secondary-container/30 h-[45%] rounded-t-sm"></div>
+<div class="w-full bg-secondary-container/40 h-[95%] rounded-t-sm"></div>
+</div>
+<div class="flex justify-between text-[10px] font-label text-on-surface-variant mt-2 absolute bottom-2 inset-x-8">
+<span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+</div>
+</div>
+</div>
+<!-- Event Highlights -->
+<div>
+<h3 class="text-2xl font-bold font-headline text-primary mb-8">Upcoming Local Events</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex gap-6 p-6 bg-surface-container-low rounded-xl group hover:bg-surface-container-lowest transition-colors">
+<div class="shrink-0 text-center">
+<span class="block text-tertiary font-bold text-lg font-headline">JUN</span>
+<span class="block text-3xl font-extrabold text-primary font-headline">14</span>
+</div>
+<div class="space-y-2">
+<h4 class="font-bold text-on-surface text-lg leading-tight">Port Townsend Summer Market</h4>
+<p class="text-sm text-on-surface-variant font-body">Featured Artisan Spot: Table 24B</p>
+<div class="flex items-center gap-2 text-xs text-primary font-bold pt-2">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span>Civic Center Plaza</span>
+</div>
+</div>
+</div>
+<div class="flex gap-6 p-6 bg-surface-container-low rounded-xl group hover:bg-surface-container-lowest transition-colors">
+<div class="shrink-0 text-center">
+<span class="block text-tertiary font-bold text-lg font-headline">JUN</span>
+<span class="block text-3xl font-extrabold text-primary font-headline">21</span>
+</div>
+<div class="space-y-2">
+<h4 class="font-bold text-on-surface text-lg leading-tight">Solstice Floral Workshop</h4>
+<p class="text-sm text-on-surface-variant font-body">12 Registered • 3 Spots Left</p>
+<div class="flex items-center gap-2 text-xs text-primary font-bold pt-2">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span>6:00 PM - 8:30 PM</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Panel / Social & Notifications -->
+<div class="lg:col-span-4 space-y-12">
+<div class="bg-surface-container-lowest p-8 rounded-xl border-b-2 border-outline-variant/15">
+<h3 class="text-xl font-bold font-headline text-primary mb-6">Recent Activity</h3>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-secondary mt-2"></div>
+<div>
+<p class="text-sm font-body text-on-surface">New subscription from <span class="font-bold text-primary">Marlowe K.</span></p>
+<span class="text-[10px] text-on-surface-variant font-label uppercase">2 minutes ago</span>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-outline-variant mt-2"></div>
+<div>
+<p class="text-sm font-body text-on-surface">Inventory alert: <span class="font-bold text-tertiary">Eucalyptus Bundles</span> low.</p>
+<span class="text-[10px] text-on-surface-variant font-label uppercase">1 hour ago</span>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-secondary mt-2"></div>
+<div>
+<p class="text-sm font-body text-on-surface">Payout of <span class="font-bold text-primary">$1,240.00</span> processed.</p>
+<span class="text-[10px] text-on-surface-variant font-label uppercase">Yesterday</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-2 text-sm font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-tertiary-fixed transition-all">
+                            View All History
+                        </button>
+</div>
+<div class="bg-tertiary p-8 rounded-xl text-on-tertiary relative overflow-hidden">
+<h3 class="text-xl font-bold font-headline mb-2">Artisan Support</h3>
+<p class="text-sm font-body opacity-80 mb-6 leading-relaxed">Need help with your listings or event booking? Our collective coordinators are available.</p>
+<button class="bg-tertiary-fixed text-on-tertiary-fixed px-6 py-2 rounded-md font-bold text-sm hover:bg-tertiary-fixed-dim transition-colors">
+                            Contact Support
+                        </button>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[100px]" data-icon="support_agent">support_agent</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-[#fbf9f5]/80 dark:bg-[#1b1c1a]/80 backdrop-blur-md border-t border-[#bfc9c3]/15 shadow-[0_-10px_30px_rgba(27,28,26,0.03)] rounded-t-3xl">
+<a class="flex flex-col items-center justify-center bg-[#d0e7c0] dark:bg-[#064e3b] text-[#003527] dark:text-[#ffffff] rounded-2xl px-5 py-2 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-medium font-label mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#404944] dark:text-[#bfc9c3] px-5 py-2 active:bg-[#d0e7c0]" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="text-[10px] font-medium font-label mt-1">Metrics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#404944] dark:text-[#bfc9c3] px-5 py-2 active:bg-[#d0e7c0]" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="text-[10px] font-medium font-label mt-1">Schedule</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#404944] dark:text-[#bfc9c3] px-5 py-2 active:bg-[#d0e7c0]" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium font-label mt-1">Account</span>
+</a>
+</nav>
+</body></html>

@@ -36,32 +36,32 @@ export default function BookingStepConfirm({
     <div className="space-y-6">
       {/* Review Card */}
       <UniversalCard>
-        <h3 className="text-lg font-semibold text-v3-primary mb-4">Booking Summary</h3>
+        <h3 className="text-lg font-semibold text-on-surface mb-4">Booking Summary</h3>
         <div className="space-y-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-v3-secondary">Service:</span>
-            <span className="font-medium text-v3-primary">{service.name}</span>
+            <span className="text-on-surface-variant">Service:</span>
+            <span className="font-medium text-on-surface">{service.name}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-v3-secondary">Date:</span>
-            <span className="font-medium text-v3-primary">
+            <span className="text-on-surface-variant">Date:</span>
+            <span className="font-medium text-on-surface">
               {format(selectedDate, 'EEEE, MMMM d, yyyy')}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-v3-secondary">Time:</span>
-            <span className="font-medium text-v3-primary">
+            <span className="text-on-surface-variant">Time:</span>
+            <span className="font-medium text-on-surface">
               {selectedSlot.local_start_time} - {selectedSlot.local_end_time}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-v3-secondary">Duration:</span>
-            <span className="font-medium text-v3-primary">{service.duration} minutes</span>
+            <span className="text-on-surface-variant">Duration:</span>
+            <span className="font-medium text-on-surface">{service.duration} minutes</span>
           </div>
           {service.price && (
-            <div className="flex justify-between pt-3 border-t border-v3-border">
-              <span className="text-v3-secondary">Price:</span>
-              <span className="font-semibold text-lg text-v3-primary">${service.price}</span>
+            <div className="flex justify-between pt-3 border-t border-outline-variant">
+              <span className="text-on-surface-variant">Price:</span>
+              <span className="font-semibold text-lg text-on-surface">${service.price}</span>
             </div>
           )}
         </div>
@@ -70,11 +70,11 @@ export default function BookingStepConfirm({
       {/* Location Type Selector (only for mobile/hybrid vendors) */}
       {isMobileOrHybrid && (
         <div>
-          <h3 className="text-lg font-semibold text-v3-primary mb-3">Service Location</h3>
+          <h3 className="text-lg font-semibold text-on-surface mb-3">Service Location</h3>
           <div className="space-y-2">
             {/* At Vendor Location (only if hybrid or has fixed address) */}
             {(storefront.location_type === 'hybrid' || storefront.address) && (
-              <label className="flex items-start gap-3 p-4 border-2 border-v3-border rounded-2xl cursor-pointer hover:bg-v3-surface-highlight transition-colors">
+              <label className="flex items-start gap-3 p-4 border-2 border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
                 <input
                   type="radio"
                   name="locationType"
@@ -84,16 +84,16 @@ export default function BookingStepConfirm({
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-v3-primary">At {storefront.name}'s location</div>
+                  <div className="font-medium text-on-surface">At {storefront.name}'s location</div>
                   {storefront.address && (
-                    <div className="text-sm text-v3-secondary mt-1">{storefront.address}</div>
+                    <div className="text-sm text-on-surface-variant mt-1">{storefront.address}</div>
                   )}
                 </div>
               </label>
             )}
 
             {/* At Client Location */}
-            <label className="flex items-start gap-3 p-4 border-2 border-v3-border rounded-2xl cursor-pointer hover:bg-v3-surface-highlight transition-colors">
+            <label className="flex items-start gap-3 p-4 border-2 border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
               <input
                 type="radio"
                 name="locationType"
@@ -103,8 +103,8 @@ export default function BookingStepConfirm({
                 className="mt-1"
               />
               <div className="flex-1">
-                <div className="font-medium text-v3-primary">At my location</div>
-                <div className="text-sm text-v3-secondary mt-1">
+                <div className="font-medium text-on-surface">At my location</div>
+                <div className="text-sm text-on-surface-variant mt-1">
                   Service area: {storefront.service_area_city || storefront.city}
                   {storefront.service_radius && ` (${storefront.service_radius}mi radius)`}
                 </div>
@@ -115,7 +115,7 @@ export default function BookingStepConfirm({
           {/* Client Address Input (only if at_client selected) */}
           {locationType === 'at_client' && (
             <div className="mt-3">
-              <label className="block text-sm font-medium text-v3-primary mb-2">
+              <label className="block text-sm font-medium text-on-surface mb-2">
                 Your Address <span className="text-red-500">*</span>
               </label>
               <input
@@ -123,7 +123,7 @@ export default function BookingStepConfirm({
                 value={clientAddress}
                 onChange={(e) => onClientAddressChange(e.target.value)}
                 placeholder="123 Main St, City, State ZIP"
-                className="w-full px-4 py-3 border-2 border-v3-border rounded-xl focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                className="w-full px-4 py-3 border-2 border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
             </div>
@@ -133,7 +133,7 @@ export default function BookingStepConfirm({
 
       {/* Optional Notes */}
       <div>
-        <label className="block text-sm font-medium text-v3-primary mb-2">
+        <label className="block text-sm font-medium text-on-surface mb-2">
           Special Requests (Optional)
         </label>
         <textarea
@@ -141,7 +141,7 @@ export default function BookingStepConfirm({
           onChange={(e) => onClientNotesChange(e.target.value)}
           placeholder="Any special requests or notes for the vendor..."
           rows={3}
-          className="w-full px-4 py-3 border-2 border-v3-border rounded-xl focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent resize-none"
+          className="w-full px-4 py-3 border-2 border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
         />
       </div>
 

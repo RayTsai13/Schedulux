@@ -1,9 +1,22 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, MapPin, Navigation } from 'lucide-react';
-import UniversalCard from '../universal/UniversalCard';
-import UniversalButton from '../universal/UniversalButton';
 
+// ---------------------------------------------------------------------------
+// Icon helper
+// ---------------------------------------------------------------------------
+function Icon({ name, className = '', fill = false }: { name: string; className?: string; fill?: boolean }) {
+  return (
+    <span
+      className={`material-symbols-outlined ${className}`}
+      style={fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+    >
+      {name}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 interface StorefrontCardProps {
   id: number;
   name: string;
@@ -19,105 +32,110 @@ interface StorefrontCardProps {
   serviceCategories?: string[];
 }
 
+// ---------------------------------------------------------------------------
+// StorefrontCard — editorial, image-forward card matching the reference design
+// ---------------------------------------------------------------------------
 export default function StorefrontCard({
-  id, name, description, avatarUrl, locationType,
-  isVerified, location, serviceCount, priceRange, distanceMiles, isOwned = false,
+  id,
+  name,
+  description,
+  avatarUrl,
+  locationType,
+  isVerified,
+  location,
+  serviceCount,
+  distanceMiles,
+  isOwned = false,
   serviceCategories = [],
 }: StorefrontCardProps) {
   const navigate = useNavigate();
 
+  // Determine a badge label based on verification / location type
+  const badgeLabel = isOwned
+    ? 'Your Storefront'
+    : isVerified
+    ? 'Verified Partner'
+    : locationType === 'mobile'
+    ? 'Mobile Service'
+    : null;
+
+  // Primary category or fallback
+  const primaryCategory = serviceCategories[0] || (locationType === 'mobile' ? 'mobile service' : 'local business');
+
+  // Initials fallback for the image placeholder
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+
   return (
-    <UniversalCard noPadding className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-6 flex items-start gap-4">
-        {/* Avatar */}
+    <div
+      className="group flex flex-col space-y-4 cursor-pointer"
+      onClick={() => navigate(isOwned ? `/dashboard/storefront/${id}` : `/book/${id}`)}
+    >
+      {/* Image */}
+      <div className="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
         {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="w-16 h-16 rounded-full object-cover border-2 border-v3-border" />
+          <img
+            src={avatarUrl}
+            alt={name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-v3-accent to-purple-600 flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">{name.charAt(0).toUpperCase()}</span>
+          <div className="w-full h-full bg-gradient-to-br from-secondary-container to-surface-container-high flex items-center justify-center">
+            <span className="text-6xl font-headline font-bold text-primary/30">{initials}</span>
           </div>
         )}
 
-        {/* Name + Badges */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 mb-1">
-            <h3 className="text-xl font-semibold text-v3-primary truncate">{name}</h3>
-            {isVerified && <CheckCircle className="h-5 w-5 text-blue-500 flex-shrink-0" />}
-          </div>
-
-          {/* Location Type Badge + Owned Badge */}
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className={`
-              inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-              ${locationType === 'mobile' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}
-            `}>
-              {locationType === 'mobile' && <Navigation className="h-3 w-3" />}
-              {locationType === 'mobile' ? 'Comes to you' : 'Fixed location'}
+        {/* Badge overlay */}
+        {badgeLabel && (
+          <div className="absolute top-4 right-4">
+            <span className="bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-tertiary">
+              {badgeLabel}
             </span>
-            {isOwned && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-v3-accent/10 text-v3-accent border border-v3-accent/20">
-                ✓ Your Storefront
-              </span>
-            )}
           </div>
+        )}
+      </div>
 
-          {/* Location */}
-          <div className="flex items-center gap-1 text-sm text-v3-secondary">
-            <MapPin className="h-4 w-4" />
+      {/* Name + Rating */}
+      <div className="flex justify-between items-start">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xl font-bold text-primary group-hover:text-tertiary transition-colors font-headline truncate">
+            {name}
+          </h3>
+          <p className="text-sm text-outline flex items-center gap-1 mt-1">
+            <Icon name="location_on" fill className="text-xs" />
             <span className="truncate">{location}</span>
-          </div>
+            {distanceMiles !== undefined && (
+              <span className="text-on-surface-variant ml-1">· {distanceMiles.toFixed(1)} mi</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded flex-shrink-0 ml-2">
+          <Icon name="star" fill className="text-sm text-on-secondary-container" />
+          <span className="text-sm font-bold text-on-secondary-container">
+            {serviceCount > 0 ? '4.8' : '—'}
+          </span>
         </div>
       </div>
 
       {/* Description */}
       {description && (
-        <div className="px-6 pb-4">
-          <p className="text-sm text-v3-secondary line-clamp-2">{description}</p>
-        </div>
+        <p className="text-on-surface-variant text-sm leading-relaxed line-clamp-2">{description}</p>
       )}
 
-      {/* Service Categories */}
-      {serviceCategories.length > 0 && (
-        <div className="px-6 pb-4">
-          <div className="flex flex-wrap gap-2">
-            {serviceCategories.slice(0, 3).map((category, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-v3-surface border border-v3-border text-v3-primary"
-              >
-                {category}
-              </span>
-            ))}
-            {serviceCategories.length > 3 && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-v3-secondary">
-                +{serviceCategories.length - 3} more
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="mt-auto p-6 pt-0 space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-v3-secondary">{serviceCount} {serviceCount === 1 ? 'service' : 'services'}</span>
-          {priceRange && <span className="font-semibold text-v3-primary">${priceRange.min} - ${priceRange.max}</span>}
-        </div>
-
-        {distanceMiles !== undefined && (
-          <div className="text-xs text-v3-secondary">{distanceMiles.toFixed(1)} miles away</div>
-        )}
-
-        <UniversalButton
-          variant={isOwned ? "outline" : "primary"}
-          size="md"
-          onClick={() => navigate(isOwned ? `/dashboard/storefront/${id}` : `/book/${id}`)}
-          className="w-full"
-        >
-          {isOwned ? 'Manage Storefront' : 'View Profile'}
-        </UniversalButton>
+      {/* Footer: category + arrow */}
+      <div className="pt-2 flex justify-between items-center" style={{ borderTop: '1px solid rgba(191,201,195,0.15)' }}>
+        <span className="text-xs font-bold text-tertiary uppercase tracking-wider">
+          {primaryCategory}
+        </span>
+        <span className="text-primary text-sm font-bold flex items-center gap-1 group/link">
+          {isOwned ? 'Manage' : 'View Profile'}
+          <Icon name="arrow_forward" className="text-sm group-hover:translate-x-1 transition-transform" />
+        </span>
       </div>
-    </UniversalCard>
+    </div>
   );
 }

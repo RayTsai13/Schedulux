@@ -22,7 +22,7 @@ export default function DropCard({
 
   const availabilityColor =
     availabilityPercent > 50
-      ? 'text-v3-secondary'
+      ? 'text-on-surface-variant'
       : availabilityPercent > 20
       ? 'text-amber-600'
       : 'text-red-600';
@@ -31,7 +31,7 @@ export default function DropCard({
     <UniversalCard>
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Date Badge */}
-        <div className="flex-shrink-0 w-20 h-20 bg-v3-accent rounded-2xl flex flex-col items-center justify-center text-white">
+        <div className="flex-shrink-0 w-20 h-20 bg-primary rounded-2xl flex flex-col items-center justify-center text-white">
           <div className="text-xs font-bold uppercase">
             {format(date, 'EEE')}
           </div>
@@ -42,7 +42,7 @@ export default function DropCard({
 
         {/* Content */}
         <div className="flex-1 text-center sm:text-left">
-          <h3 className="text-lg font-semibold text-v3-primary mb-1">
+          <h3 className="text-lg font-semibold text-on-surface mb-1">
             {title}
           </h3>
           <p className={`text-sm ${availabilityColor} font-medium`}>

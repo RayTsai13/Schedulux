@@ -77,7 +77,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
 
         {step === 'confirm' && selectedSlot && (
           <div className="space-y-6">
-            <p className="text-v3-secondary">
+            <p className="text-on-surface-variant">
               Your appointment will be moved to the new time. The vendor will need to re-confirm.
             </p>
 
@@ -101,7 +101,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
 
               {/* Arrow */}
               <div className="flex justify-center">
-                <ArrowRight className="w-6 h-6 text-v3-secondary" />
+                <ArrowRight className="w-6 h-6 text-on-surface-variant" />
               </div>
 
               {/* New time */}
@@ -122,7 +122,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
               </div>
             </div>
 
-            <div className="text-sm text-v3-secondary">
+            <div className="text-sm text-on-surface-variant">
               <p>Service: {appointment.service_name || `Service #${appointment.service_id}`}</p>
               <p>At: {appointment.storefront_name || `Storefront #${appointment.storefront_id}`}</p>
             </div>
@@ -131,7 +131,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between mt-6 pt-4 border-t border-v3-border">
+      <div className="flex justify-between mt-6 pt-4 border-t border-outline-variant">
         {step === 'confirm' && (
           <UniversalButton
             variant="outline"

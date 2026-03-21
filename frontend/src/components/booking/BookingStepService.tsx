@@ -20,7 +20,7 @@ export default function BookingStepService({
   if (availableServices.length === 0) {
     return (
       <UniversalCard className="text-center py-12">
-        <p className="text-v3-secondary">
+        <p className="text-on-surface-variant">
           No services available for booking at this time.
         </p>
       </UniversalCard>
@@ -29,7 +29,7 @@ export default function BookingStepService({
 
   return (
     <div className="space-y-4">
-      <p className="text-v3-secondary">
+      <p className="text-on-surface-variant">
         Choose a service to book:
       </p>
 
@@ -39,7 +39,7 @@ export default function BookingStepService({
             key={service.id}
             className={cn(
               'cursor-pointer transition-all rounded-3xl',
-              selectedServiceId === service.id && 'ring-2 ring-v3-accent ring-offset-2'
+              selectedServiceId === service.id && 'ring-2 ring-primary ring-offset-2'
             )}
             onClick={() => onSelectService(service)}
           >

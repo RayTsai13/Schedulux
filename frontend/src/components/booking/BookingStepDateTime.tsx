@@ -53,8 +53,8 @@ export default function BookingStepDateTime({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left: Calendar */}
       <div>
-        <h3 className="text-lg font-semibold text-v3-primary mb-3">Select Date</h3>
-        <div className="border border-v3-border rounded-2xl p-4 bg-white">
+        <h3 className="text-lg font-semibold text-on-surface mb-3">Select Date</h3>
+        <div className="border border-outline-variant rounded-2xl p-4 bg-white">
           <DatePicker
             selected={selectedDate}
             onChange={(date) => { if (date) onSelectDate(date); }}
@@ -73,21 +73,21 @@ export default function BookingStepDateTime({
 
       {/* Right: Time Slots */}
       <div>
-        <h3 className="text-lg font-semibold text-v3-primary mb-3">Available Times</h3>
+        <h3 className="text-lg font-semibold text-on-surface mb-3">Available Times</h3>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-v3-accent" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : !selectedDate ? (
           <UniversalCard className="text-center py-12">
-            <p className="text-v3-secondary">
+            <p className="text-on-surface-variant">
               Select a date to see available times
             </p>
           </UniversalCard>
         ) : availableSlots.length === 0 ? (
           <UniversalCard className="text-center py-12">
-            <p className="text-v3-secondary">
+            <p className="text-on-surface-variant">
               No availability on this date. Please select another day.
             </p>
           </UniversalCard>
@@ -99,10 +99,10 @@ export default function BookingStepDateTime({
                 onClick={() => onSelectSlot(slot)}
                 className={cn(
                   'py-3 px-3 rounded-xl border-2 text-sm transition-all',
-                  'focus:outline-none focus:ring-2 focus:ring-v3-accent focus:ring-offset-2',
+                  'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                   selectedSlot?.start_datetime === slot.start_datetime
-                    ? 'bg-v3-accent text-white border-v3-accent shadow-md'
-                    : 'bg-white text-v3-primary border-v3-border hover:border-v3-accent hover:shadow-sm'
+                    ? 'bg-primary text-white border-primary shadow-md'
+                    : 'bg-white text-on-surface border-outline-variant hover:border-primary hover:shadow-sm'
                 )}
               >
                 <div className="font-semibold">{slot.local_start_time}</div>

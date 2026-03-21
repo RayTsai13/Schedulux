@@ -39,12 +39,12 @@ interface DropFormModalProps {
 }
 
 const inputClass =
-  'w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary ' +
-  'placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent';
+  'w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface ' +
+  'placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
 
 const selectClass =
-  'w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary ' +
-  'focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent';
+  'w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface ' +
+  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
 
 function buildDefaultValues(drop?: Drop | null): DropFormData {
   if (drop) {
@@ -149,7 +149,7 @@ export default function DropFormModal({
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Title <span className="text-red-500">*</span>
           </label>
           <input
@@ -165,7 +165,7 @@ export default function DropFormModal({
 
         {/* Date */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Date <span className="text-red-500">*</span>
           </label>
           <input type="date" {...register('drop_date')} className={inputClass} />
@@ -177,7 +177,7 @@ export default function DropFormModal({
         {/* Time range */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Start Time <span className="text-red-500">*</span>
             </label>
             <input type="time" {...register('start_time')} className={inputClass} />
@@ -186,7 +186,7 @@ export default function DropFormModal({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               End Time <span className="text-red-500">*</span>
             </label>
             <input type="time" {...register('end_time')} className={inputClass} />
@@ -199,7 +199,7 @@ export default function DropFormModal({
         {/* Service (optional) */}
         {services && services.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-v3-primary mb-2">
+            <label className="block text-sm font-medium text-on-surface mb-2">
               Service (optional)
             </label>
             <Controller
@@ -218,7 +218,7 @@ export default function DropFormModal({
                 </select>
               )}
             />
-            <p className="mt-1 text-xs text-v3-secondary">
+            <p className="mt-1 text-xs text-on-surface-variant">
               Leave blank to allow booking any service during this drop.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function DropFormModal({
 
         {/* Max concurrent */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Max Simultaneous Bookings
           </label>
           <Controller
@@ -249,7 +249,7 @@ export default function DropFormModal({
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Description (optional)
           </label>
           <textarea
@@ -262,7 +262,7 @@ export default function DropFormModal({
 
         {/* Published toggle */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">Visibility</label>
+          <label className="block text-sm font-medium text-on-surface mb-2">Visibility</label>
           <Controller
             name="is_published"
             control={control}
@@ -274,8 +274,8 @@ export default function DropFormModal({
                   className={
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (!field.value
-                      ? 'border-v3-accent bg-v3-accent/10 text-v3-accent'
-                      : 'border-v3-border text-v3-secondary hover:border-v3-accent/50')
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-outline-variant text-on-surface-variant hover:border-primary/50')
                   }
                 >
                   Draft
@@ -287,7 +287,7 @@ export default function DropFormModal({
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (field.value
                       ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-v3-border text-v3-secondary hover:border-green-300')
+                      : 'border-outline-variant text-on-surface-variant hover:border-green-300')
                   }
                 >
                   Published
@@ -295,7 +295,7 @@ export default function DropFormModal({
               </div>
             )}
           />
-          <p className="mt-1 text-xs text-v3-secondary">
+          <p className="mt-1 text-xs text-on-surface-variant">
             {isPublished
               ? 'This drop is visible to clients and available for booking.'
               : 'Draft drops are only visible to you. Publish when ready.'}

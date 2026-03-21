@@ -22,19 +22,19 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
   };
 
   return (
-    <div className="min-h-screen w-full bg-v3-background font-sans text-v3-primary antialiased">
+    <div className="min-h-screen w-full bg-surface font-sans text-on-surface antialiased">
       {/* Navbar - Sticky Top */}
       {showNav && (
-        <nav className="sticky top-0 z-50 bg-v3-surface/80 backdrop-blur-md border-b border-v3-border">
+        <nav className="sticky top-0 z-50 bg-surface-container-lowest/80 backdrop-blur-md border-b border-outline-variant">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             {/* Logo - Left */}
-            <a href="/" className="font-bold text-xl hover:text-v3-accent transition-colors">
+            <a href="/" className="font-bold text-xl hover:text-primary transition-colors">
               Schedulux
             </a>
 
             {/* Nav Actions - Right */}
             <div className="flex items-center gap-6">
-              <a href="/explore" className="text-v3-secondary hover:text-v3-primary font-medium transition-colors">
+              <a href="/explore" className="text-on-surface-variant hover:text-on-surface font-medium transition-colors">
                 Explore
               </a>
 
@@ -62,21 +62,21 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                   {user?.role === 'admin' ? (
                     <a
                       href="/admin"
-                      className="text-v3-secondary hover:text-v3-primary font-medium transition-colors"
+                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
                     >
                       Admin
                     </a>
                   ) : user?.role === 'vendor' ? (
                     <a
                       href="/dashboard"
-                      className="text-v3-secondary hover:text-v3-primary font-medium transition-colors"
+                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
                     >
                       Dashboard
                     </a>
                   ) : (
                     <a
                       href="/my-appointments"
-                      className="text-v3-secondary hover:text-v3-primary font-medium transition-colors"
+                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
                     >
                       My Appointments
                     </a>
@@ -86,7 +86,7 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                   <div className="relative">
                     <button
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-v3-background transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface transition-colors"
                     >
                       <User className="w-4 h-4" />
                       <span className="text-sm font-medium">
@@ -105,16 +105,16 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                         />
 
                         {/* Menu Content */}
-                        <div className="absolute right-0 mt-2 w-56 bg-v3-surface border border-v3-border rounded-xl shadow-lg z-50 overflow-hidden">
+                        <div className="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 overflow-hidden">
                           {/* User Info */}
-                          <div className="px-4 py-3 border-b border-v3-border">
-                            <p className="text-sm font-medium text-v3-primary">
+                          <div className="px-4 py-3 border-b border-outline-variant">
+                            <p className="text-sm font-medium text-on-surface">
                               {user?.first_name} {user?.last_name}
                             </p>
-                            <p className="text-xs text-v3-secondary mt-0.5">
+                            <p className="text-xs text-on-surface-variant mt-0.5">
                               {user?.email}
                             </p>
-                            <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-v3-accent/10 text-v3-accent rounded-full">
+                            <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                               {user?.role === 'admin' ? 'Admin' : user?.role === 'vendor' ? 'Vendor' : 'Client'}
                             </span>
                           </div>
@@ -122,7 +122,7 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                           {/* Logout Button */}
                           <button
                             onClick={handleLogout}
-                            className="w-full px-4 py-3 flex items-center gap-2 text-sm text-v3-secondary hover:bg-v3-background hover:text-v3-primary transition-colors"
+                            className="w-full px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant hover:bg-surface hover:text-on-surface transition-colors"
                           >
                             <LogOut className="w-4 h-4" />
                             Logout

@@ -28,11 +28,11 @@ export default function DropsTab({
   if (!drops || drops.length === 0) {
     return (
       <UniversalCard className="p-8 text-center">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-v3-accent/10 flex items-center justify-center">
-          <Plus className="w-6 h-6 text-v3-accent" />
+        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+          <Plus className="w-6 h-6 text-primary" />
         </div>
-        <h3 className="text-lg font-semibold text-v3-primary mb-2">No drops yet</h3>
-        <p className="text-v3-secondary mb-6 max-w-sm mx-auto">
+        <h3 className="text-lg font-semibold text-on-surface mb-2">No drops yet</h3>
+        <p className="text-on-surface-variant mb-6 max-w-sm mx-auto">
           Create curated time windows for your clients to book. Drops are perfect for special sessions,
           flash availability, or limited-time offerings.
         </p>
@@ -47,7 +47,7 @@ export default function DropsTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <p className="text-v3-secondary text-sm">
+        <p className="text-on-surface-variant text-sm">
           {drops.length} drop{drops.length !== 1 ? 's' : ''}
         </p>
         <UniversalButton variant="primary" size="md" onClick={onAddDrop}>
@@ -71,10 +71,10 @@ export default function DropsTab({
               {/* Header row */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-v3-primary truncate">
+                  <h3 className="text-base font-semibold text-on-surface truncate">
                     {drop.title}
                   </h3>
-                  <p className="text-sm text-v3-secondary mt-0.5">
+                  <p className="text-sm text-on-surface-variant mt-0.5">
                     {format(dropDate, 'EEE, MMM d, yyyy')}
                   </p>
                 </div>
@@ -85,7 +85,7 @@ export default function DropsTab({
                       Live
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs font-medium text-v3-secondary bg-v3-background px-2 py-1 rounded-full">
+                    <span className="flex items-center gap-1 text-xs font-medium text-on-surface-variant bg-surface px-2 py-1 rounded-full">
                       <EyeOff className="w-3 h-3" />
                       Draft
                     </span>
@@ -94,19 +94,19 @@ export default function DropsTab({
               </div>
 
               {/* Time range */}
-              <p className="text-sm text-v3-primary mb-1">
+              <p className="text-sm text-on-surface mb-1">
                 {fmt12(drop.start_time)} – {fmt12(drop.end_time)}
               </p>
 
               {/* Description */}
               {drop.description && (
-                <p className="text-xs text-v3-secondary line-clamp-2 mb-3">
+                <p className="text-xs text-on-surface-variant line-clamp-2 mb-3">
                   {drop.description}
                 </p>
               )}
 
               {/* Meta */}
-              <div className="flex items-center gap-3 text-xs text-v3-secondary mt-auto pt-3 border-t border-v3-border">
+              <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-auto pt-3 border-t border-outline-variant">
                 <span>Max {drop.max_concurrent_appointments} concurrent</span>
                 {!drop.is_active && (
                   <span className="text-red-500 font-medium">Inactive</span>

@@ -28,7 +28,7 @@ export default function PortfolioCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-v3-accent to-purple-600 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
             <div className="text-6xl opacity-20">✂️</div>
           </div>
         )}
@@ -36,15 +36,15 @@ export default function PortfolioCard({
 
       {/* Content Section */}
       <div className="p-6">
-        <h3 className="text-xl font-semibold text-v3-primary mb-3">
+        <h3 className="text-xl font-semibold text-on-surface mb-3">
           {title}
         </h3>
 
         <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-2xl font-bold text-v3-primary">
+          <span className="text-2xl font-bold text-on-surface">
             ${price}
           </span>
-          <span className="text-sm text-v3-secondary">
+          <span className="text-sm text-on-surface-variant">
             {duration} min
           </span>
         </div>

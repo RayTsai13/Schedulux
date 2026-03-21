@@ -80,8 +80,8 @@ export default function AppointmentCalendarPage() {
       <AppScaffold>
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-v3-accent border-r-transparent" />
-            <p className="mt-4 text-v3-secondary">Loading calendar...</p>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
+            <p className="mt-4 text-on-surface-variant">Loading calendar...</p>
           </div>
         </div>
       </AppScaffold>
@@ -96,23 +96,23 @@ export default function AppointmentCalendarPage() {
           <div>
             <Link
               to={`/dashboard/storefront/${storefrontId}`}
-              className="inline-flex items-center gap-2 text-v3-secondary hover:text-v3-primary transition-colors mb-2"
+              className="inline-flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors mb-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Storefront
             </Link>
-            <h1 className="text-4xl font-bold text-v3-primary">
+            <h1 className="text-4xl font-bold text-on-surface">
               {storefront?.name} - Calendar
             </h1>
           </div>
 
           {/* Status Filter */}
           <div className="flex items-center gap-3">
-            <Filter className="w-5 h-5 text-v3-secondary" />
+            <Filter className="w-5 h-5 text-on-surface-variant" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 rounded-xl border border-v3-border bg-v3-background text-v3-primary focus:outline-none focus:ring-2 focus:ring-v3-accent"
+              className="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -125,21 +125,21 @@ export default function AppointmentCalendarPage() {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-6 p-4 bg-v3-surface rounded-xl border border-v3-border">
-          <span className="text-sm font-medium text-v3-primary">Status:</span>
+        <div className="flex items-center gap-6 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant">
+          <span className="text-sm font-medium text-on-surface">Status:</span>
           {Object.entries(STATUS_COLORS).map(([status, color]) => (
             <div key={status} className="flex items-center gap-2">
               <div
                 className="w-4 h-4 rounded"
                 style={{ backgroundColor: color }}
               />
-              <span className="text-sm text-v3-secondary capitalize">{status}</span>
+              <span className="text-sm text-on-surface-variant capitalize">{status}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar */}
-        <div className="bg-v3-surface rounded-xl border border-v3-border p-6" style={{ height: '700px' }}>
+        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6" style={{ height: '700px' }}>
           <Calendar
             localizer={localizer}
             events={events}

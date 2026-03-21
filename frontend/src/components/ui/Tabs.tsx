@@ -20,7 +20,7 @@ export default function Tabs({ tabs, defaultTab, className = '' }: TabsProps) {
   return (
     <div className={`w-full ${className}`}>
       {/* Tab Bar */}
-      <div className="flex border-b border-v3-border">
+      <div className="flex border-b border-outline-variant">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -28,14 +28,14 @@ export default function Tabs({ tabs, defaultTab, className = '' }: TabsProps) {
             className={`
               px-6 py-3 text-sm font-semibold transition-colors relative
               ${activeTab === tab.id
-                ? 'text-v3-accent'
-                : 'text-v3-secondary hover:text-v3-primary'
+                ? 'text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
               }
             `}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-v3-accent rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
           </button>
         ))}

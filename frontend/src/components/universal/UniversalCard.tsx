@@ -16,9 +16,9 @@ export default function UniversalCard({
   return (
     <div
       className={cn(
-        'bg-v3-surface border border-v3-border rounded-3xl shadow-sm overflow-hidden',
+        'bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-sm overflow-hidden',
         'transition-all duration-200',
-        hoverable && 'hover:shadow-md hover:border-v3-border/80',
+        hoverable && 'hover:shadow-md hover:border-outline-variant/80',
         !noPadding && 'p-6',
         className
       )}

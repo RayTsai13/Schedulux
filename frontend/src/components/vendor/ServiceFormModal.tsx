@@ -213,7 +213,7 @@ export default function ServiceFormModal({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-2">
+          <label className="block text-sm font-medium text-on-surface mb-2">
             Service Image
           </label>
           <div
@@ -223,8 +223,8 @@ export default function ServiceFormModal({
             onClick={() => !isUploading && fileInputRef.current?.click()}
             className={`relative w-full h-40 rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
               isDragOver
-                ? 'border-v3-accent bg-v3-accent/5'
-                : 'border-v3-border hover:border-v3-accent/50'
+                ? 'border-primary bg-primary/5'
+                : 'border-outline-variant hover:border-primary/50'
             }`}
           >
             {imagePreview ? (
@@ -255,7 +255,7 @@ export default function ServiceFormModal({
                 )}
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-v3-secondary/60">
+              <div className="flex flex-col items-center justify-center h-full text-on-surface-variant/60">
                 <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                 </svg>
@@ -278,14 +278,14 @@ export default function ServiceFormModal({
 
         {/* Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-v3-primary mb-2">
+          <label htmlFor="name" className="block text-sm font-medium text-on-surface mb-2">
             Service Name <span className="text-red-500">*</span>
           </label>
           <input
             id="name"
             type="text"
             {...register('name')}
-            className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             placeholder="e.g., Classic Fade"
           />
           {errors.name && (
@@ -295,14 +295,14 @@ export default function ServiceFormModal({
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-v3-primary mb-2">
+          <label htmlFor="description" className="block text-sm font-medium text-on-surface mb-2">
             Description
           </label>
           <textarea
             id="description"
             {...register('description')}
             rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             placeholder="Describe what's included..."
           />
         </div>
@@ -310,7 +310,7 @@ export default function ServiceFormModal({
         {/* Duration & Buffer */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="duration_minutes" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="duration_minutes" className="block text-sm font-medium text-on-surface mb-2">
               Duration (minutes) <span className="text-red-500">*</span>
             </label>
             <Controller
@@ -322,7 +322,7 @@ export default function ServiceFormModal({
                   type="number"
                   {...field}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="60"
                 />
               )}
@@ -333,7 +333,7 @@ export default function ServiceFormModal({
           </div>
 
           <div>
-            <label htmlFor="buffer_time_minutes" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="buffer_time_minutes" className="block text-sm font-medium text-on-surface mb-2">
               Buffer Time (minutes)
             </label>
             <Controller
@@ -345,7 +345,7 @@ export default function ServiceFormModal({
                   type="number"
                   {...field}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="0"
                 />
               )}
@@ -359,7 +359,7 @@ export default function ServiceFormModal({
         {/* Price & Category */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="price" className="block text-sm font-medium text-on-surface mb-2">
               Price ($)
             </label>
             <Controller
@@ -373,7 +373,7 @@ export default function ServiceFormModal({
                   {...field}
                   onChange={(e) => field.onChange(e.target.value ? e.target.valueAsNumber : undefined)}
                   value={field.value ?? ''}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="75.00"
                 />
               )}
@@ -384,14 +384,14 @@ export default function ServiceFormModal({
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="category" className="block text-sm font-medium text-on-surface mb-2">
               Category
             </label>
             <input
               id="category"
               type="text"
               {...register('category')}
-              className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Haircut"
             />
           </div>

@@ -5,11 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useAuth } from '../../hooks/useAuth';
-import AppScaffold from '../../components/layout/AppScaffold';
-import UniversalButton from '../../components/universal/UniversalButton';
-import UniversalCard from '../../components/universal/UniversalCard';
+import AuthLayout, { editorialInputClass } from '../../components/layout/AuthLayout';
 
-// Validation schema
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -17,6 +17,16 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// ---------------------------------------------------------------------------
+// Icon helper (inline for simplicity)
+// ---------------------------------------------------------------------------
+function Icon({ name, className = '' }: { name: string; className?: string }) {
+  return <span className={`material-symbols-outlined ${className}`}>{name}</span>;
+}
+
+// ---------------------------------------------------------------------------
+// LoginPage
+// ---------------------------------------------------------------------------
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -35,11 +45,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const success = await login(data.email, data.password);
-
       if (success) {
         toast.success('Login successful!');
-
-        // Redirect: returnTo param takes priority, then role-based default
         setTimeout(() => {
           const returnTo = searchParams.get('returnTo');
           if (returnTo) {
@@ -61,101 +68,118 @@ export default function LoginPage() {
     }
   };
 
+  const returnToParam = searchParams.get('returnTo');
+
   return (
-    <AppScaffold>
-      <div className="min-h-[calc(100vh-16rem)] flex items-center justify-center">
-        <div className="w-full max-w-md">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-v3-primary mb-2">
-              Welcome back
-            </h1>
-            <p className="text-v3-secondary">
-              Sign in to your Schedulux account
-            </p>
+    <AuthLayout title="Schedulux" subtitle="Welcome back to the hearth.">
+      {/* Login Card */}
+      <div className="bg-surface-container-lowest rounded-xl p-8 shadow-editorial" style={{ border: '1px solid rgba(191,201,195,0.10)' }}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-semibold font-label text-on-surface-variant mb-2">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              {...register('email')}
+              className={editorialInputClass}
+              placeholder="name@example.com"
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-error">{errors.email.message}</p>
+            )}
           </div>
 
-          {/* Login Form Card */}
-          <UniversalCard className="p-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Email Field */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-v3-primary mb-2"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent transition-all"
-                  placeholder="your@email.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-v3-primary mb-2"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  {...register('password')}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent transition-all"
-                  placeholder="Enter your password"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
-                )}
-                <div className="mt-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/forgot-password')}
-                    className="text-sm text-v3-accent hover:text-v3-accent/80 font-medium transition-colors"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <UniversalButton
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full"
-                isLoading={isLoading}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </UniversalButton>
-            </form>
-
-          </UniversalCard>
-
-          {/* Footer Links */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-v3-secondary">
-              Don't have an account?{' '}
+          {/* Password */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold font-label text-on-surface-variant">
+                Password
+              </label>
               <button
-                onClick={() => navigate(`/register${searchParams.get('returnTo') ? `?returnTo=${searchParams.get('returnTo')}` : ''}`)}
-                className="text-v3-accent hover:text-v3-accent/80 font-medium transition-colors"
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                className="text-xs font-semibold text-tertiary hover:underline transition-all"
               >
-                Sign up
+                Forgot?
               </button>
-            </p>
+            </div>
+            <input
+              id="password"
+              type="password"
+              {...register('password')}
+              className={editorialInputClass}
+              placeholder="••••••••"
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-error">{errors.password.message}</p>
+            )}
           </div>
-        </div>
+
+          {/* Submit */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-lg hover:bg-primary-container transition-all flex items-center justify-center gap-2 group shadow-primary-glow active:scale-[0.98] disabled:opacity-60"
+            >
+              {isLoading ? 'Signing in…' : 'Sign in'}
+              {!isLoading && (
+                <Icon name="arrow_forward" className="text-lg group-hover:translate-x-1 transition-transform" />
+              )}
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-outline-variant/20" />
+            <span className="flex-shrink mx-4 text-xs font-label text-outline uppercase tracking-widest">
+              or continue with
+            </span>
+            <div className="flex-grow border-t border-outline-variant/20" />
+          </div>
+
+          {/* Social buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              className="flex items-center justify-center py-3 px-4 bg-surface rounded-lg hover:bg-surface-container-low transition-colors font-label font-semibold text-sm text-on-surface-variant"
+              style={{ border: '1px solid rgba(191,201,195,0.20)' }}
+            >
+              <Icon name="mail" className="text-lg mr-2" />
+              Google
+            </button>
+            <button
+              type="button"
+              className="flex items-center justify-center py-3 px-4 bg-surface rounded-lg hover:bg-surface-container-low transition-colors font-label font-semibold text-sm text-on-surface-variant"
+              style={{ border: '1px solid rgba(191,201,195,0.20)' }}
+            >
+              <span
+                className="material-symbols-outlined text-lg mr-2"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                forest
+              </span>
+              Schedulux ID
+            </button>
+          </div>
+        </form>
       </div>
-    </AppScaffold>
+
+      {/* Bottom link */}
+      <div className="mt-8 text-center">
+        <p className="font-body text-sm text-on-surface-variant">
+          New to the community?{' '}
+          <button
+            onClick={() => navigate(`/register${returnToParam ? `?returnTo=${returnToParam}` : ''}`)}
+            className="font-bold text-primary hover:underline underline-offset-4"
+          >
+            Register your plot
+          </button>
+        </p>
+      </div>
+    </AuthLayout>
   );
 }

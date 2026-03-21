@@ -63,10 +63,10 @@ export default function ResetPasswordPage() {
                     <div className="w-full max-w-md text-center">
                         <UniversalCard className="p-8">
                             <div className="text-5xl mb-4">⚠️</div>
-                            <h1 className="text-2xl font-bold text-v3-primary mb-4">
+                            <h1 className="text-2xl font-bold text-on-surface mb-4">
                                 Invalid Reset Link
                             </h1>
-                            <p className="text-v3-secondary mb-6">
+                            <p className="text-on-surface-variant mb-6">
                                 This password reset link is missing or invalid. Please request a new one.
                             </p>
                             <UniversalButton
@@ -89,10 +89,10 @@ export default function ResetPasswordPage() {
             <div className="min-h-[calc(100vh-16rem)] flex items-center justify-center">
                 <div className="w-full max-w-md">
                     <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold text-v3-primary mb-2">
+                        <h1 className="text-4xl font-bold text-on-surface mb-2">
                             {isSuccess ? 'Password reset!' : 'Set new password'}
                         </h1>
-                        <p className="text-v3-secondary">
+                        <p className="text-on-surface-variant">
                             {isSuccess
                                 ? 'Your password has been updated successfully.'
                                 : 'Choose a strong password for your account.'}
@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
                         {isSuccess ? (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl">✅</div>
-                                <p className="text-v3-secondary">
+                                <p className="text-on-surface-variant">
                                     You can now log in with your new password.
                                 </p>
                                 <UniversalButton
@@ -120,7 +120,7 @@ export default function ResetPasswordPage() {
                                 <div>
                                     <label
                                         htmlFor="password"
-                                        className="block text-sm font-medium text-v3-primary mb-2"
+                                        className="block text-sm font-medium text-on-surface mb-2"
                                     >
                                         New Password
                                     </label>
@@ -128,7 +128,7 @@ export default function ResetPasswordPage() {
                                         id="password"
                                         type="password"
                                         {...register('password')}
-                                        className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent transition-all"
+                                        className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                         placeholder="Enter new password"
                                     />
                                     {errors.password && (
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
                                 <div>
                                     <label
                                         htmlFor="confirmPassword"
-                                        className="block text-sm font-medium text-v3-primary mb-2"
+                                        className="block text-sm font-medium text-on-surface mb-2"
                                     >
                                         Confirm Password
                                     </label>
@@ -147,7 +147,7 @@ export default function ResetPasswordPage() {
                                         id="confirmPassword"
                                         type="password"
                                         {...register('confirmPassword')}
-                                        className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent transition-all"
+                                        className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                         placeholder="Confirm new password"
                                     />
                                     {errors.confirmPassword && (
@@ -172,7 +172,7 @@ export default function ResetPasswordPage() {
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => navigate('/login')}
-                            className="text-sm text-v3-accent hover:text-v3-accent/80 font-medium transition-colors"
+                            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                         >
                             ← Back to login
                         </button>

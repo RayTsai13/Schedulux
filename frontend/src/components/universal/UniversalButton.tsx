@@ -25,30 +25,30 @@ export default function UniversalButton({
     'inline-flex items-center justify-center gap-2',
     'rounded-full font-medium',
     'transition-all duration-200 ease-in-out',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-v3-accent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'whitespace-nowrap'
   );
 
   const variantStyles = {
     primary: cn(
-      'bg-v3-primary text-white',
+      'bg-primary text-white',
       'hover:bg-zinc-800',
       'active:bg-zinc-950'
     ),
     secondary: cn(
-      'bg-v3-border text-v3-primary',
+      'bg-outline-variant text-on-surface',
       'hover:bg-zinc-300',
       'active:bg-zinc-400'
     ),
     outline: cn(
-      'bg-transparent border-2 border-v3-border text-v3-primary',
-      'hover:bg-v3-surface-highlight',
+      'bg-transparent border-2 border-outline-variant text-on-surface',
+      'hover:bg-surface-container-low',
       'active:bg-zinc-200'
     ),
     ghost: cn(
-      'bg-transparent text-v3-primary',
-      'hover:bg-v3-surface-highlight',
+      'bg-transparent text-on-surface',
+      'hover:bg-surface-container-low',
       'active:bg-zinc-200'
     ),
   };

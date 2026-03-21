@@ -19,9 +19,9 @@ export default function ServicesTab({
   if (!services || services.length === 0) {
     return (
       <UniversalCard className="p-8 text-center">
-        <Clock className="w-12 h-12 mx-auto mb-4 text-v3-secondary/40" />
-        <h3 className="text-lg font-semibold text-v3-primary mb-2">No services yet</h3>
-        <p className="text-v3-secondary mb-6">Add services that customers can book.</p>
+        <Clock className="w-12 h-12 mx-auto mb-4 text-on-surface-variant/40" />
+        <h3 className="text-lg font-semibold text-on-surface mb-2">No services yet</h3>
+        <p className="text-on-surface-variant mb-6">Add services that customers can book.</p>
         <UniversalButton variant="primary" onClick={onAddService}>
           <Plus className="w-4 h-4 mr-2" />
           Add Service
@@ -33,7 +33,7 @@ export default function ServicesTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <p className="text-v3-secondary text-sm">{services.length} service{services.length !== 1 ? 's' : ''}</p>
+        <p className="text-on-surface-variant text-sm">{services.length} service{services.length !== 1 ? 's' : ''}</p>
         <UniversalButton variant="primary" size="md" onClick={onAddService}>
           <Plus className="w-4 h-4 mr-2" />
           Add Service
@@ -44,31 +44,31 @@ export default function ServicesTab({
         {services.map((service) => (
           <UniversalCard key={service.id} className="p-6 flex flex-col">
             <div className="flex-1 mb-4">
-              <h3 className="text-lg font-semibold text-v3-primary mb-1">{service.name}</h3>
+              <h3 className="text-lg font-semibold text-on-surface mb-1">{service.name}</h3>
               {service.description && (
-                <p className="text-sm text-v3-secondary line-clamp-2">{service.description}</p>
+                <p className="text-sm text-on-surface-variant line-clamp-2">{service.description}</p>
               )}
             </div>
 
             <div className="space-y-1.5 mb-4">
               {service.price && (
-                <div className="flex items-center gap-2 text-sm text-v3-secondary">
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                   <DollarSign className="w-4 h-4 shrink-0" />
                   <span>${service.price}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm text-v3-secondary">
+              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                 <Clock className="w-4 h-4 shrink-0" />
                 <span>{service.duration_minutes} min</span>
               </div>
               {service.category && (
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-v3-accent/10 text-v3-accent rounded-full">
+                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                   {service.category}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2 pt-4 border-t border-v3-border">
+            <div className="flex items-center gap-2 pt-4 border-t border-outline-variant">
               <UniversalButton variant="ghost" size="sm" onClick={() => onEditService(service)}>
                 <Edit className="w-4 h-4 mr-1" />
                 Edit

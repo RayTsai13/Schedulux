@@ -109,18 +109,18 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Info Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-v3-primary">Basic Information</h3>
+          <h3 className="text-lg font-semibold text-on-surface">Basic Information</h3>
 
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-on-surface mb-2">
               Business Name <span className="text-red-500">*</span>
             </label>
             <input
               id="name"
               type="text"
               {...register('name')}
-              className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="e.g., The Midnight Barber"
             />
             {errors.name && (
@@ -130,14 +130,14 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-v3-primary mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-on-surface mb-2">
               Description
             </label>
             <textarea
               id="description"
               {...register('description')}
               rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Tell customers about your business..."
             />
           </div>
@@ -145,7 +145,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Profile Type */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-3">
+          <label className="block text-sm font-medium text-on-surface mb-3">
             Profile Type <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -156,9 +156,9 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 {...register('profile_type')}
                 className="peer sr-only"
               />
-              <div className="px-4 py-3 rounded-xl border-2 border-v3-border bg-v3-background cursor-pointer peer-checked:border-v3-accent peer-checked:bg-v3-accent/5 transition-all">
-                <p className="font-medium text-v3-primary">Individual</p>
-                <p className="text-xs text-v3-secondary mt-1">Freelancer, tutor, etc.</p>
+              <div className="px-4 py-3 rounded-xl border-2 border-outline-variant bg-surface cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                <p className="font-medium text-on-surface">Individual</p>
+                <p className="text-xs text-on-surface-variant mt-1">Freelancer, tutor, etc.</p>
               </div>
             </label>
             <label className="relative">
@@ -168,9 +168,9 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 {...register('profile_type')}
                 className="peer sr-only"
               />
-              <div className="px-4 py-3 rounded-xl border-2 border-v3-border bg-v3-background cursor-pointer peer-checked:border-v3-accent peer-checked:bg-v3-accent/5 transition-all">
-                <p className="font-medium text-v3-primary">Business</p>
-                <p className="text-xs text-v3-secondary mt-1">Salon, clinic, shop, etc.</p>
+              <div className="px-4 py-3 rounded-xl border-2 border-outline-variant bg-surface cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                <p className="font-medium text-on-surface">Business</p>
+                <p className="text-xs text-on-surface-variant mt-1">Salon, clinic, shop, etc.</p>
               </div>
             </label>
           </div>
@@ -178,7 +178,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Location Type */}
         <div>
-          <label className="block text-sm font-medium text-v3-primary mb-3">
+          <label className="block text-sm font-medium text-on-surface mb-3">
             Location Type <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -189,9 +189,9 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 {...register('location_type')}
                 className="peer sr-only"
               />
-              <div className="px-3 py-3 rounded-xl border-2 border-v3-border bg-v3-background cursor-pointer peer-checked:border-v3-accent peer-checked:bg-v3-accent/5 transition-all text-center">
-                <p className="font-medium text-v3-primary text-sm">Fixed</p>
-                <p className="text-xs text-v3-secondary mt-1">At location</p>
+              <div className="px-3 py-3 rounded-xl border-2 border-outline-variant bg-surface cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+                <p className="font-medium text-on-surface text-sm">Fixed</p>
+                <p className="text-xs text-on-surface-variant mt-1">At location</p>
               </div>
             </label>
             <label className="relative">
@@ -201,9 +201,9 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 {...register('location_type')}
                 className="peer sr-only"
               />
-              <div className="px-3 py-3 rounded-xl border-2 border-v3-border bg-v3-background cursor-pointer peer-checked:border-v3-accent peer-checked:bg-v3-accent/5 transition-all text-center">
-                <p className="font-medium text-v3-primary text-sm">Mobile</p>
-                <p className="text-xs text-v3-secondary mt-1">Travel to client</p>
+              <div className="px-3 py-3 rounded-xl border-2 border-outline-variant bg-surface cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+                <p className="font-medium text-on-surface text-sm">Mobile</p>
+                <p className="text-xs text-on-surface-variant mt-1">Travel to client</p>
               </div>
             </label>
             <label className="relative">
@@ -213,9 +213,9 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 {...register('location_type')}
                 className="peer sr-only"
               />
-              <div className="px-3 py-3 rounded-xl border-2 border-v3-border bg-v3-background cursor-pointer peer-checked:border-v3-accent peer-checked:bg-v3-accent/5 transition-all text-center">
-                <p className="font-medium text-v3-primary text-sm">Hybrid</p>
-                <p className="text-xs text-v3-secondary mt-1">Both options</p>
+              <div className="px-3 py-3 rounded-xl border-2 border-outline-variant bg-surface cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+                <p className="font-medium text-on-surface text-sm">Hybrid</p>
+                <p className="text-xs text-on-surface-variant mt-1">Both options</p>
               </div>
             </label>
           </div>
@@ -223,18 +223,18 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Fixed Location Fields */}
         {isFixed && (
-          <div className="space-y-4 p-4 rounded-xl bg-v3-accent/5 border border-v3-accent/20">
-            <h4 className="text-sm font-semibold text-v3-primary">Fixed Location Details</h4>
+          <div className="space-y-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <h4 className="text-sm font-semibold text-on-surface">Fixed Location Details</h4>
 
             <div>
-              <label htmlFor="address" className="block text-sm font-medium text-v3-primary mb-2">
+              <label htmlFor="address" className="block text-sm font-medium text-on-surface mb-2">
                 Address <span className="text-red-500">*</span>
               </label>
               <input
                 id="address"
                 type="text"
                 {...register('address')}
-                className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="123 Main St"
               />
               {errors.address && (
@@ -244,26 +244,26 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="city" className="block text-sm font-medium text-v3-primary mb-2">
+                <label htmlFor="city" className="block text-sm font-medium text-on-surface mb-2">
                   City <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="city"
                   type="text"
                   {...register('city')}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="San Francisco"
                 />
               </div>
               <div>
-                <label htmlFor="state" className="block text-sm font-medium text-v3-primary mb-2">
+                <label htmlFor="state" className="block text-sm font-medium text-on-surface mb-2">
                   State <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="state"
                   type="text"
                   {...register('state')}
-                  className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="CA"
                 />
               </div>
@@ -273,18 +273,18 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Mobile/Hybrid Service Fields */}
         {isMobileOrHybrid && (
-          <div className="space-y-4 p-4 rounded-xl bg-v3-accent/5 border border-v3-accent/20">
-            <h4 className="text-sm font-semibold text-v3-primary">Service Area Details</h4>
+          <div className="space-y-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <h4 className="text-sm font-semibold text-on-surface">Service Area Details</h4>
 
             <div>
-              <label htmlFor="service_area_city" className="block text-sm font-medium text-v3-primary mb-2">
+              <label htmlFor="service_area_city" className="block text-sm font-medium text-on-surface mb-2">
                 Service Area City <span className="text-red-500">*</span>
               </label>
               <input
                 id="service_area_city"
                 type="text"
                 {...register('service_area_city')}
-                className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="San Francisco"
               />
               {errors.service_area_city && (
@@ -293,7 +293,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
             </div>
 
             <div>
-              <label htmlFor="service_radius" className="block text-sm font-medium text-v3-primary mb-2">
+              <label htmlFor="service_radius" className="block text-sm font-medium text-on-surface mb-2">
                 Service Radius (miles) <span className="text-red-500">*</span>
               </label>
               <Controller
@@ -305,7 +305,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                     type="number"
                     {...field}
                     onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                    className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="15"
                   />
                 )}
@@ -319,30 +319,30 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Contact Info */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-v3-primary">Contact Information</h3>
+          <h3 className="text-lg font-semibold text-on-surface">Contact Information</h3>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-v3-primary mb-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-on-surface mb-2">
                 Phone
               </label>
               <input
                 id="phone"
                 type="tel"
                 {...register('phone')}
-                className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="(555) 123-4567"
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-v3-primary mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-on-surface mb-2">
                 Email
               </label>
               <input
                 id="email"
                 type="email"
                 {...register('email')}
-                className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="contact@business.com"
               />
               {errors.email && (
@@ -354,13 +354,13 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
         {/* Timezone */}
         <div>
-          <label htmlFor="timezone" className="block text-sm font-medium text-v3-primary mb-2">
+          <label htmlFor="timezone" className="block text-sm font-medium text-on-surface mb-2">
             Timezone
           </label>
           <select
             id="timezone"
             {...register('timezone')}
-            className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary focus:outline-none focus:ring-2 focus:ring-v3-accent focus:border-transparent"
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           >
             <option value="America/New_York">Eastern Time</option>
             <option value="America/Chicago">Central Time</option>

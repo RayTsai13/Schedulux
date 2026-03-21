@@ -58,8 +58,8 @@ export default function VendorProfilePage() {
     return (
       <AppScaffold>
         <UniversalCard className="flex flex-col items-center justify-center py-12 max-w-md mx-auto">
-          <Loader2 className="h-8 w-8 animate-spin text-v3-accent mb-3" />
-          <span className="text-v3-secondary">Loading storefront...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+          <span className="text-on-surface-variant">Loading storefront...</span>
         </UniversalCard>
       </AppScaffold>
     );
@@ -117,7 +117,7 @@ export default function VendorProfilePage() {
       {/* Upcoming Drops Section */}
       {publicDrops && publicDrops.length > 0 && (
         <div className="max-w-4xl mx-auto mt-12 px-4">
-          <h2 className="text-3xl font-bold text-v3-primary mb-6">Upcoming Drops</h2>
+          <h2 className="text-3xl font-bold text-on-surface mb-6">Upcoming Drops</h2>
           <div className="space-y-4">
             {publicDrops.map(drop => {
               const dropDate = typeof drop.drop_date === 'string'
@@ -152,7 +152,7 @@ export default function VendorProfilePage() {
       {/* Services Section */}
       {storefrontData.services.length > 0 && (
         <div className="max-w-4xl mx-auto mt-12 px-4">
-          <h2 className="text-3xl font-bold text-v3-primary mb-6">Services</h2>
+          <h2 className="text-3xl font-bold text-on-surface mb-6">Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {storefrontData.services.map(service => (
               <PortfolioCard

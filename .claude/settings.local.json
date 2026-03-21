@@ -16,7 +16,17 @@
       "Bash(ls:*)",
       "mcp__ide__getDiagnostics",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__stitch-design__list_projects",
+      "Read(//Users/raymondtsai/.claude/**)",
+      "mcp__stitch__list_projects",
+      "mcp__stitch__get_screen",
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "Bash(npx vite:*)",
+      "Bash(xargs sed:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "stitch-design"
+  ]
 }

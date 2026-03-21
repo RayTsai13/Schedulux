@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Modern Naturalist | Marketplace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#0b513d",
+              "tertiary-container": "#613b24",
+              "surface": "#fbf9f5",
+              "on-tertiary-fixed": "#311302",
+              "primary-fixed": "#b0f0d6",
+              "on-primary-container": "#80bea6",
+              "on-secondary-fixed-variant": "#394c2f",
+              "primary-container": "#064e3b",
+              "inverse-primary": "#95d3ba",
+              "error-container": "#ffdad6",
+              "on-secondary-fixed": "#0f2008",
+              "background": "#fbf9f5",
+              "surface-container-highest": "#e4e2de",
+              "surface-container-low": "#f5f3ef",
+              "primary": "#003527",
+              "inverse-on-surface": "#f2f0ed",
+              "on-primary": "#ffffff",
+              "surface-variant": "#e4e2de",
+              "on-primary-fixed": "#002117",
+              "tertiary": "#472510",
+              "surface-container-high": "#eae8e4",
+              "outline": "#707974",
+              "surface-tint": "#2b6954",
+              "on-tertiary-fixed-variant": "#643d26",
+              "secondary-fixed": "#d3e9c3",
+              "surface-bright": "#fbf9f5",
+              "error": "#ba1a1a",
+              "on-surface": "#1b1c1a",
+              "surface-dim": "#dbdad6",
+              "secondary-fixed-dim": "#b7cda8",
+              "secondary": "#516445",
+              "on-error-container": "#93000a",
+              "outline-variant": "#bfc9c3",
+              "primary-fixed-dim": "#95d3ba",
+              "surface-container": "#efeeea",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#556849",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#ffdbc9",
+              "tertiary-fixed-dim": "#f3ba9c",
+              "on-secondary": "#ffffff",
+              "on-surface-variant": "#404944",
+              "on-background": "#1b1c1a",
+              "on-tertiary-container": "#dca688",
+              "secondary-container": "#d0e7c0",
+              "on-tertiary": "#ffffff",
+              "inverse-surface": "#30312e"
+            },
+            fontFamily: {
+              "headline": ["Epilogue"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'Epilogue', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="bg-[#fbf9f5]/80 dark:bg-[#1b1c1a]/80 backdrop-blur-md fixed top-0 w-full z-50 flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto font-['Epilogue'] tracking-tight">
+<div class="text-xl font-bold text-[#003527] dark:text-[#fbf9f5]">The Modern Naturalist</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors" href="#">Growth</a>
+<a class="text-[#003527] dark:text-[#fbf9f5] font-semibold border-b-2 border-[#472510] pb-1" href="#">Marketplace</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors" href="#">Community</a>
+<a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#003527] dark:hover:text-[#fbf9f5] transition-colors" href="#">About</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-md font-semibold hover:bg-primary-container active:scale-95 transition-all duration-200">
+            Join us
+        </button>
+</nav>
+<main class="pt-24">
+<!-- Hero Section: Editorial Header -->
+<section class="px-8 py-16 md:py-24 max-w-screen-xl mx-auto">
+<div class="grid md:grid-cols-12 gap-8 items-end">
+<div class="md:col-span-8">
+<span class="text-tertiary font-bold tracking-widest text-xs uppercase mb-4 block">The Local Directory</span>
+<h1 class="text-5xl md:text-7xl font-extrabold text-primary leading-tight -ml-1">
+                        Curated Goods &amp; <br/>Bespoke Services.
+                    </h1>
+</div>
+<div class="md:col-span-4 pb-2">
+<p class="text-on-surface-variant body-lg leading-relaxed">
+                        Supporting the artisans, growers, and practitioners of the Pacific Northwest. Every partner is vetted for sustainability and community impact.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Search and Filter Bar -->
+<section class="bg-surface-container-low sticky top-[72px] z-40">
+<div class="max-w-screen-xl mx-auto px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="relative w-full md:w-1/3">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant focus:ring-0 focus:border-primary pl-12 py-3 transition-all font-body" placeholder="Search by business or service..." type="text"/>
+</div>
+<div class="flex items-center gap-3 overflow-x-auto w-full md:w-auto no-scrollbar">
+<span class="text-on-surface-variant text-sm font-semibold mr-2 whitespace-nowrap">Filter by:</span>
+<button class="bg-secondary-fixed text-on-secondary-fixed px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap">All Industries</button>
+<button class="hover:bg-surface-container-high px-5 py-2 rounded-full text-sm font-medium text-on-surface-variant whitespace-nowrap transition-colors">Agriculture</button>
+<button class="hover:bg-surface-container-high px-5 py-2 rounded-full text-sm font-medium text-on-surface-variant whitespace-nowrap transition-colors">Crafts</button>
+<button class="hover:bg-surface-container-high px-5 py-2 rounded-full text-sm font-medium text-on-surface-variant whitespace-nowrap transition-colors">Wellness</button>
+<button class="hover:bg-surface-container-high px-5 py-2 rounded-full text-sm font-medium text-on-surface-variant whitespace-nowrap transition-colors">Education</button>
+</div>
+</div>
+</section>
+<!-- Marketplace Grid -->
+<section class="px-8 py-16 max-w-screen-xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+<!-- Business Card 1 -->
+<div class="group flex flex-col space-y-4">
+<div class="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Artisanal pottery studio with finished ceramic vases" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmK99b6_70u7TSg2KBC7aPB8NOYDniN5WUuaRgYKEjkQ93iAL4suvsce-wzv-BejJxVb022kDGJ4FI2Yfcuq9XoHJ7UrUVYnEuzmNAxILZVXC1gMYqTnLFgaK1Q20bM2Xj2fR5_oc5yIx092FYhrdxs6-y9WdKJkgtLBfhjuqalmYQcWiVGCy3IF4UIrb4_Z6h3oUPFU5wv2kB1uhK6DpEuU2VEe8Nxh4CSajIsG1AjDK2lsETyQxAgBscPLPTJnt7ygBTSirCBOBf"/>
+<div class="absolute top-4 right-4">
+<span class="bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-tertiary">B-Corp Certified</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-xl font-bold text-primary group-hover:text-tertiary transition-colors">Sloane &amp; Cedar Ceramics</h3>
+<p class="text-sm text-outline flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                                Port Townsend, WA
+                            </p>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-on-secondary-container">4.9</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed line-clamp-2">
+                        Hand-thrown stoneware inspired by the moody textures of the Olympic Peninsula. Sustainable firing practices.
+                    </p>
+<div class="pt-2 border-t border-outline-variant/15 flex justify-between items-center">
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter">Bespoke Tableware</span>
+<a class="text-primary text-sm font-bold flex items-center gap-1 group/link" href="#">
+                            View Profile
+                            <span class="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Business Card 2 -->
+<div class="group flex flex-col space-y-4">
+<div class="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Dense evergreen forest landscape in morning mist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHRlVfb_rKepY1xT2pS8oRz7OYPwshOE2cBukw_a8He7nD7L2QyLUYU6avrp7XPFYzZh0NZsCufsrRkoqutj5mHKe1Bb6c1I-Avhh-VolnUfZiUtWoLPmhG4mRDlJ_0Y1Y-WpYmFK_GhrRrFx4ho3euX8B12zSWjLzlSyYZI8P8d_gsWpQ-dk5jnNEYIbbXGf9w0qIi8bvX7aczLqZ5_IR7YlCIRh97JjUM6DFJT2_Y9fx07b9g0a7moT1bGJpVfMyNQXkAlqSbhC3"/>
+<div class="absolute top-4 right-4">
+<span class="bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-tertiary">Native Owned</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-xl font-bold text-primary group-hover:text-tertiary transition-colors">Rainshadow Apothecary</h3>
+<p class="text-sm text-outline flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                                Sequim, WA
+                            </p>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-on-secondary-container">5.0</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed line-clamp-2">
+                        Wild-harvested botanical remedies and tinctures. Rooted in traditional knowledge and ecological stewardship.
+                    </p>
+<div class="pt-2 border-t border-outline-variant/15 flex justify-between items-center">
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter">Herbal Wellness</span>
+<a class="text-primary text-sm font-bold flex items-center gap-1 group/link" href="#">
+                            View Profile
+                            <span class="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Business Card 3 (Asymmetric layout helper: wider card or offset) -->
+<div class="group flex flex-col space-y-4 lg:mt-12">
+<div class="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Handcrafted leather goods on a wooden workbench" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQ5w4FIzXT9Y8TIqdNXgD54UK0TWFTLS7xthbcPWHJgF2OBMtbrtZBtrpLoVjRS11tr-nAbZEe9Yt7ghFjHlB7A8Boq3rd4bOcuO8nUgV7lHtUr1qKrMtKPt0XST5ZKfJJ7-_rdBBHGIIe9ka6nbTb6WcTNj4dUjplWXvYHOM5YczjNtbuNrhsuv2Fe_fjJo9AUp5PHJ0jNyfMRbHajb_mVsmWDe9ppOpgxeRZosigXgpTQKNQRDgcNLo6FXP51YexFcx2n1bMyJoe"/>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-xl font-bold text-primary group-hover:text-tertiary transition-colors">Ironwood Leather</h3>
+<p class="text-sm text-outline flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                                Bend, OR
+                            </p>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-on-secondary-container">4.8</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed line-clamp-2">
+                        Lifetime-guaranteed bags and accessories using vegetable-tanned hides and heritage techniques.
+                    </p>
+<div class="pt-2 border-t border-outline-variant/15 flex justify-between items-center">
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter">Hard Goods</span>
+<a class="text-primary text-sm font-bold flex items-center gap-1 group/link" href="#">
+                            View Profile
+                            <span class="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Business Card 4 -->
+<div class="group flex flex-col space-y-4 lg:-mt-12">
+<div class="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Fresh organic vegetables in a wooden crate" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC42QC7E8jIGprNIMU4_nK-JcjhiTdooWxum5lttP7HfPAeiOq9WoesBojZsWqScQxc7SQ2DwGhm3v3cxfejo2sudzTLDXaMkk-Jlo3Dz-JAZIa8fWbeSCl0WVArXAg7UoynkPdpRoVFM0_Izkc94gaQt6jLr7YYxi-BqPczlvRBwlKUceFNQfVT_K8Snrn1SvwreORUk5WTbK4rzeHckswLzpa_Tn1XUFoAk-2FN_Xqy6hMD5RXi0vJg4SAzEqeAYfVhgRuloFQqpy"/>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-xl font-bold text-primary group-hover:text-tertiary transition-colors">Fern &amp; Fallow Farm</h3>
+<p class="text-sm text-outline flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                                Eugene, OR
+                            </p>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-on-secondary-container">4.9</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed line-clamp-2">
+                        Regenerative agriculture and heirloom seeds. Weekly CSA boxes and seasonal farm-to-table workshops.
+                    </p>
+<div class="pt-2 border-t border-outline-variant/15 flex justify-between items-center">
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter">Agriculture</span>
+<a class="text-primary text-sm font-bold flex items-center gap-1 group/link" href="#">
+                            View Profile
+                            <span class="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Business Card 5 -->
+<div class="group flex flex-col space-y-4">
+<div class="aspect-[4/5] overflow-hidden rounded-lg bg-surface-container-low relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Zen yoga studio with bamboo flooring" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADsGKlifteFVnwJxSHhgi-fGw_YW66wNvg3hzZ9P9RC6Ud5vDljNHljy8hd_ejxhJW9ReCZTKiR8V9-zgjaavG0ajLF03Wcx8qK2S98tMDZLnc8NGTP1V3RUGfk1J_gjaJCyjiRf9OB70bLHfEr_WcAcfM4vylMIaFWDvRHcLXcKPQO4yaZvqhM2-iYJyttjSThWI4id_aJ8XuYOpvIQDLtu_YFvF1HA7YJt_LERAACB8-h_jwX5TShckJQ-Pm_SVDj-1UxdKetY8o"/>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-xl font-bold text-primary group-hover:text-tertiary transition-colors">Moss &amp; Mind</h3>
+<p class="text-sm text-outline flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                                Portland, OR
+                            </p>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-on-secondary-container">4.7</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed line-clamp-2">
+                        Holistic movement and forest bathing therapy. Reconnecting urban dwellers with the natural world.
+                    </p>
+<div class="pt-2 border-t border-outline-variant/15 flex justify-between items-center">
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter">Wellness</span>
+<a class="text-primary text-sm font-bold flex items-center gap-1 group/link" href="#">
+                            View Profile
+                            <span class="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- CTA Card -->
+<div class="bg-primary p-8 rounded-lg flex flex-col justify-between text-on-primary">
+<div>
+<h3 class="text-3xl font-bold mb-4">Your business belongs here.</h3>
+<p class="text-primary-fixed leading-relaxed">
+                            Join over 200 local partners who prioritize craftsmanship and the environment. 
+                        </p>
+</div>
+<div class="space-y-4">
+<ul class="space-y-2 mb-6">
+<li class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+                                Zero commission on first $1k
+                            </li>
+<li class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+                                Community marketing reach
+                            </li>
+</ul>
+<button class="w-full bg-tertiary-fixed text-on-tertiary-fixed py-4 rounded-md font-bold hover:bg-tertiary-fixed-dim transition-colors">
+                            Apply to Partner
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Map Section -->
+<section class="bg-surface-container-low py-24 px-8 overflow-hidden">
+<div class="max-w-screen-xl mx-auto">
+<div class="grid lg:grid-cols-2 gap-16 items-center">
+<div class="order-2 lg:order-1">
+<div class="aspect-square bg-surface-container-highest rounded-full border-8 border-surface-container-lowest overflow-hidden shadow-2xl">
+<img class="w-full h-full object-cover grayscale opacity-50 mix-blend-multiply" data-alt="Topographic map of coastal mountains" data-location="Pacific Northwest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3T8A55vDjPBgcf_Tqw3X34S3bZ5LX2UrjI3hVJh_3zXyBvk_T1vCD9IWVoOomo_N_oZc5V_4IdttqcgIJypiI0RefRHSTKlp-SXzGSJ-tFg0LUQxuwEuNkT_uTk4DRk68OlPBSPwuaDnpficpN5VfPnSbspsLs60mzf9QoQAaDvfl_R0dqYYjMfCBW2pye_PaanTlPsYV7X2hq3yHzdQifEddnb4N_KKn6FHeHON-YZLa6roXnVIXJrHyuAx-8mAlrcSEb_3jqpow"/>
+</div>
+</div>
+<div class="order-1 lg:order-2 space-y-8">
+<h2 class="text-4xl md:text-5xl font-extrabold text-primary leading-tight">Finding Your <br/>Natural Neighbors.</h2>
+<p class="text-on-surface-variant body-lg leading-relaxed">
+                            Our interactive directory doesn't just show you where to shop; it shows you where to grow. Discover local supply chains, workshops, and communal resources near you.
+                        </p>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="bg-surface-container-lowest p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">eco</span>
+</div>
+<div>
+<h4 class="font-bold text-primary">Sustainability Tracked</h4>
+<p class="text-sm text-on-surface-variant">We verify the sourcing of every business in our network.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container-lowest p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<div>
+<h4 class="font-bold text-primary">Direct Communication</h4>
+<p class="text-sm text-on-surface-variant">Talk directly with makers and service providers.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f5f3ef] dark:bg-[#1b1c1a] w-full py-16 px-8 grid grid-cols-1 md:grid-cols-4 gap-12 border-t border-[#bfc9c3]/15 font-['Manrope'] text-sm">
+<div class="md:col-span-1">
+<div class="text-lg font-bold text-[#003527] dark:text-[#fbf9f5] mb-6">The Modern Naturalist</div>
+<p class="text-[#404944] dark:text-[#bfc9c3] leading-relaxed">
+                © 2024 The Modern Naturalist. Rooted in the Pacific Northwest. Supporting local ecosystems one business at a time.
+            </p>
+</div>
+<div>
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] mb-6 uppercase tracking-widest text-xs">Explore</h4>
+<ul class="space-y-4">
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Local Directory</a></li>
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Sustainability Pact</a></li>
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Partner Onboarding</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] mb-6 uppercase tracking-widest text-xs">Connect</h4>
+<ul class="space-y-4">
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Privacy Policy</a></li>
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Contact Support</a></li>
+<li><a class="text-[#404944] dark:text-[#bfc9c3] hover:text-[#472510] dark:hover:text-[#ffdbc9] transition-all" href="#">Instagram</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[#003527] dark:text-[#fbf9f5] mb-6 uppercase tracking-widest text-xs">Newsletter</h4>
+<p class="text-[#404944] dark:text-[#bfc9c3] mb-4">Get seasonal field guides and local artisan spotlights.</p>
+<div class="relative">
+<input class="w-full bg-white/50 border-none border-b border-outline py-2 focus:ring-0 focus:border-primary transition-colors italic" placeholder="email address" type="email"/>
+<button class="absolute right-0 top-1/2 -translate-y-1/2 text-primary font-bold">Sign Up</button>
+</div>
+</div>
+</footer>
+</body></html>

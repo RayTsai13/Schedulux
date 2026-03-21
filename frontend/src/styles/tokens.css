@@ -1,0 +1,313 @@
+/*
+ * ============================================================================
+ * Schedulux Design Tokens
+ * ============================================================================
+ * Source of truth for all visual values. Extracted from the Stitch
+ * "Schedulux 1.0 UI" project (project ID 17382833909498924302).
+ *
+ * Design language: "The Editorial Earth" / "The Modern Naturalist"
+ *
+ * Rules:
+ *   - Every color, radius, shadow, spacing, and typographic value used in
+ *     components MUST reference a token from this file.
+ *   - No hardcoded hex values, pixel sizes, or font stacks in components.
+ *   - Semantic names describe PURPOSE, not appearance.
+ * ============================================================================
+ */
+
+:root {
+
+  /* ==========================================================================
+   * 1. COLOR — Primary (Deep Forest Green)
+   * The brand color. Used for CTAs, headlines, nav active states.
+   * ======================================================================== */
+  --color-primary:                 #003527;
+  --color-primary-container:       #064e3b;  /* hover states, gradient endpoints */
+  --color-primary-fixed:           #b0f0d6;  /* light accents, badges */
+  --color-primary-fixed-dim:       #95d3ba;  /* muted accents, inverse primary */
+  --color-on-primary:              #ffffff;  /* text on primary backgrounds */
+  --color-on-primary-container:    #80bea6;  /* text on primary-container backgrounds */
+  --color-on-primary-fixed:        #002117;  /* text on primary-fixed backgrounds */
+  --color-on-primary-fixed-variant:#0b513d;  /* text on primary-fixed variant */
+  --color-inverse-primary:         #95d3ba;  /* primary in inverse/dark contexts */
+
+  /* ==========================================================================
+   * 2. COLOR — Secondary (Muted Sage)
+   * Supporting actions, tags, chip selections.
+   * ======================================================================== */
+  --color-secondary:               #516445;
+  --color-secondary-container:     #d0e7c0;  /* secondary button bg, sidebar active */
+  --color-secondary-fixed:         #d3e9c3;  /* chip selections, subtle highlights */
+  --color-secondary-fixed-dim:     #b7cda8;  /* muted secondary accent */
+  --color-on-secondary:            #ffffff;
+  --color-on-secondary-container:  #556849;
+  --color-on-secondary-fixed:      #0f2008;
+  --color-on-secondary-fixed-variant: #394c2f;
+
+  /* ==========================================================================
+   * 3. COLOR — Tertiary (Warm Brown)
+   * Warm accents: icons, underlines, accent text. Brings warmth to the
+   * cool green palette.
+   * ======================================================================== */
+  --color-tertiary:                #472510;
+  --color-tertiary-container:      #613b24;
+  --color-tertiary-fixed:          #ffdbc9;  /* warm highlight surfaces, underline hover */
+  --color-tertiary-fixed-dim:      #f3ba9c;
+  --color-on-tertiary:             #ffffff;
+  --color-on-tertiary-container:   #dca688;
+  --color-on-tertiary-fixed:       #311302;
+  --color-on-tertiary-fixed-variant: #643d26;
+
+  /* ==========================================================================
+   * 4. COLOR — Surface & Background
+   * Tonal layering hierarchy. Depth is created by nesting surfaces, NOT
+   * by adding borders or shadows.
+   *
+   * Stacking order (back to front):
+   *   surface → surface-container-low → surface-container → surface-container-high
+   *   → surface-container-highest → surface-container-lowest (pop cards)
+   * ======================================================================== */
+  --color-surface:                 #fbf9f5;  /* main page body (warm off-white) */
+  --color-surface-dim:             #dbdad6;  /* muted bg for card lift effect */
+  --color-surface-bright:          #fbf9f5;  /* same as surface, bright variant */
+  --color-surface-container-lowest:#ffffff;  /* "pop" cards on muted backgrounds */
+  --color-surface-container-low:   #f5f3ef;  /* subtle content grouping, inputs bg */
+  --color-surface-container:       #efeeea;  /* mid-level containers */
+  --color-surface-container-high:  #eae8e4;  /* elevated containers, avatars bg */
+  --color-surface-container-highest:#e4e2de; /* highest-priority containers */
+  --color-surface-variant:         #e4e2de;  /* same as highest, surface variant */
+  --color-surface-tint:            #2b6954;  /* tint overlay for surfaces */
+  --color-background:              #fbf9f5;  /* page background (= surface) */
+
+  /* ==========================================================================
+   * 5. COLOR — On-Surface (Text & Icons on surfaces)
+   * Never use pure #000000. Always on-surface (#1b1c1a).
+   * ======================================================================== */
+  --color-on-surface:              #1b1c1a;  /* primary text color */
+  --color-on-surface-variant:      #404944;  /* secondary/muted text */
+  --color-on-background:           #1b1c1a;  /* text on background (= on-surface) */
+
+  /* ==========================================================================
+   * 6. COLOR — Outline & Borders
+   * "No Border" rule: 1px solid borders are prohibited for sectioning.
+   * Use outline-variant at 15% opacity as ghost border only for a11y.
+   * ======================================================================== */
+  --color-outline:                 #707974;  /* visible outlines, dividers */
+  --color-outline-variant:         #bfc9c3;  /* ghost borders (use at 15% opacity) */
+
+  /* ==========================================================================
+   * 7. COLOR — Inverse (Dark panels, tooltips)
+   * ======================================================================== */
+  --color-inverse-surface:         #30312e;
+  --color-inverse-on-surface:      #f2f0ed;
+
+  /* ==========================================================================
+   * 8. COLOR — Error / Destructive
+   * ======================================================================== */
+  --color-error:                   #ba1a1a;
+  --color-error-container:         #ffdad6;
+  --color-on-error:                #ffffff;
+  --color-on-error-container:      #93000a;
+
+  /* ==========================================================================
+   * 9. COLOR — Status (for appointment badges, calendar events)
+   * These appear as hardcoded values in the current codebase (e.g.
+   * AppointmentCalendarPage). Encoding as tokens for consistency.
+   * ======================================================================== */
+  --color-status-pending:          #f59e0b;  /* amber — awaiting action */
+  --color-status-confirmed:        #3b82f6;  /* blue — confirmed */
+  --color-status-completed:        #10b981;  /* green — done */
+  --color-status-cancelled:        #ef4444;  /* red — cancelled */
+  --color-status-declined:         #6b7280;  /* gray — declined */
+
+  /* ==========================================================================
+   * 10. TYPOGRAPHY — Font Families
+   * Dual-typeface system: Epilogue for editorial headlines,
+   * Manrope for body/labels/UI.
+   * ======================================================================== */
+  --font-headline:                 'Epilogue', sans-serif;
+  --font-body:                     'Manrope', sans-serif;
+  --font-label:                    'Manrope', sans-serif;
+
+  /* ==========================================================================
+   * 11. TYPOGRAPHY — Font Weights
+   * ======================================================================== */
+  --font-weight-normal:            400;
+  --font-weight-medium:            500;
+  --font-weight-semibold:          600;
+  --font-weight-bold:              700;
+  --font-weight-extrabold:         800;
+
+  /* ==========================================================================
+   * 12. TYPOGRAPHY — Type Scale
+   * Sizes extracted from Stitch HTML. Consistent across 6+ screens.
+   * ======================================================================== */
+  --text-2xs:                      0.625rem;   /* 10px — micro labels (6/8 screens) */
+  --text-xs:                       0.75rem;    /* 12px — captions, badges */
+  --text-sm:                       0.875rem;   /* 14px — body small, nav, labels */
+  --text-base:                     1rem;       /* 16px — body default */
+  --text-lg:                       1.125rem;   /* 18px — body large, card titles */
+  --text-xl:                       1.25rem;    /* 20px — section subtitles */
+  --text-2xl:                      1.5rem;     /* 24px — page subtitles */
+  --text-3xl:                      1.875rem;   /* 30px — section headings */
+  --text-4xl:                      2.25rem;    /* 36px — large section headings */
+  --text-5xl:                      3rem;       /* 48px — hero subheadings */
+  --text-6xl:                      3.75rem;    /* 60px — decorative only (oversized quotes, watermarks) */
+  --text-7xl:                      4.5rem;     /* 72px — hero headlines */
+
+  /* ==========================================================================
+   * 13. TYPOGRAPHY — Letter Spacing
+   * ======================================================================== */
+  --tracking-tighter:             -0.05em;   /* tight display text */
+  --tracking-tight:               -0.025em;  /* headings, brand name (8/8 screens) */
+  --tracking-normal:               0em;
+  --tracking-wider:                0.05em;    /* uppercase labels */
+  --tracking-widest:               0.1em;     /* uppercase micro labels (7/8 screens) */
+
+  /* ==========================================================================
+   * 14. TYPOGRAPHY — Line Heights
+   * ======================================================================== */
+  --leading-none:                  1;         /* hero headlines */
+  --leading-tight:                 1.25;      /* headings */
+  --leading-normal:                1.5;       /* default */
+  --leading-relaxed:               1.625;     /* body text, descriptions (8/8) */
+
+  /* ==========================================================================
+   * 15. SPACING — Scale
+   * The Stitch design uses a spacing-3 factor scale. These are the semantic
+   * values actually used in the HTML.
+   * ======================================================================== */
+  --space-0:                       0rem;
+  --space-0-5:                     0.125rem;  /* 2px */
+  --space-1:                       0.25rem;   /* 4px */
+  --space-1-5:                     0.375rem;  /* 6px */
+  --space-2:                       0.5rem;    /* 8px — inline gaps, badge padding */
+  --space-2-5:                     0.625rem;  /* 10px — button py */
+  --space-3:                       0.75rem;   /* 12px — small card padding */
+  --space-4:                       1rem;      /* 16px — component padding, nav items */
+  --space-5:                       1.25rem;   /* 20px — medium padding */
+  --space-6:                       1.5rem;    /* 24px — card gutters, grid gap */
+  --space-8:                       2rem;      /* 32px — section padding, page px */
+  --space-10:                      2.5rem;    /* 40px — breathing rooms */
+  --space-12:                      3rem;      /* 48px — large section gaps */
+  --space-16:                      4rem;      /* 64px — footer section py */
+  --space-20:                      5rem;      /* 80px — hero py */
+  --space-24:                      6rem;      /* 96px — hero-to-content, pt for pages */
+  --space-32:                      8rem;      /* 128px — pt for offset pages */
+
+  /* ==========================================================================
+   * 16. BORDER RADIUS
+   * From Stitch Tailwind config. The design system uses subtle rounding
+   * with a max of 0.75rem for "full" and true rounded-full for pills.
+   * ======================================================================== */
+  --radius-none:                   0rem;
+  --radius-sm:                     0.125rem;  /* 2px — minimal, default in Stitch config */
+  --radius-md:                     0.375rem;  /* 6px — primary buttons (Tailwind default md) */
+  --radius-lg:                     0.5rem;    /* 8px — standard cards, images */
+  --radius-xl:                     0.75rem;   /* 12px — large cards, nav overlays */
+  --radius-2xl:                    1rem;      /* 16px — prominent containers */
+  --radius-3xl:                    1.5rem;    /* 24px — hero cards, bottom nav top */
+  --radius-full:                   9999px;    /* pills, avatars, circular buttons */
+
+  /* ==========================================================================
+   * 17. SHADOWS
+   * Tonal layering is preferred. Shadows only for truly floating elements.
+   * ======================================================================== */
+  --shadow-editorial:              0 20px 40px rgba(27, 28, 26, 0.05);   /* ambient float (5/8 screens) */
+  --shadow-bottom-nav:             0 -10px 30px rgba(27, 28, 26, 0.03);  /* bottom nav lift (3/8 screens) */
+  --shadow-primary-glow:           0 10px 15px -3px rgba(0, 53, 39, 0.1); /* CTA glow: shadow-lg shadow-primary/10 */
+
+  /* ==========================================================================
+   * 18. GLASS / FROSTED EFFECTS
+   * Used on fixed navbars and floating actions.
+   * ======================================================================== */
+  --glass-blur:                    12px;
+  --glass-bg:                      rgba(251, 249, 245, 0.8);  /* surface at 80% */
+  --glass-bg-dark:                 rgba(27, 28, 26, 0.8);     /* inverse-surface at 80% */
+
+  /* ==========================================================================
+   * 19. OPACITY — Semantic modifiers
+   * Frequently used opacity values for color modifiers.
+   * ======================================================================== */
+  --opacity-ghost-border:          0.15;     /* outline-variant at 15% (8/8 screens) */
+  --opacity-subtle-border:         0.20;     /* outline-variant at 20% (5/8 screens) */
+  --opacity-glass:                 0.80;     /* nav/floating backgrounds (7/8 screens) */
+  --opacity-decorative:            0.10;     /* decorative background elements */
+
+  /* ==========================================================================
+   * 20. TRANSITIONS
+   * ======================================================================== */
+  --transition-fast:               150ms;
+  --transition-base:               200ms;
+  --transition-slow:               500ms;   /* confirmed: single "slow" speed for the system */
+  --transition-easing:             cubic-bezier(0.4, 0, 0.2, 1); /* ease-in-out */
+
+  /* ==========================================================================
+   * 21. Z-INDEX SCALE
+   * ======================================================================== */
+  --z-base:                        0;
+  --z-raised:                      10;      /* overlapping content, decorative */
+  --z-sticky:                      40;      /* sticky filters, FABs */
+  --z-fixed:                       50;      /* fixed navbars, modals */
+
+  /* ==========================================================================
+   * 22. LAYOUT — Container widths
+   * ======================================================================== */
+  --container-sm:                  28rem;   /* 448px — max-w-md (login forms) */
+  --container-md:                  32rem;   /* 512px — max-w-lg */
+  --container-lg:                  36rem;   /* 576px — max-w-xl */
+  --container-xl:                  42rem;   /* 672px — max-w-2xl */
+  --container-2xl:                 48rem;   /* 768px — max-w-3xl */
+  --container-content:             80rem;   /* 1280px — max-w-7xl (main content) */
+  --container-wide:                96rem;   /* 1536px — max-w-screen-2xl (full layouts) */
+  --grid-gap:                      1.5rem;  /* 24px — 12-column grid gap */
+  --calendar-row-height:           140px;   /* standard calendar cell height */
+
+  /* ==========================================================================
+   * 23. GRADIENT — Signature
+   * Forest canopy gradient. Used on hero CTAs and primary action areas.
+   * ======================================================================== */
+  --gradient-primary:              linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+
+  /* ==========================================================================
+   * 24. ICON — Material Symbols defaults
+   * ======================================================================== */
+  --icon-size:                     24px;
+  --icon-weight:                   400;
+  --icon-fill:                     0;
+  --icon-grade:                    0;
+  --icon-optical-size:             24;
+
+  /* ==========================================================================
+   * 25. SHADCN/UI COMPATIBILITY
+   * These map our design tokens to the CSS vars that shadcn/ui components
+   * expect (HSL format). This lets existing shadcn components pick up
+   * our theme without modification.
+   * ======================================================================== */
+  --radius:                        0.5rem;  /* shadcn default radius base */
+
+  --background:                    48 33% 97%;    /* #fbf9f5 */
+  --foreground:                    100 5% 10%;    /* #1b1c1a */
+  --card:                          0 0% 100%;     /* #ffffff (surface-container-lowest) */
+  --card-foreground:               100 5% 10%;    /* #1b1c1a */
+  --popover:                       0 0% 100%;
+  --popover-foreground:            100 5% 10%;
+  --primary:                       160 100% 10%;  /* #003527 */
+  --primary-foreground:            0 0% 100%;     /* #ffffff */
+  --secondary:                     100 19% 33%;   /* #516445 */
+  --secondary-foreground:          0 0% 100%;
+  --muted:                         40 13% 95%;    /* #f5f3ef (surface-container-low) */
+  --muted-foreground:              160 7% 27%;    /* #404944 */
+  --accent:                        150 31% 23%;   /* #064e3b (primary-container) */
+  --accent-foreground:             0 0% 100%;
+  --destructive:                   0 74% 42%;     /* #ba1a1a */
+  --destructive-foreground:        0 0% 100%;
+  --border:                        150 8% 77%;    /* #bfc9c3 (outline-variant) */
+  --input:                         150 8% 77%;    /* #bfc9c3 */
+  --ring:                          160 100% 10%;  /* #003527 (primary) */
+  --chart-1:                       160 100% 10%;
+  --chart-2:                       100 19% 33%;
+  --chart-3:                       22 65% 17%;    /* tertiary */
+  --chart-4:                       150 31% 23%;
+  --chart-5:                       43 100% 35%;   /* status-pending */
+}

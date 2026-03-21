@@ -91,8 +91,8 @@ export default function StorefrontDetailPage() {
       <AppScaffold>
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-v3-accent border-r-transparent" />
-            <p className="mt-4 text-v3-secondary">Loading storefront...</p>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
+            <p className="mt-4 text-on-surface-variant">Loading storefront...</p>
           </div>
         </div>
       </AppScaffold>
@@ -103,7 +103,7 @@ export default function StorefrontDetailPage() {
     return (
       <AppScaffold>
         <div className="text-center py-12">
-          <p className="text-v3-secondary mb-4">Storefront not found</p>
+          <p className="text-on-surface-variant mb-4">Storefront not found</p>
           <UniversalButton variant="primary" onClick={() => navigate('/dashboard')}>
             Back to Dashboard
           </UniversalButton>
@@ -118,7 +118,7 @@ export default function StorefrontDetailPage() {
         {/* Breadcrumb */}
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-2 text-v3-secondary hover:text-v3-primary transition-colors"
+          className="inline-flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
@@ -127,11 +127,11 @@ export default function StorefrontDetailPage() {
         {/* Storefront Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-v3-primary mb-2">{storefront.name}</h1>
+            <h1 className="text-4xl font-bold text-on-surface mb-2">{storefront.name}</h1>
             {storefront.description && (
-              <p className="text-v3-secondary mb-4">{storefront.description}</p>
+              <p className="text-on-surface-variant mb-4">{storefront.description}</p>
             )}
-            <div className="flex items-center gap-3 flex-wrap text-sm text-v3-secondary">
+            <div className="flex items-center gap-3 flex-wrap text-sm text-on-surface-variant">
               {(storefront.city || storefront.address) && (
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4" />
@@ -142,10 +142,10 @@ export default function StorefrontDetailPage() {
                   </span>
                 </div>
               )}
-              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-v3-accent/10 text-v3-accent rounded-full">
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                 {storefront.profile_type === 'individual' ? 'Individual' : 'Business'}
               </span>
-              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-v3-primary/10 text-v3-primary rounded-full">
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-on-surface rounded-full">
                 {storefront.location_type === 'fixed'
                   ? 'Fixed Location'
                   : storefront.location_type === 'mobile'

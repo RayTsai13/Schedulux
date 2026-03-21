@@ -79,7 +79,7 @@ export default function AppointmentDetailModal({
           >
             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
           </span>
-          <span className="text-sm text-v3-secondary">
+          <span className="text-sm text-on-surface-variant">
             ID: #{appointment.id}
           </span>
         </div>
@@ -87,19 +87,19 @@ export default function AppointmentDetailModal({
         {/* Date & Time */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-start gap-3">
-            <Calendar className="w-5 h-5 text-v3-secondary mt-0.5" />
+            <Calendar className="w-5 h-5 text-on-surface-variant mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-v3-primary">Date</p>
-              <p className="text-sm text-v3-secondary">
+              <p className="text-sm font-medium text-on-surface">Date</p>
+              <p className="text-sm text-on-surface-variant">
                 {format(new Date(appointment.requested_start_datetime), 'MMMM d, yyyy')}
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-v3-secondary mt-0.5" />
+            <Clock className="w-5 h-5 text-on-surface-variant mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-v3-primary">Time</p>
-              <p className="text-sm text-v3-secondary">
+              <p className="text-sm font-medium text-on-surface">Time</p>
+              <p className="text-sm text-on-surface-variant">
                 {format(new Date(appointment.requested_start_datetime), 'h:mm a')} -{' '}
                 {format(new Date(appointment.requested_end_datetime), 'h:mm a')}
               </p>
@@ -108,32 +108,32 @@ export default function AppointmentDetailModal({
         </div>
 
         {/* Client Info Section */}
-        <div className="p-4 bg-v3-background rounded-xl border border-v3-border space-y-3">
-          <h3 className="text-sm font-semibold text-v3-primary mb-3">Client Information</h3>
+        <div className="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+          <h3 className="text-sm font-semibold text-on-surface mb-3">Client Information</h3>
 
           <div className="flex items-center gap-3">
-            <User className="w-4 h-4 text-v3-secondary" />
-            <span className="text-sm text-v3-primary">Client ID: {appointment.client_id}</span>
+            <User className="w-4 h-4 text-on-surface-variant" />
+            <span className="text-sm text-on-surface">Client ID: {appointment.client_id}</span>
           </div>
 
           {/* Note: In a real app, you'd fetch client details separately */}
-          <p className="text-xs text-v3-secondary italic">
+          <p className="text-xs text-on-surface-variant italic">
             Full client details would be displayed here (fetched from client API)
           </p>
         </div>
 
         {/* Service Info */}
-        <div className="p-4 bg-v3-background rounded-xl border border-v3-border space-y-3">
-          <h3 className="text-sm font-semibold text-v3-primary mb-3">Service Information</h3>
+        <div className="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+          <h3 className="text-sm font-semibold text-on-surface mb-3">Service Information</h3>
 
           <div className="space-y-2">
-            <p className="text-sm text-v3-secondary">
+            <p className="text-sm text-on-surface-variant">
               Service ID: {appointment.service_id}
             </p>
             {appointment.price_quoted && (
               <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-v3-secondary" />
-                <span className="text-sm text-v3-primary">
+                <DollarSign className="w-4 h-4 text-on-surface-variant" />
+                <span className="text-sm text-on-surface">
                   Price: ${appointment.price_quoted}
                 </span>
               </div>
@@ -143,12 +143,12 @@ export default function AppointmentDetailModal({
 
         {/* Location */}
         {appointment.service_location_type && (
-          <div className="p-4 bg-v3-background rounded-xl border border-v3-border">
+          <div className="p-4 bg-surface rounded-xl border border-outline-variant">
             <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-v3-secondary mt-0.5" />
+              <MapPin className="w-5 h-5 text-on-surface-variant mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-v3-primary mb-1">Location</p>
-                <p className="text-sm text-v3-secondary">
+                <p className="text-sm font-medium text-on-surface mb-1">Location</p>
+                <p className="text-sm text-on-surface-variant">
                   {appointment.service_location_type === 'at_vendor'
                     ? 'At business location'
                     : appointment.service_location_type === 'at_client' && appointment.client_address
@@ -162,12 +162,12 @@ export default function AppointmentDetailModal({
 
         {/* Client Notes */}
         {appointment.client_notes && (
-          <div className="p-4 bg-v3-background rounded-xl border border-v3-border">
+          <div className="p-4 bg-surface rounded-xl border border-outline-variant">
             <div className="flex items-start gap-3">
-              <MessageSquare className="w-5 h-5 text-v3-secondary mt-0.5" />
+              <MessageSquare className="w-5 h-5 text-on-surface-variant mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-v3-primary mb-1">Client Notes</p>
-                <p className="text-sm text-v3-secondary">{appointment.client_notes}</p>
+                <p className="text-sm font-medium text-on-surface mb-1">Client Notes</p>
+                <p className="text-sm text-on-surface-variant">{appointment.client_notes}</p>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function AppointmentDetailModal({
 
         {/* Vendor Notes */}
         <div>
-          <label htmlFor="vendor_notes" className="block text-sm font-medium text-v3-primary mb-2">
+          <label htmlFor="vendor_notes" className="block text-sm font-medium text-on-surface mb-2">
             Vendor Notes (Optional)
           </label>
           <textarea
@@ -183,14 +183,14 @@ export default function AppointmentDetailModal({
             value={vendorNotes}
             onChange={(e) => setVendorNotes(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-v3-border bg-v3-background text-v3-primary placeholder:text-v3-secondary/50 focus:outline-none focus:ring-2 focus:ring-v3-accent"
+            className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Add notes about this appointment..."
             disabled={isCompleted || isCancelled || isDeclined}
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 pt-4 border-t border-v3-border">
+        <div className="flex items-center gap-3 pt-4 border-t border-outline-variant">
           {canConfirm && (
             <UniversalButton
               variant="primary"

@@ -56,8 +56,8 @@ export default function ClientAppointmentsPage() {
       <AppScaffold>
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-v3-accent border-r-transparent" />
-            <p className="mt-4 text-v3-secondary">Loading appointments...</p>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
+            <p className="mt-4 text-on-surface-variant">Loading appointments...</p>
           </div>
         </div>
       </AppScaffold>
@@ -70,17 +70,17 @@ export default function ClientAppointmentsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-v3-primary mb-2">My Appointments</h1>
-            <p className="text-v3-secondary">View and manage your bookings</p>
+            <h1 className="text-4xl font-bold text-on-surface mb-2">My Appointments</h1>
+            <p className="text-on-surface-variant">View and manage your bookings</p>
           </div>
 
           {/* Filter */}
           <div className="flex items-center gap-3">
-            <Filter className="w-5 h-5 text-v3-secondary" />
+            <Filter className="w-5 h-5 text-on-surface-variant" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 rounded-xl border border-v3-border bg-v3-background text-v3-primary focus:outline-none focus:ring-2 focus:ring-v3-accent"
+              className="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Appointments</option>
               <option value="upcoming">Upcoming</option>
@@ -96,11 +96,11 @@ export default function ClientAppointmentsPage() {
         {/* Appointments List */}
         {!sortedAppointments || sortedAppointments.length === 0 ? (
           <UniversalCard className="p-12 text-center">
-            <Calendar className="w-16 h-16 mx-auto mb-4 text-v3-secondary/50" />
-            <h3 className="text-2xl font-semibold text-v3-primary mb-2">
+            <Calendar className="w-16 h-16 mx-auto mb-4 text-on-surface-variant/50" />
+            <h3 className="text-2xl font-semibold text-on-surface mb-2">
               No appointments found
             </h3>
-            <p className="text-v3-secondary mb-6">
+            <p className="text-on-surface-variant mb-6">
               {statusFilter === 'all'
                 ? "You haven't booked any appointments yet"
                 : `No ${statusFilter} appointments`}
@@ -174,15 +174,15 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
             >
               {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
             </span>
-            <span className="text-sm text-v3-secondary">Confirmation #{appointment.id}</span>
+            <span className="text-sm text-on-surface-variant">Confirmation #{appointment.id}</span>
           </div>
 
           {/* Service Info */}
           <div>
-            <h3 className="text-xl font-semibold text-v3-primary mb-1">
+            <h3 className="text-xl font-semibold text-on-surface mb-1">
               {appointment.service_name || `Service #${appointment.service_id}`}
             </h3>
-            <p className="text-sm text-v3-secondary">
+            <p className="text-sm text-on-surface-variant">
               {appointment.storefront_name || `Storefront #${appointment.storefront_id}`}
             </p>
           </div>
@@ -190,14 +190,14 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
           {/* Date & Time */}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-v3-secondary" />
-              <span className="text-sm text-v3-primary">
+              <Calendar className="w-4 h-4 text-on-surface-variant" />
+              <span className="text-sm text-on-surface">
                 {format(new Date(appointment.requested_start_datetime), 'MMMM d, yyyy')}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-v3-secondary" />
-              <span className="text-sm text-v3-primary">
+              <Clock className="w-4 h-4 text-on-surface-variant" />
+              <span className="text-sm text-on-surface">
                 {format(new Date(appointment.requested_start_datetime), 'h:mm a')} -{' '}
                 {format(new Date(appointment.requested_end_datetime), 'h:mm a')}
               </span>
@@ -207,8 +207,8 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
           {/* Location */}
           {appointment.service_location_type && (
             <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-v3-secondary mt-0.5" />
-              <span className="text-sm text-v3-secondary">
+              <MapPin className="w-4 h-4 text-on-surface-variant mt-0.5" />
+              <span className="text-sm text-on-surface-variant">
                 {appointment.service_location_type === 'at_vendor'
                   ? 'At business location'
                   : appointment.service_location_type === 'at_client' && appointment.client_address
@@ -221,8 +221,8 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
           {/* Price */}
           {appointment.price_quoted && (
             <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-v3-secondary" />
-              <span className="text-sm font-medium text-v3-primary">${appointment.price_quoted}</span>
+              <DollarSign className="w-4 h-4 text-on-surface-variant" />
+              <span className="text-sm font-medium text-on-surface">${appointment.price_quoted}</span>
             </div>
           )}
 
@@ -238,17 +238,17 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
 
           {/* Client Notes */}
           {appointment.client_notes && (
-            <div className="p-3 bg-v3-background rounded-lg">
-              <p className="text-xs font-medium text-v3-secondary mb-1">Your Notes:</p>
-              <p className="text-sm text-v3-primary">{appointment.client_notes}</p>
+            <div className="p-3 bg-surface rounded-lg">
+              <p className="text-xs font-medium text-on-surface-variant mb-1">Your Notes:</p>
+              <p className="text-sm text-on-surface">{appointment.client_notes}</p>
             </div>
           )}
 
           {/* Vendor Notes */}
           {appointment.vendor_notes && (
-            <div className="p-3 bg-v3-accent/5 rounded-lg border border-v3-accent/20">
-              <p className="text-xs font-medium text-v3-accent mb-1">Vendor Notes:</p>
-              <p className="text-sm text-v3-primary">{appointment.vendor_notes}</p>
+            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-xs font-medium text-primary mb-1">Vendor Notes:</p>
+              <p className="text-sm text-on-surface">{appointment.vendor_notes}</p>
             </div>
           )}
         </div>
@@ -274,7 +274,7 @@ function AppointmentCard({ appointment, onCancel, onReschedule }: AppointmentCar
             </>
           )}
           {(isCompleted || isCancelled || isDeclined || isPast) && (
-            <span className="text-xs text-v3-secondary text-center">
+            <span className="text-xs text-on-surface-variant text-center">
               {isPast && !isCompleted ? 'Past' : 'Final'}
             </span>
           )}

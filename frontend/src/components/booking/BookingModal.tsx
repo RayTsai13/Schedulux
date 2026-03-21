@@ -238,10 +238,10 @@ export default function BookingModal({
             key={step}
             className={`h-2 rounded-full transition-all ${
               step === state.currentStep
-                ? 'w-8 bg-v3-accent'
+                ? 'w-8 bg-primary'
                 : step < state.currentStep
-                ? 'w-2 bg-v3-accent/50'
-                : 'w-2 bg-v3-border'
+                ? 'w-2 bg-primary/50'
+                : 'w-2 bg-outline-variant'
             }`}
             aria-current={step === state.currentStep ? 'step' : undefined}
           />
@@ -305,7 +305,7 @@ export default function BookingModal({
 
       {/* Navigation Buttons */}
       {state.currentStep !== 4 && (
-        <div className="flex justify-between mt-6 pt-4 border-t border-v3-border">
+        <div className="flex justify-between mt-6 pt-4 border-t border-outline-variant">
           {state.currentStep > 1 && (
             <UniversalButton
               variant="outline"

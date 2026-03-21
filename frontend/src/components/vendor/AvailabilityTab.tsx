@@ -225,10 +225,10 @@ export default function AvailabilityTab({
       {/* ── Rules strip ─────────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-v3-primary">
+          <h3 className="text-sm font-semibold text-on-surface">
             Availability Rules
             {scheduleRules && scheduleRules.length > 0 && (
-              <span className="ml-2 font-normal text-v3-secondary">
+              <span className="ml-2 font-normal text-on-surface-variant">
                 ({scheduleRules.length})
               </span>
             )}
@@ -241,8 +241,8 @@ export default function AvailabilityTab({
 
         {!scheduleRules || scheduleRules.length === 0 ? (
           <UniversalCard className="p-5 text-center">
-            <p className="text-sm font-semibold text-v3-primary mb-1">No rules yet</p>
-            <p className="text-xs text-v3-secondary mb-4">
+            <p className="text-sm font-semibold text-on-surface mb-1">No rules yet</p>
+            <p className="text-xs text-on-surface-variant mb-4">
               Add weekly recurring hours or monthly blocks to define your regular schedule.
             </p>
             <UniversalButton variant="primary" size="sm" onClick={onAddRule}>
@@ -255,7 +255,7 @@ export default function AvailabilityTab({
             {scheduleRules.map((rule) => (
               <div
                 key={rule.id}
-                className="flex items-center gap-2 pl-3 pr-2 py-1.5 bg-v3-surface border border-v3-border rounded-2xl text-xs"
+                className="flex items-center gap-2 pl-3 pr-2 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-2xl text-xs"
               >
                 {/* availability dot */}
                 <span
@@ -264,24 +264,24 @@ export default function AvailabilityTab({
                   }`}
                 />
                 {/* label */}
-                <span className="text-v3-primary font-medium">
+                <span className="text-on-surface font-medium">
                   {rule.name ? `${rule.name} · ` : ''}
                   {formatScheduleRule(rule)}
                 </span>
                 {/* type badge */}
-                <span className="px-1.5 py-0.5 bg-v3-accent/10 text-v3-accent rounded-full font-medium">
+                <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
                   {rule.rule_type}
                 </span>
                 {/* actions */}
                 <button
                   onClick={() => onEditRule(rule)}
-                  className="p-0.5 text-v3-secondary hover:text-v3-primary transition-colors"
+                  className="p-0.5 text-on-surface-variant hover:text-on-surface transition-colors"
                 >
                   <Edit className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => onDeleteRule(rule.id)}
-                  className="p-0.5 text-v3-secondary hover:text-red-500 transition-colors"
+                  className="p-0.5 text-on-surface-variant hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -307,7 +307,7 @@ export default function AvailabilityTab({
           >
             <ChevronLeft className="w-4 h-4" />
           </UniversalButton>
-          <span className="text-base font-semibold text-v3-primary">
+          <span className="text-base font-semibold text-on-surface">
             {format(calendarMonth, 'MMMM yyyy')}
           </span>
           <UniversalButton
@@ -329,7 +329,7 @@ export default function AvailabilityTab({
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
             <div
               key={d}
-              className="text-center text-xs font-semibold text-v3-secondary py-1.5"
+              className="text-center text-xs font-semibold text-on-surface-variant py-1.5"
             >
               {d}
             </div>
@@ -369,10 +369,10 @@ export default function AvailabilityTab({
                   ${!inMonth
                     ? 'border-transparent bg-transparent cursor-default'
                     : isPast
-                    ? 'border-v3-border bg-v3-background cursor-default opacity-40'
+                    ? 'border-outline-variant bg-surface cursor-default opacity-40'
                     : isSelected
-                    ? 'border-v3-accent bg-v3-accent/5 ring-1 ring-v3-accent'
-                    : 'border-v3-border bg-v3-surface hover:border-v3-accent/50 hover:bg-v3-accent/5 cursor-pointer'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50 hover:bg-primary/5 cursor-pointer'
                   }
                 `}
               >
@@ -380,10 +380,10 @@ export default function AvailabilityTab({
                 <span
                   className={`
                     absolute top-2 left-2.5 text-xs font-semibold leading-none z-10
-                    ${!inMonth ? 'text-v3-border' : ''}
-                    ${inMonth && isPast ? 'text-v3-secondary' : ''}
-                    ${inMonth && !isPast && !todayDay ? 'text-v3-primary' : ''}
-                    ${todayDay ? 'text-v3-accent' : ''}
+                    ${!inMonth ? 'text-outline-variant' : ''}
+                    ${inMonth && isPast ? 'text-on-surface-variant' : ''}
+                    ${inMonth && !isPast && !todayDay ? 'text-on-surface' : ''}
+                    ${todayDay ? 'text-primary' : ''}
                   `}
                 >
                   {format(day, 'd')}
@@ -391,7 +391,7 @@ export default function AvailabilityTab({
 
                 {/* Today ring */}
                 {todayDay && (
-                  <span className="absolute top-1.5 left-2 w-5 h-5 rounded-full ring-2 ring-v3-accent" />
+                  <span className="absolute top-1.5 left-2 w-5 h-5 rounded-full ring-2 ring-primary" />
                 )}
 
                 {/* Rule time-window bars (right side) */}
@@ -425,7 +425,7 @@ export default function AvailabilityTab({
                 {/* "has content" dot when bars are too thin to see */}
                 {inMonth && !isPast && hasContent &&
                   [...ruleBars, ...dropBars].every((b) => b.heightPct < 5) && (
-                  <span className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-v3-accent" />
+                  <span className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
               </button>
             );
@@ -433,24 +433,24 @@ export default function AvailabilityTab({
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-5 mt-5 pt-4 border-t border-v3-border flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
+        <div className="flex items-center gap-5 mt-5 pt-4 border-t border-outline-variant flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
             <span className="w-1.5 h-4 rounded-full bg-green-400 inline-block" />
             Open window
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
             <span className="w-1.5 h-4 rounded-full bg-red-300 inline-block" />
             Closed / blocked
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
             <span className="w-1.5 h-4 rounded-full bg-violet-400 inline-block" />
             Drop
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-v3-secondary">
-            <span className="w-4 h-4 rounded-md ring-2 ring-v3-accent inline-block" />
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+            <span className="w-4 h-4 rounded-md ring-2 ring-primary inline-block" />
             Today
           </div>
-          <p className="ml-auto text-xs text-v3-secondary italic">
+          <p className="ml-auto text-xs text-on-surface-variant italic">
             Click a day for details.
           </p>
         </div>
@@ -461,29 +461,29 @@ export default function AvailabilityTab({
         <div
           ref={popoverRef}
           style={popoverStyle}
-          className="bg-v3-surface border border-v3-border rounded-2xl shadow-lg overflow-hidden"
+          className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-lg overflow-hidden"
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-v3-border bg-v3-background">
-            <p className="text-sm font-semibold text-v3-primary">
+          <div className="px-4 py-3 border-b border-outline-variant bg-surface">
+            <p className="text-sm font-semibold text-on-surface">
               {format(selectedDay, 'EEEE, MMMM d')}
             </p>
           </div>
 
           {/* Drops for this day */}
           {popoverDrops.length > 0 && (
-            <div className="px-4 py-3 border-b border-v3-border">
-              <p className="text-xs font-semibold text-v3-secondary uppercase tracking-wide mb-2">
+            <div className="px-4 py-3 border-b border-outline-variant">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
                 Drops
               </p>
               <div className="space-y-1.5">
                 {popoverDrops.map((drop) => (
                   <div key={drop.id} className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full shrink-0 bg-violet-500" />
-                    <span className="text-xs text-v3-primary font-medium truncate">
+                    <span className="text-xs text-on-surface font-medium truncate">
                       {drop.title}
                     </span>
-                    <span className="text-xs text-v3-secondary whitespace-nowrap">
+                    <span className="text-xs text-on-surface-variant whitespace-nowrap">
                       {fmt12(drop.start_time)} – {fmt12(drop.end_time)}
                     </span>
                     <span
@@ -502,12 +502,12 @@ export default function AvailabilityTab({
           )}
 
           {/* Rules for this day */}
-          <div className="px-4 py-3 border-b border-v3-border">
-            <p className="text-xs font-semibold text-v3-secondary uppercase tracking-wide mb-2">
+          <div className="px-4 py-3 border-b border-outline-variant">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
               Regular Hours
             </p>
             {popoverRules.length === 0 ? (
-              <p className="text-xs text-v3-secondary">No rules apply to this day.</p>
+              <p className="text-xs text-on-surface-variant">No rules apply to this day.</p>
             ) : (
               <div className="space-y-1.5">
                 {popoverRules.map((rule) => (
@@ -517,7 +517,7 @@ export default function AvailabilityTab({
                         rule.is_available ? 'bg-green-500' : 'bg-red-400'
                       }`}
                     />
-                    <span className="text-xs text-v3-primary">
+                    <span className="text-xs text-on-surface">
                       {fmt12(rule.start_time)} – {fmt12(rule.end_time)}
                     </span>
                     <span
@@ -537,20 +537,20 @@ export default function AvailabilityTab({
 
           {/* Appointments for this day */}
           <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-v3-secondary uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
               Appointments
             </p>
             {popoverAppointments.length === 0 ? (
-              <p className="text-xs text-v3-secondary">None booked.</p>
+              <p className="text-xs text-on-surface-variant">None booked.</p>
             ) : (
               <div className="space-y-1.5">
                 {popoverAppointments.map((apt) => (
                   <div key={apt.id} className="flex items-center gap-2">
-                    <span className="text-xs text-v3-primary tabular-nums">
+                    <span className="text-xs text-on-surface tabular-nums">
                       {format(new Date(apt.requested_start_datetime), 'h:mm a')}
                     </span>
-                    <span className="text-xs text-v3-secondary">–</span>
-                    <span className="text-xs text-v3-primary tabular-nums">
+                    <span className="text-xs text-on-surface-variant">–</span>
+                    <span className="text-xs text-on-surface tabular-nums">
                       {format(new Date(apt.requested_end_datetime), 'h:mm a')}
                     </span>
                     <span
