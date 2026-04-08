@@ -26,3 +26,4 @@ export const apiLimiter = rateLimit({
         message: 'Too many requests. Please slow down.',
     } as ApiResponse<null>,
 });
+
