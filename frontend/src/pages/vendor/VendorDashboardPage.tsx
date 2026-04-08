@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, formatDistanceToNow, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { useStorefronts } from '../../hooks/useStorefronts';
+import { useStorefrontAppointments } from '../../hooks/useAppointments';
 import { useAuth } from '../../hooks/useAuth';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import CreateStorefrontModal from '../../components/vendor/CreateStorefrontModal';
+import type { Appointment, Storefront } from '../../services/api';
 
 // ---------------------------------------------------------------------------
 // Icon helper
@@ -20,43 +23,34 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 }
 
 // ---------------------------------------------------------------------------
-// Mock data for the editorial dashboard
+// Aggregated appointments hook — fetches across all storefronts
 // ---------------------------------------------------------------------------
-const MOCK_EVENTS = [
-  {
-    month: 'JUN',
-    day: '14',
-    title: 'Summer Market',
-    detail: 'Featured Table: 24B',
-    meta: 'Civic Center Plaza',
-    metaIcon: 'location_on',
-  },
-  {
-    month: 'JUN',
-    day: '21',
-    title: 'Community Workshop',
-    detail: '12 Registered • 3 Spots Left',
-    meta: '6:00 PM - 8:30 PM',
-    metaIcon: 'schedule',
-  },
-];
+function useAllAppointments(storefronts: Storefront[] | undefined) {
+  const ids = useMemo(() => (storefronts || []).slice(0, 10).map(s => s.id), [storefronts]);
 
-const MOCK_ACTIVITY = [
-  { text: 'New booking from', highlight: 'Marlowe K.', time: '2 minutes ago', color: 'bg-secondary' },
-  { text: 'Service updated:', highlight: 'Standard Session', time: '1 hour ago', color: 'bg-outline-variant' },
-  { text: 'Payout of', highlight: '$1,240.00', time: 'Yesterday', color: 'bg-secondary', highlightColor: 'text-primary' },
-];
+  const q0 = useStorefrontAppointments(ids[0] ?? null);
+  const q1 = useStorefrontAppointments(ids[1] ?? null);
+  const q2 = useStorefrontAppointments(ids[2] ?? null);
+  const q3 = useStorefrontAppointments(ids[3] ?? null);
+  const q4 = useStorefrontAppointments(ids[4] ?? null);
 
-const CHART_BARS = [
-  { height: '40%', opacity: 'bg-secondary-container/30' },
-  { height: '60%', opacity: 'bg-secondary-container/40' },
-  { height: '50%', opacity: 'bg-secondary-container/30' },
-  { height: '85%', opacity: 'bg-primary' },
-  { height: '70%', opacity: 'bg-secondary-container/40' },
-  { height: '45%', opacity: 'bg-secondary-container/30' },
-  { height: '95%', opacity: 'bg-secondary-container/40' },
-];
+  const queries = [q0, q1, q2, q3, q4].slice(0, ids.length);
+  const isLoading = queries.some(q => q.isLoading);
 
+  const appointments = useMemo(() => {
+    const all: Appointment[] = [];
+    queries.forEach((q) => {
+      if (q.data) all.push(...q.data);
+    });
+    return all;
+  }, [queries.map(q => q.data)]);
+
+  return { appointments, isLoading };
+}
+
+// ---------------------------------------------------------------------------
+// Day labels
+// ---------------------------------------------------------------------------
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 // ---------------------------------------------------------------------------
@@ -65,8 +59,54 @@ const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 export default function VendorDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: storefronts, isLoading } = useStorefronts();
+  const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
+  const { appointments, isLoading: appointmentsLoading } = useAllAppointments(storefronts);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const isLoading = storefrontsLoading || appointmentsLoading;
+
+  // --- Computed metrics from real data ---
+  const metrics = useMemo(() => {
+    const now = new Date();
+    const totalRevenue = appointments
+      .filter(a => a.status === 'completed')
+      .reduce((sum, a) => sum + (a.price_final ?? a.price_quoted ?? 0), 0);
+
+    const totalAppointments = appointments.filter(
+      a => a.status !== 'cancelled' && a.status !== 'declined'
+    ).length;
+
+    // Upcoming appointments (confirmed or pending, in the future)
+    const upcoming = appointments
+      .filter(a =>
+        (a.status === 'confirmed' || a.status === 'pending') &&
+        new Date(a.requested_start_datetime) > now
+      )
+      .sort((a, b) =>
+        new Date(a.requested_start_datetime).getTime() - new Date(b.requested_start_datetime).getTime()
+      )
+      .slice(0, 4);
+
+    // Recent activity — last 5 appointments sorted by newest
+    const recentActivity = [...appointments]
+      .sort((a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      )
+      .slice(0, 5);
+
+    // Weekly chart: count appointments per day of current week
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const weekCounts = DAYS.map((_, i) => {
+      const day = addDays(weekStart, i);
+      return appointments.filter(a =>
+        isSameDay(new Date(a.requested_start_datetime), day) &&
+        a.status !== 'cancelled' && a.status !== 'declined'
+      ).length;
+    });
+    const maxCount = Math.max(...weekCounts, 1);
+
+    return { totalRevenue, totalAppointments, upcoming, recentActivity, weekCounts, maxCount };
+  }, [appointments]);
 
   // Loading state
   if (isLoading) {
@@ -80,7 +120,6 @@ export default function VendorDashboardPage() {
   }
 
   const storefrontCount = storefronts?.length ?? 0;
-  const firstName = user?.first_name || 'there';
 
   return (
     <DashboardLayout title="Dashboard">
@@ -90,16 +129,18 @@ export default function VendorDashboardPage() {
          * METRIC BENTO GRID
          * ============================================================ */}
         <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Total Impact Value — Hero card */}
+          {/* Total Revenue — Hero card */}
           <div className="col-span-1 md:col-span-2 bg-primary p-8 rounded-xl flex flex-col justify-between text-on-primary min-h-[200px] relative overflow-hidden group">
             <div className="relative z-10">
               <span className="text-on-primary-container text-xs font-label tracking-widest uppercase">
-                Total Bookings Value
+                Total Revenue
               </span>
-              <h2 className="text-5xl font-bold font-headline mt-2 tracking-tight">$4,280</h2>
+              <h2 className="text-5xl font-bold font-headline mt-2 tracking-tight">
+                ${metrics.totalRevenue.toLocaleString()}
+              </h2>
               <div className="flex items-center gap-2 mt-4 text-on-primary-container text-sm">
-                <Icon name="trending_up" className="text-sm" />
-                <span>12% increase from last month</span>
+                <Icon name="payments" className="text-sm" />
+                <span>From {appointments.filter(a => a.status === 'completed').length} completed sessions</span>
               </div>
             </div>
             <div className="absolute right-0 bottom-0 opacity-10 group-hover:scale-110 transition-transform duration-700">
@@ -131,16 +172,18 @@ export default function VendorDashboardPage() {
             )}
           </div>
 
-          {/* Local Reach */}
+          {/* Appointments count */}
           <div className="bg-surface-container-low p-8 rounded-xl flex flex-col justify-between min-h-[200px]">
             <div>
               <span className="text-on-surface-variant text-xs font-label tracking-widest uppercase">
                 Appointments
               </span>
-              <h2 className="text-4xl font-bold font-headline mt-2 text-primary">28</h2>
+              <h2 className="text-4xl font-bold font-headline mt-2 text-primary">
+                {metrics.totalAppointments}
+              </h2>
             </div>
             <p className="text-on-surface-variant text-xs font-body leading-relaxed">
-              Total sessions scheduled this month across all storefronts.
+              Total sessions across all storefronts.
             </p>
           </div>
         </section>
@@ -150,74 +193,110 @@ export default function VendorDashboardPage() {
          * ============================================================ */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-          {/* ---- Left 8-col: Chart + Events ---- */}
+          {/* ---- Left 8-col: Chart + Upcoming ---- */}
           <div className="lg:col-span-8 space-y-12">
 
-            {/* Revenue Trend Chart */}
+            {/* Weekly Appointments Chart */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-bold font-headline text-primary">Revenue Trend</h3>
-                <div className="flex gap-2">
-                  <span className="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold uppercase tracking-wider">
-                    Weekly
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                    Monthly
-                  </span>
-                </div>
+                <h3 className="text-2xl font-bold font-headline text-primary">This Week</h3>
+                <span className="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold uppercase tracking-wider">
+                  Appointments
+                </span>
               </div>
               <div className="aspect-[16/7] bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden">
-                {/* Bar chart */}
+                {/* Bar chart from real data */}
                 <div className="absolute inset-x-8 bottom-8 top-16 flex items-end justify-between gap-4">
-                  {CHART_BARS.map((bar, i) => (
-                    <div
-                      key={i}
-                      className={`w-full ${bar.opacity} rounded-t-sm transition-all hover:opacity-80`}
-                      style={{ height: bar.height }}
-                    />
-                  ))}
+                  {metrics.weekCounts.map((count, i) => {
+                    const heightPct = metrics.maxCount > 0 ? (count / metrics.maxCount) * 100 : 0;
+                    const isMax = count === metrics.maxCount && count > 0;
+                    return (
+                      <div
+                        key={i}
+                        className={`w-full rounded-t-sm transition-all hover:opacity-80 ${
+                          isMax ? 'bg-primary' : count > 0 ? 'bg-secondary-container/60' : 'bg-secondary-container/15'
+                        }`}
+                        style={{ height: `${Math.max(heightPct, 4)}%` }}
+                      />
+                    );
+                  })}
                 </div>
-                {/* Labels */}
+                {/* Day labels */}
                 <div className="flex justify-between text-[10px] font-label text-on-surface-variant mt-2 absolute bottom-2 inset-x-8">
-                  {DAYS.map((d) => (
-                    <span key={d}>{d}</span>
+                  {DAYS.map((d, i) => (
+                    <span key={d} className={metrics.weekCounts[i] > 0 ? 'text-primary font-bold' : ''}>
+                      {d}
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Upcoming Events */}
+            {/* Upcoming Appointments — from real data */}
             <div>
-              <h3 className="text-2xl font-bold font-headline text-primary mb-8">
-                Upcoming Appointments
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {MOCK_EVENTS.map((event, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-6 p-6 bg-surface-container-low rounded-xl group hover:bg-surface-container-lowest transition-colors cursor-pointer"
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold font-headline text-primary">
+                  Upcoming Appointments
+                </h3>
+                {metrics.upcoming.length > 0 && (
+                  <button
+                    onClick={() => navigate('/dashboard/appointments')}
+                    className="text-sm font-bold text-primary hover:underline underline-offset-4"
                   >
-                    <div className="shrink-0 text-center">
-                      <span className="block text-tertiary font-bold text-lg font-headline">
-                        {event.month}
-                      </span>
-                      <span className="block text-3xl font-extrabold text-primary font-headline">
-                        {event.day}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-bold text-on-surface text-lg leading-tight">
-                        {event.title}
-                      </h4>
-                      <p className="text-sm text-on-surface-variant">{event.detail}</p>
-                      <div className="flex items-center gap-2 text-xs text-primary font-bold pt-2">
-                        <Icon name={event.metaIcon} className="text-sm" />
-                        <span>{event.meta}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    View All
+                  </button>
+                )}
               </div>
+              {metrics.upcoming.length === 0 ? (
+                <div className="p-8 bg-surface-container-low rounded-xl text-center">
+                  <Icon name="event" className="text-4xl text-outline mb-4" />
+                  <p className="text-on-surface-variant">No upcoming appointments.</p>
+                  <p className="text-on-surface-variant text-sm mt-1">
+                    Appointments will appear here when clients book your services.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {metrics.upcoming.map((apt) => {
+                    const dt = new Date(apt.requested_start_datetime);
+                    return (
+                      <div
+                        key={apt.id}
+                        onClick={() => navigate(`/dashboard/storefront/${apt.storefront_id}/calendar`)}
+                        className="flex gap-6 p-6 bg-surface-container-low rounded-xl group hover:bg-surface-container-lowest transition-colors cursor-pointer"
+                      >
+                        <div className="shrink-0 text-center">
+                          <span className="block text-tertiary font-bold text-lg font-headline">
+                            {format(dt, 'MMM').toUpperCase()}
+                          </span>
+                          <span className="block text-3xl font-extrabold text-primary font-headline">
+                            {format(dt, 'd')}
+                          </span>
+                        </div>
+                        <div className="space-y-2 min-w-0">
+                          <h4 className="font-bold text-on-surface text-lg leading-tight truncate">
+                            {apt.service_name || `Service #${apt.service_id}`}
+                          </h4>
+                          <p className="text-sm text-on-surface-variant truncate">
+                            {apt.storefront_name || `Storefront #${apt.storefront_id}`}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-primary font-bold pt-2">
+                            <Icon name="schedule" className="text-sm" />
+                            <span>{format(dt, 'h:mm a')}</span>
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              apt.status === 'confirmed'
+                                ? 'bg-secondary-container text-on-secondary-container'
+                                : 'bg-tertiary-fixed text-on-tertiary-fixed'
+                            }`}>
+                              {apt.status.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Storefronts Quick Access */}
@@ -294,29 +373,57 @@ export default function VendorDashboardPage() {
           {/* ---- Right 4-col: Activity + Support ---- */}
           <div className="lg:col-span-4 space-y-12">
 
-            {/* Recent Activity */}
+            {/* Recent Activity — from real data */}
             <div className="bg-surface-container-lowest p-8 rounded-xl" style={{ borderBottom: '2px solid rgba(191,201,195,0.15)' }}>
               <h3 className="text-xl font-bold font-headline text-primary mb-6">Recent Activity</h3>
-              <div className="space-y-6">
-                {MOCK_ACTIVITY.map((item, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className={`w-2 h-2 rounded-full ${item.color} mt-2 flex-shrink-0`} />
-                    <div>
-                      <p className="text-sm font-body text-on-surface">
-                        {item.text}{' '}
-                        <span className={`font-bold ${item.highlightColor || 'text-primary'}`}>
-                          {item.highlight}
-                        </span>
-                      </p>
-                      <span className="text-[10px] text-on-surface-variant font-label uppercase">
-                        {item.time}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full mt-8 py-2 text-sm font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-tertiary-fixed transition-all">
-                View All History
+              {metrics.recentActivity.length === 0 ? (
+                <p className="text-sm text-on-surface-variant py-4">
+                  No activity yet. Activity will appear here as appointments are created and updated.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {metrics.recentActivity.map((apt) => {
+                    const statusColors: Record<string, string> = {
+                      pending: 'bg-tertiary-fixed',
+                      confirmed: 'bg-secondary',
+                      completed: 'bg-secondary-fixed',
+                      cancelled: 'bg-error-container',
+                      declined: 'bg-outline-variant',
+                    };
+                    const actionText: Record<string, string> = {
+                      pending: 'New booking request for',
+                      confirmed: 'Confirmed booking for',
+                      completed: 'Completed session:',
+                      cancelled: 'Cancelled booking for',
+                      declined: 'Declined booking for',
+                    };
+                    return (
+                      <div key={apt.id} className="flex gap-4">
+                        <div className={`w-2 h-2 rounded-full ${statusColors[apt.status] || 'bg-outline-variant'} mt-2 flex-shrink-0`} />
+                        <div>
+                          <p className="text-sm font-body text-on-surface">
+                            {actionText[apt.status] || 'Updated:'}{' '}
+                            <span className="font-bold text-primary">
+                              {apt.service_name || `Service #${apt.service_id}`}
+                            </span>
+                            {apt.price_quoted && (
+                              <span className="text-on-surface-variant"> · ${apt.price_quoted}</span>
+                            )}
+                          </p>
+                          <span className="text-[10px] text-on-surface-variant font-label uppercase">
+                            {formatDistanceToNow(new Date(apt.updated_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <button
+                onClick={() => navigate('/dashboard/appointments')}
+                className="w-full mt-8 py-2 text-sm font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-tertiary-fixed transition-all"
+              >
+                View All Appointments
               </button>
             </div>
 
