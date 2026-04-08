@@ -22,16 +22,15 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 const NAV_ITEMS = [
   { label: 'Overview', icon: 'dashboard', href: '/dashboard' },
   { label: 'Storefronts', icon: 'storefront', href: '/dashboard/storefronts' },
-  { label: 'Calendar', icon: 'calendar_today', href: '/dashboard/calendar' },
   { label: 'Appointments', icon: 'event_available', href: '/dashboard/appointments' },
   { label: 'Customers', icon: 'group', href: '/dashboard/customers' },
 ];
 
 const MOBILE_NAV = [
   { label: 'Home', icon: 'home', href: '/dashboard' },
-  { label: 'Metrics', icon: 'bar_chart', href: '/dashboard/analytics' },
-  { label: 'Schedule', icon: 'event', href: '/dashboard/calendar' },
-  { label: 'Account', icon: 'person', href: '/dashboard/settings' },
+  { label: 'Shops', icon: 'storefront', href: '/dashboard/storefronts' },
+  { label: 'Bookings', icon: 'event_available', href: '/dashboard/appointments' },
+  { label: 'Clients', icon: 'group', href: '/dashboard/customers' },
 ];
 
 // ---------------------------------------------------------------------------

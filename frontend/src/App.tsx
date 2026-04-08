@@ -9,6 +9,9 @@ import RegisterPage from './pages/auth/RegisterPage';
 import VendorProfilePage from './pages/VendorProfilePage';
 import ExplorePage from './pages/ExplorePage';
 import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
+import VendorStorefrontsPage from './pages/vendor/VendorStorefrontsPage';
+import VendorAppointmentsPage from './pages/vendor/VendorAppointmentsPage';
+import VendorCustomersPage from './pages/vendor/VendorCustomersPage';
 import StorefrontDetailPage from './pages/vendor/StorefrontDetailPage';
 import AppointmentCalendarPage from './pages/vendor/AppointmentCalendarPage';
 import ClientAppointmentsPage from './pages/client/ClientAppointmentsPage';
@@ -40,6 +43,30 @@ function App() {
               element={
                 <ProtectedRoute requireRole="vendor">
                   <VendorDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/storefronts"
+              element={
+                <ProtectedRoute requireRole="vendor">
+                  <VendorStorefrontsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/appointments"
+              element={
+                <ProtectedRoute requireRole="vendor">
+                  <VendorAppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/customers"
+              element={
+                <ProtectedRoute requireRole="vendor">
+                  <VendorCustomersPage />
                 </ProtectedRoute>
               }
             />
