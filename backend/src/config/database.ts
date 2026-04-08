@@ -149,7 +149,8 @@ pool.on('connect', () => {
  */
 pool.on('error', (err: Error) => {
   console.error('❌ Database connection error:', err);
-  process.exit(-1);  // Exit with error code to signal failure to process manager
+  // Note: In production, process managers (PM2, Docker) should handle restarts.
+  // Calling process.exit() here can mask the root cause and prevent graceful cleanup.
 });
 
 /**
@@ -201,16 +202,21 @@ export async function query(text: string, params?: any[]) {
   // Calculate execution time for performance monitoring
   const duration = Date.now() - start;
 
-  // Log query details for debugging and performance analysis
-  // In production, you might want to:
-  // - Only log slow queries (duration > threshold)
-  // - Send metrics to monitoring system instead of console
-  // - Sanitize logged query text to remove sensitive data
-  console.log('🔍 Executed query', {
-    text,              // The SQL query that was executed
-    duration,          // How long it took in milliseconds
-    rows: res.rowCount // Number of rows affected/returned
-  });
+  // In development, log all queries for debugging.
+  // In production, only log slow queries (>200ms) to reduce noise.
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔍 Executed query', {
+      text,
+      duration,
+      rows: res.rowCount
+    });
+  } else if (duration > 200) {
+    console.warn('⚠️ Slow query detected', {
+      text: text.substring(0, 100),
+      duration,
+      rows: res.rowCount
+    });
+  }
 
   // Return the complete PostgreSQL result object
   // This includes .rows (data), .rowCount (affected rows), .fields (metadata)
