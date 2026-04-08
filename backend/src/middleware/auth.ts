@@ -33,7 +33,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
             }
         
         const token = authHeader.substring(7);
-        const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+        const secret = process.env.JWT_SECRET!;
         const decoded = jwt.verify(token, secret) as any;
 
         const user = await UserService.getById(decoded.userId);

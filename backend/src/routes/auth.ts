@@ -147,8 +147,8 @@ const handleValidationErrors = (req: Request, res: Response, next: NextFunction)
  * - Consider using refresh tokens for longer sessions
  */
 const generateToken = (userId: number, role: string): string => {
-  // Get JWT secret from environment variables
-  const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+  // Get JWT secret from environment variables (validated at startup)
+  const secret = process.env.JWT_SECRET!;
 
   // Create token payload (data encoded in the token)
   const payload = {

@@ -77,6 +77,15 @@ import authRoutes from './routes/auth';
 // Load environment variables from .env file into process.env
 dotenv.config();
 
+// ---------------------------------------------------------------------------
+// Validate required environment variables at startup
+// ---------------------------------------------------------------------------
+if (!process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
+  console.error('   Set it in your .env file or environment before starting the server.');
+  process.exit(1);
+}
+
 // Create Express application instance
 // This is the main app object that will handle all HTTP requests
 const app: Application = express();
