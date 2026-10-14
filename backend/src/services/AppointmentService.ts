@@ -13,7 +13,9 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { PoolClient } from 'pg';
 
 import { getClient } from '../config/database';
+import { localToUtc, parseClock } from '@schedulux/availability-engine';
 import { AppointmentModel } from '../models/Appointment';
+import { DropModel } from '../models/Drop';
 import { StorefrontModel } from '../models/Storefront';
 import { ServiceModel } from '../models/Service';
 import { UserModel } from '../models/User';
@@ -22,6 +24,7 @@ import { DropService } from './DropService';
 import { EmailService } from './EmailService';
 import { Appointment, Service, Storefront, GuestDetails, ManagedAppointment } from '../types';
 import { AppointmentQueryOptions } from '../types/availability';
+import { toDateStr } from '../utils/dates';
 
 /** Namespace for this service's advisory locks (first key of the two-int form) */
 const BOOKING_LOCK_NAMESPACE = 41_001;
@@ -183,6 +186,22 @@ export class AppointmentService {
    */
   private static async lockStorefront(client: PoolClient, storefrontId: number): Promise<void> {
     await client.query('SELECT pg_advisory_xact_lock($1, $2)', [BOOKING_LOCK_NAMESPACE, storefrontId]);
+  }
+
+  /** dropId if [start, end) lies within that drop's window, otherwise null */
+  private static async dropContaining(
+    dropId: number,
+    storefront: Storefront,
+    start: Date,
+    end: Date
+  ): Promise<number | null> {
+    const drop = await DropModel.findById(dropId);
+    if (!drop) return null;
+    const tz = storefront.timezone || 'UTC';
+    const date = toDateStr(drop.drop_date);
+    const windowStart = localToUtc(date, parseClock(drop.start_time), tz);
+    const windowEnd = localToUtc(date, parseClock(drop.end_time), tz);
+    return start >= windowStart && end <= windowEnd ? dropId : null;
   }
 
   /** 256-bit random token, hex-encoded; possession grants access to one booking */
@@ -512,6 +531,11 @@ export class AppointmentService {
     const totalDuration = service.duration_minutes + service.buffer_time_minutes;
     const newEnd = addMinutes(newStart, totalDuration);
 
+    // The new booking stays linked to the drop only if it still falls inside the drop's window
+    const newDropId = original.drop_id
+      ? await this.dropContaining(original.drop_id, storefront, newStart, newEnd)
+      : null;
+
     const client = await getClient();
     let cancelled: Appointment;
     let created: Appointment;
@@ -563,7 +587,7 @@ export class AppointmentService {
         status: 'pending',
         client_notes: original.client_notes,
         price_quoted: service.price ?? undefined,
-        drop_id: original.drop_id ?? undefined,
+        drop_id: newDropId,
       });
 
       // Cross-reference the pair for the vendor

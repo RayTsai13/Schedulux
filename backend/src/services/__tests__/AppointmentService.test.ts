@@ -26,6 +26,7 @@ vi.mock('../EmailService', () => ({
 }));
 vi.mock('../AvailabilityService', () => ({ AvailabilityService: { isSlotAvailable: vi.fn() } }));
 vi.mock('../DropService', () => ({ DropService: { notifyWaitlist: vi.fn() } }));
+vi.mock('../../models/Drop', () => ({ DropModel: { findById: vi.fn() } }));
 
 import { AppointmentService } from '../AppointmentService';
 import { StorefrontModel } from '../../models/Storefront';
@@ -35,7 +36,8 @@ import { AppointmentModel } from '../../models/Appointment';
 import { AvailabilityService } from '../AvailabilityService';
 import { DropService } from '../DropService';
 import { EmailService } from '../EmailService';
-import { makeStorefront, makeService, makeAppointment } from './fixtures';
+import { DropModel } from '../../models/Drop';
+import { makeStorefront, makeService, makeAppointment, makeDrop } from './fixtures';
 
 const VENDOR_ID = 100;
 const STRANGER_ID = 300;
@@ -306,6 +308,23 @@ describe('AppointmentService manage-token actions', () => {
       );
       expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'ROLLBACK']);
       expect(AppointmentModel.createWithClient).not.toHaveBeenCalled();
+    });
+
+    it('keeps the drop link only when the new time is inside the drop window, and frees the drop otherwise', async () => {
+      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
+      vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(
+        makeAppointment({ status: 'confirmed', drop_id: 42 })
+      );
+      // Drop runs 13:00-15:00 UTC on 06-08
+      vi.mocked(DropModel.findById).mockResolvedValue(makeDrop({ id: 42, drop_date: '2026-06-08' }));
+
+      const inside = await AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-08T14:00:00Z');
+      expect(inside.new.drop_id).toBe(42);
+      expect(DropService.notifyWaitlist).not.toHaveBeenCalled();
+
+      const outside = await AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-09T09:00:00Z');
+      expect(outside.new.drop_id).toBeNull();
+      expect(DropService.notifyWaitlist).toHaveBeenCalledWith(42);
     });
 
     it("allows moving within the booking's own time when it is the one filling capacity", async () => {

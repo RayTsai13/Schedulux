@@ -70,31 +70,33 @@ export class AppointmentModel {
     options?: AppointmentQueryOptions
   ): Promise<Appointment[]> {
     let sql = `
-      SELECT * FROM appointments
-      WHERE storefront_id = $1 AND deleted_at IS NULL
+      SELECT a.*, s.name AS service_name
+      FROM appointments a
+      LEFT JOIN services s ON a.service_id = s.id
+      WHERE a.storefront_id = $1 AND a.deleted_at IS NULL
     `;
     const params: any[] = [storefrontId];
     let paramIndex = 2;
 
     if (options?.status) {
-      sql += ` AND status = $${paramIndex}`;
+      sql += ` AND a.status = $${paramIndex}`;
       params.push(options.status);
       paramIndex++;
     }
 
     if (options?.startDate) {
-      sql += ` AND requested_start_datetime >= $${paramIndex}`;
+      sql += ` AND a.requested_start_datetime >= $${paramIndex}`;
       params.push(options.startDate);
       paramIndex++;
     }
 
     if (options?.endDate) {
-      sql += ` AND requested_start_datetime <= $${paramIndex}`;
+      sql += ` AND a.requested_start_datetime <= $${paramIndex}`;
       params.push(options.endDate);
       paramIndex++;
     }
 
-    sql += ' ORDER BY requested_start_datetime ASC';
+    sql += ' ORDER BY a.requested_start_datetime ASC';
 
     const result = await query(sql, params);
     return result.rows;
