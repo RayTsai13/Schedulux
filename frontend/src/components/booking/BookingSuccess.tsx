@@ -20,8 +20,8 @@ export default function BookingSuccess({
   return (
     <div className="text-center space-y-6">
       {/* Success Icon */}
-      <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-        <CheckCircle className="w-10 h-10 text-green-600" />
+      <div className="mx-auto w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center">
+        <CheckCircle className="w-10 h-10 text-primary" />
       </div>
 
       <div>
@@ -69,7 +69,7 @@ export default function BookingSuccess({
           {appointment.status === 'pending' && (
             <div className="mt-4 pt-3 border-t border-outline-variant">
               <p className="text-xs text-on-surface-variant">
-                Status: <span className="font-medium text-yellow-600">Pending Approval</span>
+                Status: <span className="font-medium text-on-tertiary-fixed-variant">Pending Approval</span>
               </p>
               <p className="text-xs text-on-surface-variant mt-1">
                 The vendor will review and confirm your appointment request.

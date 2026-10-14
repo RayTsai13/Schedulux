@@ -54,7 +54,7 @@ export default function BookingStepDateTime({
       {/* Left: Calendar */}
       <div>
         <h3 className="text-lg font-semibold text-on-surface mb-3">Select Date</h3>
-        <div className="border border-outline-variant rounded-2xl p-4 bg-white">
+        <div className="border border-outline-variant rounded-2xl p-4 bg-surface-container-lowest">
           <DatePicker
             selected={selectedDate}
             onChange={(date) => { if (date) onSelectDate(date); }}
@@ -101,8 +101,8 @@ export default function BookingStepDateTime({
                   'py-3 px-3 rounded-xl border-2 text-sm transition-all',
                   'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                   selectedSlot?.start_datetime === slot.start_datetime
-                    ? 'bg-primary text-white border-primary shadow-md'
-                    : 'bg-white text-on-surface border-outline-variant hover:border-primary hover:shadow-sm'
+                    ? 'bg-primary text-on-primary border-primary shadow-md'
+                    : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary hover:shadow-sm'
                 )}
               >
                 <div className="font-semibold">{slot.local_start_time}</div>

@@ -66,14 +66,14 @@ export default function AppointmentDetailModal({
           <span
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
               isPending
-                ? 'bg-amber-500/10 text-amber-600'
+                ? 'bg-tertiary-fixed text-on-tertiary-fixed'
                 : isConfirmed
-                ? 'bg-blue-500/10 text-blue-600'
+                ? 'bg-secondary-container text-on-secondary-container'
                 : isCompleted
-                ? 'bg-green-500/10 text-green-600'
+                ? 'bg-secondary-fixed text-on-secondary-fixed'
                 : isCancelled
-                ? 'bg-red-500/10 text-red-600'
-                : 'bg-gray-500/10 text-gray-600'
+                ? 'bg-error-container text-on-error-container'
+                : 'bg-surface-container-high text-on-surface-variant'
             }`}
           >
             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
