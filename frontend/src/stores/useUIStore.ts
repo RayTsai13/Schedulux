@@ -13,11 +13,8 @@ import { create } from 'zustand';
 type ModalType =
   | 'createAppointment'
   | 'editAppointment'
-  | 'createStorefront'
-  | 'editStorefront'
   | 'createService'
   | 'editService'
-  | 'createClient'
   | null;
 
 interface UIStore {

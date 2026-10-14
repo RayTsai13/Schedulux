@@ -1,36 +1,44 @@
-import { format } from 'date-fns';
 import UniversalCard from '../universal/UniversalCard';
-import type { PublicStorefrontDetail, AvailableSlot, ServiceLocationType } from '../../services/api';
+import type { PublicStorefront, AvailableSlot, Service } from '../../services/api';
+import { formatInZone } from '../../lib/booking';
+
+export interface GuestDetails {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 interface BookingStepConfirmProps {
-  storefront: PublicStorefrontDetail['storefront'];
-  service: PublicStorefrontDetail['services'][0];
-  selectedDate: Date;
+  storefront: PublicStorefront;
+  service: Service;
   selectedSlot: AvailableSlot;
-  locationType: ServiceLocationType;
-  clientAddress?: string;
-  clientNotes?: string;
-  onLocationTypeChange: (type: ServiceLocationType) => void;
-  onClientAddressChange: (address: string) => void;
+  guest: GuestDetails;
+  guestErrors: Partial<Record<keyof GuestDetails, string>>;
+  clientNotes: string;
+  onGuestChange: (guest: GuestDetails) => void;
   onClientNotesChange: (notes: string) => void;
   error?: string | null;
 }
 
+const inputClass =
+  'w-full px-4 py-3 border-2 border-outline-variant rounded-xl bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
+
 export default function BookingStepConfirm({
   storefront,
   service,
-  selectedDate,
   selectedSlot,
-  locationType,
-  clientAddress,
+  guest,
+  guestErrors,
   clientNotes,
-  onLocationTypeChange,
-  onClientAddressChange,
+  onGuestChange,
   onClientNotesChange,
   error,
 }: BookingStepConfirmProps) {
-  // Check if vendor offers mobile services
-  const isMobileOrHybrid = storefront.location_type === 'mobile' || storefront.location_type === 'hybrid';
+  const field = (key: keyof GuestDetails) => ({
+    value: guest[key],
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => onGuestChange({ ...guest, [key]: e.target.value }),
+    'aria-invalid': !!guestErrors[key],
+  });
 
   return (
     <div className="space-y-6">
@@ -45,7 +53,12 @@ export default function BookingStepConfirm({
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Date:</span>
             <span className="font-medium text-on-surface">
-              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              {formatInZone(selectedSlot.start_datetime, storefront.timezone, {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
             </span>
           </div>
           <div className="flex justify-between">
@@ -56,92 +69,63 @@ export default function BookingStepConfirm({
           </div>
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Duration:</span>
-            <span className="font-medium text-on-surface">{service.duration} minutes</span>
+            <span className="font-medium text-on-surface">{service.duration_minutes} minutes</span>
           </div>
-          {service.price && (
+          {service.price ? (
             <div className="flex justify-between pt-3 border-t border-outline-variant">
               <span className="text-on-surface-variant">Price:</span>
               <span className="font-semibold text-lg text-on-surface">${service.price}</span>
             </div>
-          )}
+          ) : null}
         </div>
       </UniversalCard>
 
-      {/* Location Type Selector (only for mobile/hybrid vendors) */}
-      {isMobileOrHybrid && (
+      {/* Guest details — no account needed */}
+      <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-on-surface mb-3">Service Location</h3>
-          <div className="space-y-2">
-            {/* At Vendor Location (only if hybrid or has fixed address) */}
-            {(storefront.location_type === 'hybrid' || storefront.address) && (
-              <label className="flex items-start gap-3 p-4 border-2 border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
-                <input
-                  type="radio"
-                  name="locationType"
-                  value="at_vendor"
-                  checked={locationType === 'at_vendor'}
-                  onChange={() => onLocationTypeChange('at_vendor')}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-on-surface">At {storefront.name}'s location</div>
-                  {storefront.address && (
-                    <div className="text-sm text-on-surface-variant mt-1">{storefront.address}</div>
-                  )}
-                </div>
-              </label>
-            )}
-
-            {/* At Client Location */}
-            <label className="flex items-start gap-3 p-4 border-2 border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
-              <input
-                type="radio"
-                name="locationType"
-                value="at_client"
-                checked={locationType === 'at_client'}
-                onChange={() => onLocationTypeChange('at_client')}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-on-surface">At my location</div>
-                <div className="text-sm text-on-surface-variant mt-1">
-                  Service area: {storefront.service_area_city || storefront.city}
-                  {storefront.service_radius && ` (${storefront.service_radius}mi radius)`}
-                </div>
-              </div>
-            </label>
-          </div>
-
-          {/* Client Address Input (only if at_client selected) */}
-          {locationType === 'at_client' && (
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-on-surface mb-2">
-                Your Address <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                value={clientAddress}
-                onChange={(e) => onClientAddressChange(e.target.value)}
-                placeholder="123 Main St, City, State ZIP"
-                className="w-full px-4 py-3 border-2 border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-              />
-            </div>
-          )}
+          <h3 className="text-lg font-semibold text-on-surface">Your details</h3>
+          <p className="text-sm text-on-surface-variant">
+            No account needed. We'll email you a private link to manage this booking.
+          </p>
         </div>
-      )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label htmlFor="guest-name" className="block text-sm font-medium text-on-surface mb-2">
+              Name <span className="text-error">*</span>
+            </label>
+            <input id="guest-name" autoComplete="name" className={inputClass} {...field('name')} />
+            {guestErrors.name && <p className="text-error text-xs mt-1">{guestErrors.name}</p>}
+          </div>
+          <div>
+            <label htmlFor="guest-email" className="block text-sm font-medium text-on-surface mb-2">
+              Email <span className="text-error">*</span>
+            </label>
+            <input id="guest-email" type="email" autoComplete="email" className={inputClass} {...field('email')} />
+            {guestErrors.email && <p className="text-error text-xs mt-1">{guestErrors.email}</p>}
+          </div>
+          <div>
+            <label htmlFor="guest-phone" className="block text-sm font-medium text-on-surface mb-2">
+              Phone (optional)
+            </label>
+            <input id="guest-phone" type="tel" autoComplete="tel" className={inputClass} {...field('phone')} />
+            {guestErrors.phone && <p className="text-error text-xs mt-1">{guestErrors.phone}</p>}
+          </div>
+        </div>
+      </div>
 
       {/* Optional Notes */}
       <div>
-        <label className="block text-sm font-medium text-on-surface mb-2">
+        <label htmlFor="client-notes" className="block text-sm font-medium text-on-surface mb-2">
           Special Requests (Optional)
         </label>
         <textarea
+          id="client-notes"
           value={clientNotes}
           onChange={(e) => onClientNotesChange(e.target.value)}
-          placeholder="Any special requests or notes for the vendor..."
+          placeholder={`Anything ${storefront.name} should know...`}
           rows={3}
-          className="w-full px-4 py-3 border-2 border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+          maxLength={1000}
+          className={`${inputClass} resize-none`}
         />
       </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, User, MapPin, MessageSquare, DollarSign } from 'lucide-react';
+import { Calendar, Clock, User, Mail, Phone, MessageSquare, DollarSign } from 'lucide-react';
 import { useUpdateAppointmentStatus } from '../../hooks/useAppointments';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
@@ -112,13 +112,22 @@ export default function AppointmentDetailModal({
 
           <div className="flex items-center gap-3">
             <User className="w-4 h-4 text-on-surface-variant" />
-            <span className="text-sm text-on-surface">Client ID: {appointment.client_id}</span>
+            <span className="text-sm text-on-surface font-medium">{appointment.guest_name}</span>
           </div>
-
-          {/* Note: In a real app, you'd fetch client details separately */}
-          <p className="text-xs text-on-surface-variant italic">
-            Full client details would be displayed here (fetched from client API)
-          </p>
+          <div className="flex items-center gap-3">
+            <Mail className="w-4 h-4 text-on-surface-variant" />
+            <a href={`mailto:${appointment.guest_email}`} className="text-sm text-primary hover:underline">
+              {appointment.guest_email}
+            </a>
+          </div>
+          {appointment.guest_phone && (
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-on-surface-variant" />
+              <a href={`tel:${appointment.guest_phone}`} className="text-sm text-primary hover:underline">
+                {appointment.guest_phone}
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Service Info */}
@@ -127,7 +136,8 @@ export default function AppointmentDetailModal({
 
           <div className="space-y-2">
             <p className="text-sm text-on-surface-variant">
-              Service ID: {appointment.service_id}
+              {appointment.service_name || `Service #${appointment.service_id}`}
+              {appointment.drop_id ? ' · booked through a drop' : ''}
             </p>
             {appointment.price_quoted && (
               <div className="flex items-center gap-2">
@@ -139,25 +149,6 @@ export default function AppointmentDetailModal({
             )}
           </div>
         </div>
-
-        {/* Location */}
-        {appointment.service_location_type && (
-          <div className="p-4 bg-surface rounded-xl border border-outline-variant">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-on-surface-variant mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-on-surface mb-1">Location</p>
-                <p className="text-sm text-on-surface-variant">
-                  {appointment.service_location_type === 'at_vendor'
-                    ? 'At business location'
-                    : appointment.service_location_type === 'at_client' && appointment.client_address
-                    ? `At client: ${appointment.client_address}`
-                    : 'Location TBD'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Client Notes */}
         {appointment.client_notes && (

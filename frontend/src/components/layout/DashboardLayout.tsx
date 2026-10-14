@@ -21,17 +21,32 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 // ---------------------------------------------------------------------------
 const NAV_ITEMS = [
   { label: 'Overview', icon: 'dashboard', href: '/dashboard' },
-  { label: 'Storefronts', icon: 'storefront', href: '/dashboard/storefronts' },
+  { label: 'Drops', icon: 'new_releases', href: '/dashboard/page?tab=drops' },
+  { label: 'Services', icon: 'design_services', href: '/dashboard/page?tab=services' },
+  { label: 'Hours', icon: 'schedule', href: '/dashboard/page?tab=availability' },
   { label: 'Appointments', icon: 'event_available', href: '/dashboard/appointments' },
+  { label: 'Calendar', icon: 'calendar_month', href: '/dashboard/calendar' },
   { label: 'Customers', icon: 'group', href: '/dashboard/customers' },
+  { label: 'Page Settings', icon: 'tune', href: '/dashboard/settings' },
 ];
 
 const MOBILE_NAV = [
   { label: 'Home', icon: 'home', href: '/dashboard' },
-  { label: 'Shops', icon: 'storefront', href: '/dashboard/storefronts' },
+  { label: 'Drops', icon: 'new_releases', href: '/dashboard/page?tab=drops' },
   { label: 'Bookings', icon: 'event_available', href: '/dashboard/appointments' },
   { label: 'Clients', icon: 'group', href: '/dashboard/customers' },
 ];
+
+/** Active when path matches and, for tab links, the ?tab= matches too */
+function isActiveLink(href: string, pathname: string, search: string): boolean {
+  const [path, query] = href.split('?');
+  if (query) {
+    const tab = new URLSearchParams(query).get('tab');
+    const current = new URLSearchParams(search).get('tab') ?? 'drops';
+    return pathname === path && current === tab;
+  }
+  return pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
+}
 
 // ---------------------------------------------------------------------------
 // DashboardLayout
@@ -64,15 +79,14 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
         <div className="flex flex-col gap-1 mb-10 px-4">
           <a href="/" className="text-xl font-bold text-primary font-headline">Schedulux</a>
           <span className="text-xs font-label text-on-surface-variant tracking-wider uppercase">
-            Business Hub
+            Drops &amp; Bookings
           </span>
         </div>
 
         {/* Nav links */}
         <nav className="flex-1 flex flex-col gap-2">
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.href ||
-              (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+            const isActive = isActiveLink(item.href, location.pathname, location.search);
             return (
               <a
                 key={item.label}
@@ -94,19 +108,12 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
         {/* Bottom actions */}
         <div className="mt-auto pt-6 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(191,201,195,0.15)' }}>
           <button
-            onClick={() => navigate('/dashboard/storefronts')}
+            onClick={() => navigate('/dashboard/page?tab=drops')}
             className="mb-4 bg-primary text-on-primary px-4 py-3 rounded-md font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container transition-colors"
           >
             <Icon name="add" className="text-sm" />
-            Add New Service
+            New Drop
           </button>
-          <a
-            href="#"
-            className="flex items-center gap-3 text-on-surface-variant px-4 py-2 text-sm hover:text-primary transition-colors"
-          >
-            <Icon name="help" className="text-[20px]" />
-            Support
-          </a>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 text-error px-4 py-2 text-sm hover:opacity-80 transition-opacity"
@@ -131,20 +138,7 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <div className="relative hidden md:block">
-              <input
-                className="bg-surface-container-low border-0 border-b-2 border-outline-variant/30 focus:border-primary focus:ring-0 text-sm font-body px-4 py-2 w-64 transition-all placeholder-outline"
-                placeholder="Search insights..."
-                type="text"
-              />
-            </div>
             <div className="flex items-center gap-4 text-on-surface-variant">
-              <button className="material-symbols-outlined hover:text-primary transition-colors">
-                notifications
-              </button>
-              <button className="material-symbols-outlined hover:text-primary transition-colors">
-                settings
-              </button>
               <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
                 <span className="text-sm font-bold text-on-secondary-container">
                   {userName.charAt(0).toUpperCase()}
@@ -172,7 +166,7 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
         }}
       >
         {MOBILE_NAV.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = isActiveLink(item.href, location.pathname, location.search);
           return (
             <a
               key={item.label}

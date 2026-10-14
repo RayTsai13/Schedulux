@@ -41,3 +41,6 @@ DEMO_ACCOUNTS.md
 lessons/
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Playwright MCP screenshots/snapshots
+.playwright-mcp/

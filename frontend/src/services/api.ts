@@ -102,7 +102,7 @@ export interface User {
   email: string;        // User's email address (used for login)
   first_name: string;   // User's first name
   last_name: string;    // User's last name
-  role: 'vendor' | 'client' | 'admin';  // User type: service provider, customer, or admin
+  role: 'vendor';      // Only vendors have accounts; guests book without one
   phone?: string;       // Optional phone number
   timezone?: string;    // User's timezone for appointment scheduling
   created_at: string;   // When the user account was created (ISO string)
@@ -121,7 +121,6 @@ export interface RegisterRequest {
   password: string;     // Must meet password strength requirements
   first_name: string;   // Required field
   last_name: string;    // Required field
-  role: 'vendor' | 'client';  // Must specify user type
   phone?: string;       // Optional contact number
   timezone?: string;    // Optional timezone (auto-detected if not provided)
 }
@@ -150,7 +149,7 @@ export const authApi = {
    * 
    * HTTP Request Flow:
    * POST /api/auth/register
-   * Body: { email, password, first_name, last_name, role, phone?, timezone? }
+   * Body: { email, password, first_name, last_name, phone?, timezone? }
    * 
    * Backend Processing:
    * 1. Validates input data (email format, password strength, etc.)
@@ -504,17 +503,13 @@ export const api = {
 // ================================================================
 
 // Storefront-related types
-
-// Profile type: individual vendors (tutors, freelancers) vs businesses (salons, clinics)
-export type ProfileType = 'individual' | 'business';
-
-// Location type: where services are provided
-export type LocationType = 'fixed' | 'mobile' | 'hybrid';
+// A storefront is the vendor's single public booking page, reachable at /@slug
 
 export interface Storefront {
   id: number;
   vendor_id: number;
   name: string;
+  slug: string;
   description?: string;
   address?: string;
   phone?: string;
@@ -522,23 +517,11 @@ export interface Storefront {
   timezone: string;
   business_hours?: BusinessHours;
   is_active: boolean;
-  // Marketplace fields
-  profile_type: ProfileType;
-  location_type: LocationType;
-  service_radius?: number; // Miles, only for mobile/hybrid
-  service_area_city?: string; // For "Serves within X miles of [City]"
   avatar_url?: string;
-  is_verified: boolean; // Admin-only, read-only for vendors
-  // Geolocation fields
-  latitude?: number;
-  longitude?: number;
   city?: string;
   state?: string;
-  // Visual portfolio fields
-  layout_mode: string;
   theme_color: string;
   instagram_handle: string | null;
-  // Timestamps
   created_at: string;
   updated_at: string;
 }
@@ -555,28 +538,18 @@ export interface BusinessHours {
 
 export interface CreateStorefrontRequest {
   name: string;
+  slug: string;
   description?: string;
-  address?: string; // Optional for mobile vendors
+  address?: string;
   phone?: string;
   email?: string;
   timezone?: string;
   business_hours?: BusinessHours;
-  // Marketplace fields (defaults applied by backend)
-  profile_type?: ProfileType;
-  location_type?: LocationType;
-  service_radius?: number;
-  service_area_city?: string;
   avatar_url?: string;
-  // Geolocation fields
-  latitude?: number;
-  longitude?: number;
   city?: string;
   state?: string;
-  // Visual portfolio fields
-  layout_mode?: string;
   theme_color?: string;
-  instagram_handle?: string;
-  // NOTE: is_verified is NOT included - admin-only
+  instagram_handle?: string | null;
 }
 
 export interface UpdateStorefrontRequest extends Partial<CreateStorefrontRequest> {
@@ -585,11 +558,11 @@ export interface UpdateStorefrontRequest extends Partial<CreateStorefrontRequest
 
 export const storefrontApi = {
   /**
-   * Get all storefronts for the current vendor
+   * Get the current vendor's booking page (data is null until they create one)
    */
-  getAll: async (): Promise<ApiResponse<Storefront[]>> => {
+  getMine: async (): Promise<ApiResponse<Storefront | null>> => {
     try {
-      const response = await apiClient.get('/storefronts');
+      const response = await apiClient.get('/storefronts/mine');
       return response.data;
     } catch (error) {
       if (isAxiosError(error) && error.response?.data) {
@@ -598,7 +571,26 @@ export const storefrontApi = {
       return {
         success: false,
         error: 'Network error',
-        message: 'Unable to fetch storefronts.',
+        message: 'Unable to fetch your page.',
+      };
+    }
+  },
+
+  /**
+   * Whether a handle can be claimed (public)
+   */
+  checkSlug: async (slug: string): Promise<ApiResponse<{ available: boolean }>> => {
+    try {
+      const response = await apiClient.get(`/slugs/${encodeURIComponent(slug)}/available`);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        error: 'Network error',
+        message: 'Unable to check handle.',
       };
     }
   },
@@ -1043,6 +1035,16 @@ export interface Drop {
   deleted_at: string | null;
 }
 
+/** Spot counts computed by the backend from the drop window, capacity, and bookings */
+export interface DropSpots {
+  total_spots: number;
+  remaining_spots: number;
+}
+
+export type PublicDrop = Drop & DropSpots;
+
+export type VendorDrop = Drop & DropSpots & { waitlist_count: number };
+
 export interface CreateDropRequest {
   service_id?: number | null;
   title: string;
@@ -1067,7 +1069,7 @@ export interface UpdateDropRequest {
 }
 
 export const dropApi = {
-  getByStorefront: async (storefrontId: number): Promise<ApiResponse<Drop[]>> => {
+  getByStorefront: async (storefrontId: number): Promise<ApiResponse<VendorDrop[]>> => {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/drops`);
       return response.data;
@@ -1077,13 +1079,13 @@ export const dropApi = {
     }
   },
 
-  getPublic: async (storefrontId: number): Promise<ApiResponse<Drop[]>> => {
+  joinWaitlist: async (id: number, data: { name: string; email: string }): Promise<ApiResponse<null>> => {
     try {
-      const response = await apiClient.get(`/storefronts/${storefrontId}/drops/public`);
+      const response = await apiClient.post(`/drops/${id}/waitlist`, data);
       return response.data;
     } catch (error) {
       if (isAxiosError(error) && error.response?.data) return error.response.data;
-      return { success: false, error: 'Network error', message: 'Unable to fetch drops.' };
+      return { success: false, error: 'Network error', message: 'Unable to join the waitlist.' };
     }
   },
 
@@ -1135,12 +1137,9 @@ export const dropApi = {
 // Appointment-related types (matches backend exactly)
 export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show' | 'declined';
 
-// Service location type: where the appointment takes place
-export type ServiceLocationType = 'at_vendor' | 'at_client';
-
 export interface Appointment {
   id: number;
-  client_id: number;
+  client_id: number | null;
   storefront_id: number;
   service_id: number;
   slot_id?: number | null;
@@ -1154,9 +1153,11 @@ export interface Appointment {
   internal_notes?: string | null;
   price_quoted?: number | null;
   price_final?: number | null;
-  // Marketplace location fields
-  service_location_type: ServiceLocationType;
-  client_address?: string | null; // Required when service_location_type = 'at_client'
+  // Guest contact details
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string | null;
+  manage_token: string;
   drop_id?: number | null;
   // Joined fields
   service_name?: string | null;
@@ -1198,27 +1199,6 @@ export const appointmentApi = {
   },
 
   /**
-   * Get appointments for the current client
-   */
-  getClientAppointments: async (
-    params?: { status?: string; upcoming?: boolean }
-  ): Promise<ApiResponse<Appointment[]>> => {
-    try {
-      const response = await apiClient.get('/appointments', { params });
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) {
-        return error.response.data;
-      }
-      return {
-        success: false,
-        error: 'Network error',
-        message: 'Unable to fetch appointments.',
-      };
-    }
-  },
-
-  /**
    * Get a single appointment by ID
    */
   getById: async (id: number): Promise<ApiResponse<Appointment>> => {
@@ -1238,7 +1218,7 @@ export const appointmentApi = {
   },
 
   /**
-   * Update appointment status (vendor: confirm, cancel, complete, no_show; client: cancel only)
+   * Update appointment status (vendor: confirm, cancel, complete, no_show)
    */
   updateStatus: async (
     id: number,
@@ -1289,30 +1269,6 @@ export const appointmentApi = {
     });
   },
 
-  /**
-   * Reschedule an appointment (client only)
-   * Atomically cancels old and creates new appointment at the specified time
-   */
-  reschedule: async (
-    id: number,
-    startDatetime: string
-  ): Promise<ApiResponse<{ cancelled: Appointment; new: Appointment }>> => {
-    try {
-      const response = await apiClient.post(`/appointments/${id}/reschedule`, {
-        start_datetime: startDatetime,
-      });
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) {
-        return error.response.data;
-      }
-      return {
-        success: false,
-        error: 'Network error',
-        message: 'Unable to reschedule appointment.',
-      };
-    }
-  },
 };
 
 // ================================================================
@@ -1346,10 +1302,10 @@ export interface CreateAppointmentRequest {
   service_id: number;
   start_datetime: string;
   client_notes?: string;
-  // Marketplace location fields
-  service_location_type?: ServiceLocationType; // Default: 'at_vendor'
-  client_address?: string; // Required when service_location_type = 'at_client'
   drop_id?: number | null;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string;
 }
 
 export const availabilityApi = {
@@ -1401,49 +1357,37 @@ export const bookingApi = {
 };
 
 // ================================================================
-// MARKETPLACE API (Public endpoints - no authentication required)
+// PUBLIC PAGE API (no authentication required)
 // ================================================================
 
-export interface PublicStorefrontDetail {
-  storefront: {
-    id: number;
-    name: string;
-    description?: string;
-    avatar_url?: string;
-    profile_type: string;
-    location_type: string;
-    is_verified: boolean;
-    city?: string;
-    state?: string;
-    address?: string;
-    service_radius?: number;
-    service_area_city?: string;
-    instagram_handle?: string;
-    price_range?: {
-      min: number;
-      max: number;
-      currency: string;
-    };
-    service_count: string;
-    service_categories: string[];
-  };
-  services: Array<{
-    id: number;
-    name: string;
-    description?: string;
-    duration: number;
-    price: number;
-    image_url?: string;
-  }>;
+export type PublicStorefront = Pick<
+  Storefront,
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'description'
+  | 'address'
+  | 'city'
+  | 'state'
+  | 'timezone'
+  | 'avatar_url'
+  | 'theme_color'
+  | 'instagram_handle'
+>;
+
+export interface PublicPage {
+  storefront: PublicStorefront;
+  services: Service[];
+  drops: PublicDrop[];
 }
 
-export const marketplaceApi = {
+export const pageApi = {
   /**
-   * Get public storefront details by ID (no auth required)
+   * Get a booking page by its handle: storefront, services, upcoming drops with spot counts
    */
-  getStorefront: async (id: number): Promise<ApiResponse<PublicStorefrontDetail>> => {
+  getBySlug: async (slug: string): Promise<ApiResponse<PublicPage>> => {
     try {
-      const response = await apiClient.get(`/marketplace/storefronts/${id}`);
+      const response = await apiClient.get(`/pages/${encodeURIComponent(slug)}`);
       return response.data;
     } catch (error) {
       if (isAxiosError(error) && error.response?.data) {
@@ -1452,73 +1396,77 @@ export const marketplaceApi = {
       return {
         success: false,
         error: 'Network error',
-        message: 'Unable to fetch storefront.',
-      };
-    }
-  },
-
-  search: async (params: MarketplaceSearchParams): Promise<ApiResponse<MarketplaceSearchResponse>> => {
-    try {
-      const response = await apiClient.get('/marketplace/search', { params });
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) {
-        return error.response.data;
-      }
-      return {
-        success: false,
-        error: 'Network error',
-        message: 'Unable to search storefronts.',
+        message: 'Unable to load this page.',
       };
     }
   },
 };
 
 // ================================================================
-// MARKETPLACE SEARCH TYPES
+// MANAGE BOOKING API (guest self-service via the emailed token)
 // ================================================================
 
-export interface MarketplaceStorefront {
+/** A booking as seen by whoever holds its manage token */
+export interface ManagedBooking {
   id: number;
-  name: string;
-  description?: string;
-  avatar_url?: string;
-  profile_type: 'individual' | 'business';
-  location_type: 'fixed' | 'mobile' | 'hybrid';
-  is_verified: boolean;
-  city?: string;
-  state?: string;
-  address?: string;
-  service_radius?: number;
-  service_area_city?: string;
-  service_count: number;
-  price_range?: { min: number; max: number };
-  service_categories: string[];
-  distance_miles?: number; // Only present if lat/long used
+  storefront_id: number;
+  service_id: number;
+  status: AppointmentStatus;
+  requested_start_datetime: string;
+  requested_end_datetime: string;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string | null;
+  client_notes?: string | null;
+  vendor_notes?: string | null;
+  price_quoted?: number | null;
+  drop_id?: number | null;
+  manage_token: string;
+  service_name: string;
+  storefront_name: string;
+  storefront_slug: string;
+  storefront_timezone: string;
 }
 
-export interface MarketplaceSearchParams {
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
-  city?: string;
-  state?: string;
-  query?: string;
-  location_type?: 'fixed' | 'mobile' | 'hybrid';
-  profile_type?: 'individual' | 'business';
-  verified_only?: boolean;
-  category?: string;
-  min_price?: number;
-  max_price?: number;
-  limit?: number;
-  offset?: number;
-}
+export const manageApi = {
+  get: async (token: string): Promise<ApiResponse<ManagedBooking>> => {
+    try {
+      const response = await apiClient.get(`/bookings/${encodeURIComponent(token)}`);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to load booking.' };
+    }
+  },
 
-export interface MarketplaceSearchResponse {
-  storefronts: MarketplaceStorefront[];
-  total_count: number;
-  query: MarketplaceSearchParams;
-}
+  cancel: async (token: string): Promise<ApiResponse<ManagedBooking>> => {
+    try {
+      const response = await apiClient.post(`/bookings/${encodeURIComponent(token)}/cancel`);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to cancel booking.' };
+    }
+  },
+
+  /**
+   * Atomically cancel and rebook. The new booking has a new manage token.
+   */
+  reschedule: async (
+    token: string,
+    startDatetime: string
+  ): Promise<ApiResponse<{ cancelled: ManagedBooking; new: ManagedBooking }>> => {
+    try {
+      const response = await apiClient.post(`/bookings/${encodeURIComponent(token)}/reschedule`, {
+        start_datetime: startDatetime,
+      });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
+      return { success: false, error: 'Network error', message: 'Unable to reschedule booking.' };
+    }
+  },
+};
 
 // ================================================================
 // UPLOAD API - Image uploads via Cloudinary
@@ -1552,85 +1500,4 @@ export const uploadApi = {
   },
 };
 
-// ================================================================
-// ADMIN API FUNCTIONS
-// ================================================================
-
-export interface AdminStats {
-  users: {
-    total: number;
-    byRole: Record<string, number>;
-  };
-  storefronts: {
-    total: number;
-  };
-  appointments: {
-    total: number;
-    byStatus: Record<string, number>;
-  };
-}
-
-export interface AdminStorefront {
-  id: number;
-  vendor_id: number;
-  name: string;
-  city?: string;
-  state?: string;
-  location_type: string;
-  is_verified: boolean;
-  first_name: string;
-  last_name: string;
-  vendor_email: string;
-  created_at: string;
-}
-
-export interface AdminStorefrontList {
-  storefronts: AdminStorefront[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-export const adminApi = {
-  getStats: async (): Promise<ApiResponse<AdminStats>> => {
-    try {
-      const response = await apiClient.get('/admin/stats');
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) return error.response.data;
-      return { success: false, error: 'Network error', message: 'Unable to fetch stats.' };
-    }
-  },
-
-  getStorefronts: async (limit = 20, offset = 0): Promise<ApiResponse<AdminStorefrontList>> => {
-    try {
-      const response = await apiClient.get('/admin/storefronts', { params: { limit, offset } });
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) return error.response.data;
-      return { success: false, error: 'Network error', message: 'Unable to fetch storefronts.' };
-    }
-  },
-
-  setVerified: async (id: number, is_verified: boolean): Promise<ApiResponse<AdminStorefront>> => {
-    try {
-      const response = await apiClient.patch(`/admin/storefronts/${id}/verify`, { is_verified });
-      return response.data;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.data) return error.response.data;
-      return { success: false, error: 'Network error', message: 'Unable to update verification.' };
-    }
-  },
-};
-
-// ================================================================
-// EXPORT CONFIGURED AXIOS INSTANCE
-// ================================================================
-
-// Export the configured axios instance for use in other parts of the application
-// This allows other modules to make custom API calls while still benefiting from:
-// - Automatic authentication headers
-// - Centralized error handling
-// - Base URL configuration
-// - Request/response interceptors
 export default apiClient;

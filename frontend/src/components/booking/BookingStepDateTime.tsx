@@ -8,6 +8,13 @@ import UniversalCard from '../universal/UniversalCard';
 import { useAvailability } from '../../hooks/useAvailability';
 import type { AvailableSlot } from '../../services/api';
 
+/** Restrict choices to one local time window, e.g. a drop */
+export interface SlotWindow {
+  date: string;  // YYYY-MM-DD
+  start: string; // HH:MM[:SS]
+  end: string;   // HH:MM[:SS]
+}
+
 interface BookingStepDateTimeProps {
   storefrontId: number;
   serviceId: number;
@@ -15,7 +22,16 @@ interface BookingStepDateTimeProps {
   selectedSlot: AvailableSlot | null;
   onSelectDate: (date: Date) => void;
   onSelectSlot: (slot: AvailableSlot) => void;
+  window?: SlotWindow;
 }
+
+const inWindow = (slot: AvailableSlot, w: SlotWindow) =>
+  slot.local_date === w.date &&
+  slot.local_start_time >= w.start.slice(0, 5) &&
+  slot.local_end_time <= w.end.slice(0, 5);
+
+/** Local Date at noon for a YYYY-MM-DD string (noon avoids DST edge cases in the picker) */
+const dateFromStr = (date: string) => new Date(`${date}T12:00:00`);
 
 export default function BookingStepDateTime({
   storefrontId,
@@ -24,9 +40,12 @@ export default function BookingStepDateTime({
   selectedSlot,
   onSelectDate,
   onSelectSlot,
+  window: slotWindow,
 }: BookingStepDateTimeProps) {
   // Track the currently visible month in the calendar (independent of selected date)
-  const [visibleMonth, setVisibleMonth] = useState<Date>(new Date());
+  const [visibleMonth, setVisibleMonth] = useState<Date>(
+    slotWindow ? dateFromStr(slotWindow.date) : new Date()
+  );
 
   // Fetch availability for the entire visible month
   const monthStart = startOfMonth(visibleMonth);
@@ -39,15 +58,17 @@ export default function BookingStepDateTime({
     endDate: format(monthEnd, 'yyyy-MM-dd'),
   });
 
-  // Helper: Get slots for a specific date
-  const getSlotsForDate = (date: Date): AvailableSlot[] => {
-    if (!availabilityData?.slots) return [];
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return availabilityData.slots.filter(slot => slot.local_date === dateStr);
-  };
+  const slots = (availabilityData?.slots ?? []).filter(
+    (slot) => !slotWindow || inWindow(slot, slotWindow)
+  );
+
+  // A window pins the calendar to its one day
+  const effectiveDate = slotWindow ? dateFromStr(slotWindow.date) : selectedDate;
 
   // Get slots for selected date
-  const availableSlots = selectedDate ? getSlotsForDate(selectedDate) : [];
+  const availableSlots = effectiveDate
+    ? slots.filter((slot) => slot.local_date === format(effectiveDate, 'yyyy-MM-dd'))
+    : [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -56,16 +77,13 @@ export default function BookingStepDateTime({
         <h3 className="text-lg font-semibold text-on-surface mb-3">Select Date</h3>
         <div className="border border-outline-variant rounded-2xl p-4 bg-surface-container-lowest">
           <DatePicker
-            selected={selectedDate}
+            selected={effectiveDate}
             onChange={(date) => { if (date) onSelectDate(date); }}
             onMonthChange={(date) => setVisibleMonth(date)}
-            minDate={new Date()}
-            maxDate={addDays(new Date(), 90)}
+            minDate={slotWindow ? dateFromStr(slotWindow.date) : new Date()}
+            maxDate={slotWindow ? dateFromStr(slotWindow.date) : addDays(new Date(), 90)}
             inline
-            highlightDates={availabilityData?.slots
-              ? [...new Set(availabilityData.slots.map(s => s.local_date))].map(d => new Date(d + 'T12:00:00'))
-              : []
-            }
+            highlightDates={[...new Set(slots.map((s) => s.local_date))].map(dateFromStr)}
             calendarClassName="custom-calendar"
           />
         </div>
@@ -79,7 +97,7 @@ export default function BookingStepDateTime({
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : !selectedDate ? (
+        ) : !effectiveDate ? (
           <UniversalCard className="text-center py-12">
             <p className="text-on-surface-variant">
               Select a date to see available times

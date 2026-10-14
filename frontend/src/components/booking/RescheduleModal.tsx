@@ -1,26 +1,29 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
 import BookingStepDateTime from './BookingStepDateTime';
-import { useRescheduleAppointment } from '../../hooks/useAppointments';
-import type { Appointment, AvailableSlot } from '../../services/api';
+import { useRescheduleManagedBooking } from '../../hooks/useManageBooking';
+import type { ManagedBooking, AvailableSlot } from '../../services/api';
+import { formatInZone } from '../../lib/booking';
 
 interface RescheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  appointment: Appointment;
+  appointment: ManagedBooking;
+  /** Called with the new booking (which has a new manage token) */
+  onRescheduled: (booking: ManagedBooking) => void;
 }
 
 type RescheduleStep = 'select' | 'confirm';
 
-export default function RescheduleModal({ isOpen, onClose, appointment }: RescheduleModalProps) {
+export default function RescheduleModal({ isOpen, onClose, appointment, onRescheduled }: RescheduleModalProps) {
   const [step, setStep] = useState<RescheduleStep>('select');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const reschedule = useRescheduleAppointment();
+  const reschedule = useRescheduleManagedBooking(appointment.manage_token);
+  const tz = appointment.storefront_timezone;
 
   const handleClose = () => {
     setStep('select');
@@ -35,13 +38,11 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
     setError(null);
 
     try {
-      const response = await reschedule.mutateAsync({
-        id: appointment.id,
-        startDatetime: selectedSlot.start_datetime,
-      });
+      const response = await reschedule.mutateAsync(selectedSlot.start_datetime);
 
-      if (response.success) {
+      if (response.success && response.data) {
         handleClose();
+        onRescheduled(response.data.new);
       } else {
         setError(response.message || 'Failed to reschedule. Please try a different time.');
         setStep('select');
@@ -78,7 +79,8 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
         {step === 'confirm' && selectedSlot && (
           <div className="space-y-6">
             <p className="text-on-surface-variant">
-              Your appointment will be moved to the new time. The vendor will need to re-confirm.
+              Your booking will move to the new time and {appointment.storefront_name} will need to re-confirm.
+              Your old manage link will stop working; we'll email you a new one.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -88,13 +90,13 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Calendar className="w-4 h-4 text-error" />
                   <span className="text-sm font-semibold text-on-error-container">
-                    {format(new Date(appointment.requested_start_datetime), 'MMM d, yyyy')}
+                    {formatInZone(appointment.requested_start_datetime, tz, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <Clock className="w-4 h-4 text-error" />
                   <span className="text-sm text-on-error-container">
-                    {format(new Date(appointment.requested_start_datetime), 'h:mm a')}
+                    {formatInZone(appointment.requested_start_datetime, tz, { hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
               </div>
@@ -110,7 +112,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Calendar className="w-4 h-4 text-secondary" />
                   <span className="text-sm font-semibold text-on-secondary-container">
-                    {selectedDate && format(selectedDate, 'MMM d, yyyy')}
+                    {formatInZone(selectedSlot.start_datetime, tz, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
@@ -123,8 +125,8 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
             </div>
 
             <div className="text-sm text-on-surface-variant">
-              <p>Service: {appointment.service_name || `Service #${appointment.service_id}`}</p>
-              <p>At: {appointment.storefront_name || `Storefront #${appointment.storefront_id}`}</p>
+              <p>Service: {appointment.service_name}</p>
+              <p>At: {appointment.storefront_name}</p>
             </div>
           </div>
         )}
@@ -146,7 +148,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
           onClick={step === 'select' ? () => setStep('confirm') : handleConfirm}
           disabled={
             step === 'select'
-              ? !selectedDate || !selectedSlot
+              ? !selectedSlot
               : reschedule.isPending
           }
           isLoading={reschedule.isPending}

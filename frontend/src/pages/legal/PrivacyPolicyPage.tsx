@@ -10,13 +10,14 @@ const sections: LegalSection[] = [
       <>
         <p className={legalText}>We collect the information you give us when you use Schedulux:</p>
         <ul className={legalList}>
-          <li><strong>Account details:</strong> your name, email address, optional phone number, timezone, and a securely hashed password.</li>
-          <li><strong>Vendor profiles:</strong> storefront name, description, business address or service area, map coordinates, photos you upload, and social handles you choose to display.</li>
-          <li><strong>Bookings:</strong> the appointments you request or receive, their times and status, notes you add, and — for services performed at your location — the address you provide.</li>
+          <li><strong>Vendor accounts:</strong> your name, email address, optional phone number, timezone, and a securely hashed password.</li>
+          <li><strong>Vendor pages:</strong> page name, handle, bio, address or city, photos you upload, and social handles you choose to display.</li>
+          <li><strong>Bookings:</strong> the name, email, and optional phone number a guest enters when booking, the appointment time and status, and any notes added.</li>
+          <li><strong>Waitlists:</strong> the name and email you leave when joining a sold-out drop's waitlist.</li>
         </ul>
         <p className={legalText}>
-          If you allow it, your browser shares your approximate location so we can show nearby vendors on the
-          Explore page. This is used for the search only and is not stored on your account.
+          Guests don't create accounts. Each booking has a private link, sent by email, that lets whoever holds it
+          view, reschedule, or cancel that booking.
         </p>
       </>
     ),
@@ -25,8 +26,8 @@ const sections: LegalSection[] = [
     heading: 'How We Use Your Information',
     body: (
       <ul className={legalList}>
-        <li>Create and secure your account and keep you signed in.</li>
-        <li>Show vendor storefronts and availability, and process bookings, reschedules, and cancellations.</li>
+        <li>Create and secure vendor accounts and keep vendors signed in.</li>
+        <li>Show vendor pages and availability, and process bookings, reschedules, and cancellations.</li>
         <li>Send transactional emails: welcome messages, booking confirmations, status changes, and password resets.</li>
         <li>Prevent abuse, such as rate limiting repeated login attempts.</li>
         <li>Maintain, debug, and improve the service.</li>
@@ -39,7 +40,7 @@ const sections: LegalSection[] = [
       <p className={legalText}>
         When you book an appointment, the vendor receives the details needed to provide the service, including your
         name, the appointment time, your notes, and your address if the service is performed at your location.
-        Vendor storefront information is public on the marketplace.
+        Vendor page information (name, bio, services, drops) is public at the vendor's link.
       </p>
     ),
   },
@@ -116,8 +117,8 @@ export default function PrivacyPolicyPage() {
       lastUpdated="October 13, 2026"
       intro={
         <p>
-          This policy explains what information Schedulux collects when you browse the marketplace, run a
-          storefront, or book an appointment, and how that information is used.
+          This policy explains what information Schedulux collects when you visit a booking page, run a
+          booking page, or book an appointment, and how that information is used.
         </p>
       }
       sections={sections}

@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { useStorefronts } from '../../hooks/useStorefronts';
+import { useVendorPage } from '../../components/auth/VendorRoute';
 import { useStorefrontAppointments } from '../../hooks/useAppointments';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import AppointmentDetailModal from '../../components/vendor/AppointmentDetailModal';
-import type { Appointment, Storefront } from '../../services/api';
+import type { Appointment } from '../../services/api';
 
 // ---------------------------------------------------------------------------
 // Icon helper
@@ -43,44 +43,20 @@ const FILTER_OPTIONS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Aggregated appointments hook — fetches across all storefronts
-// ---------------------------------------------------------------------------
-function useAggregatedAppointments(storefronts: Storefront[] | undefined) {
-  // Create individual hooks for up to 10 storefronts
-  const ids = useMemo(() => (storefronts || []).slice(0, 10).map(s => s.id), [storefronts]);
-
-  const q0 = useStorefrontAppointments(ids[0] ?? null);
-  const q1 = useStorefrontAppointments(ids[1] ?? null);
-  const q2 = useStorefrontAppointments(ids[2] ?? null);
-  const q3 = useStorefrontAppointments(ids[3] ?? null);
-  const q4 = useStorefrontAppointments(ids[4] ?? null);
-
-  const queries = [q0, q1, q2, q3, q4].slice(0, ids.length);
-  const isLoading = queries.some(q => q.isLoading);
-
-  const appointments = useMemo(() => {
-    const all: Appointment[] = [];
-    queries.forEach((q) => {
-      if (q.data) all.push(...q.data);
-    });
-    return all.sort(
-      (a, b) => new Date(b.requested_start_datetime).getTime() - new Date(a.requested_start_datetime).getTime()
-    );
-  }, [queries.map(q => q.data)]);
-
-  return { appointments, isLoading };
-}
-
-// ---------------------------------------------------------------------------
 // VendorAppointmentsPage
 // ---------------------------------------------------------------------------
 export default function VendorAppointmentsPage() {
-  const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
-  const { appointments, isLoading: appointmentsLoading } = useAggregatedAppointments(storefronts);
+  const page = useVendorPage();
+  const { data, isLoading } = useStorefrontAppointments(page.id);
+  const appointments = useMemo(
+    () =>
+      [...(data ?? [])].sort(
+        (a, b) => new Date(b.requested_start_datetime).getTime() - new Date(a.requested_start_datetime).getTime()
+      ),
+    [data]
+  );
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-
-  const isLoading = storefrontsLoading || appointmentsLoading;
 
   if (isLoading) {
     return (
@@ -121,7 +97,7 @@ export default function VendorAppointmentsPage() {
               All Appointments
             </h2>
             <p className="mt-3 text-on-surface-variant text-lg font-body max-w-lg leading-relaxed">
-              A consolidated view of bookings across all your storefronts. Review, confirm, and manage client sessions.
+              Every booking request on your page. Review, confirm, and manage sessions.
             </p>
           </div>
         </header>
@@ -201,7 +177,7 @@ export default function VendorAppointmentsPage() {
             {/* Table header */}
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 text-[10px] font-label text-on-surface-variant uppercase tracking-widest">
               <span className="col-span-3">Client / Service</span>
-              <span className="col-span-2">Storefront</span>
+              <span className="col-span-2">Contact</span>
               <span className="col-span-2">Date</span>
               <span className="col-span-2">Time</span>
               <span className="col-span-1">Price</span>
@@ -222,24 +198,24 @@ export default function VendorAppointmentsPage() {
                   <div className="col-span-3 flex items-center gap-3 mb-3 md:mb-0">
                     <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
                       <span className="text-sm font-bold text-on-secondary-container">
-                        C{apt.client_id}
+                        {apt.guest_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-primary text-sm truncate font-headline">
-                        {apt.service_name || `Service #${apt.service_id}`}
+                        {apt.guest_name}
                       </p>
                       <p className="text-[10px] text-on-surface-variant truncate">
-                        Client #{apt.client_id}
+                        {apt.service_name || `Service #${apt.service_id}`}
+                        {apt.drop_id ? ' · Drop' : ''}
                       </p>
                     </div>
                   </div>
 
-                  {/* Storefront */}
+                  {/* Contact */}
                   <div className="col-span-2 mb-2 md:mb-0">
-                    <p className="text-sm text-on-surface-variant truncate">
-                      {apt.storefront_name || `Storefront #${apt.storefront_id}`}
-                    </p>
+                    <p className="text-sm text-on-surface-variant truncate">{apt.guest_email}</p>
+                    {apt.guest_phone && <p className="text-[10px] text-on-surface-variant truncate">{apt.guest_phone}</p>}
                   </div>
 
                   {/* Date */}
