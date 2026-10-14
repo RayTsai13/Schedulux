@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 // ---------------------------------------------------------------------------
 // Abstract PNW topography SVGs for background decoration
@@ -45,9 +46,12 @@ function AuthFooter() {
         © 2026 Schedulux. Rooted in the Pacific Northwest.
       </div>
       <div className="flex gap-6">
-        <a href="#" className="text-xs font-label text-outline hover:text-tertiary transition-all">
+        <Link to="/privacy" className="text-xs font-label text-outline hover:text-tertiary transition-all">
           Privacy Policy
-        </a>
+        </Link>
+        <Link to="/terms" className="text-xs font-label text-outline hover:text-tertiary transition-all">
+          Terms of Service
+        </Link>
         <a href="#" className="text-xs font-label text-outline hover:text-tertiary transition-all">
           Sustainability Pact
         </a>
