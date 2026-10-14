@@ -46,8 +46,8 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
         setError(response.message || 'Failed to reschedule. Please try a different time.');
         setStep('select');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to reschedule. Please try a different time.');
+    } catch (err) {
+      setError((err instanceof Error && err.message) || 'Failed to reschedule. Please try a different time.');
       setStep('select');
     }
   };
