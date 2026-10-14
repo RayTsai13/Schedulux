@@ -1,10 +1,12 @@
 import rateLimit from 'express-rate-limit';
 import { ApiResponse } from '../types';
 
-// Strict limiter for auth endpoints (login, register, forgot-password)
+// Strict limiter for auth endpoints (login, register, forgot-password).
+// GETs (/api/auth/me runs on every page load) are exempt; only credential POSTs count.
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10,
+    skip: (req) => req.method === 'GET',
     standardHeaders: true,
     legacyHeaders: false,
     message: {

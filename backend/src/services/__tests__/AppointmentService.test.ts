@@ -15,6 +15,7 @@ vi.mock('../../models/Appointment', () => ({
     updateStatus: vi.fn(),
     updateStatusWithClient: vi.fn(),
     createWithClient: vi.fn(),
+    countOverlappingAppointmentsWithClient: vi.fn(),
   },
 }));
 vi.mock('../EmailService', () => ({
@@ -24,7 +25,9 @@ vi.mock('../EmailService', () => ({
     sendAppointmentStatusChange: vi.fn(),
   },
 }));
-vi.mock('../AvailabilityService', () => ({ AvailabilityService: { isSlotAvailable: vi.fn() } }));
+vi.mock('../AvailabilityService', () => ({
+  AvailabilityService: { loadSlotContext: vi.fn(), evaluateSlot: vi.fn() },
+}));
 vi.mock('../DropService', () => ({ DropService: { notifyWaitlist: vi.fn() } }));
 vi.mock('../../models/Drop', () => ({ DropModel: { findById: vi.fn() } }));
 
@@ -62,6 +65,19 @@ afterEach(() => {
 });
 
 const queries = () => dbClient.query.mock.calls.map(([sql]) => sql as string);
+
+const CONTEXT = { timezone: 'UTC', rules: [], windows: [] };
+
+/** Availability as judged inside the lock */
+function slotIs(result: { available: boolean; reason?: string }) {
+  vi.mocked(AvailabilityService.evaluateSlot).mockReturnValue(result);
+}
+
+beforeEach(() => {
+  vi.mocked(AvailabilityService.loadSlotContext).mockResolvedValue(CONTEXT);
+  vi.mocked(AppointmentModel.countOverlappingAppointmentsWithClient).mockResolvedValue(0);
+  slotIs({ available: true });
+});
 
 describe('AppointmentService.updateStatus', () => {
   function withAppointment(status: string, overrides = {}) {
@@ -132,7 +148,6 @@ describe('AppointmentService.createAppointment', () => {
 
   beforeEach(() => {
     vi.mocked(UserModel.findById).mockResolvedValue({ id: VENDOR_ID, email: 'vendor@example.com' } as never);
-    vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
     vi.mocked(AppointmentModel.createWithClient).mockImplementation(async (_client, data) =>
       makeAppointment({ ...data, id: 900 } as never)
     );
@@ -144,14 +159,20 @@ describe('AppointmentService.createAppointment', () => {
     expect(appointment.id).toBe(900);
     expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'COMMIT']);
 
-    // Availability is re-checked while holding the lock, for duration + buffer
+    // Rules load before the lock; capacity is re-counted on the transaction's
+    // own connection while holding it, for duration + buffer
+    const loadOrder = vi.mocked(AvailabilityService.loadSlotContext).mock.invocationCallOrder[0];
     const lockOrder = dbClient.query.mock.invocationCallOrder[1];
-    const checkOrder = vi.mocked(AvailabilityService.isSlotAvailable).mock.invocationCallOrder[0];
+    const countOrder = vi.mocked(AppointmentModel.countOverlappingAppointmentsWithClient).mock.invocationCallOrder[0];
     const insertOrder = vi.mocked(AppointmentModel.createWithClient).mock.invocationCallOrder[0];
-    expect(lockOrder).toBeLessThan(checkOrder);
-    expect(checkOrder).toBeLessThan(insertOrder);
-    expect(AvailabilityService.isSlotAvailable).toHaveBeenCalledWith(
-      1, 7, new Date(START), new Date('2026-06-08T10:00:00Z')
+    expect(loadOrder).toBeLessThan(lockOrder);
+    expect(lockOrder).toBeLessThan(countOrder);
+    expect(countOrder).toBeLessThan(insertOrder);
+    expect(AppointmentModel.countOverlappingAppointmentsWithClient).toHaveBeenCalledWith(
+      dbClient, 1, new Date(START), new Date('2026-06-08T10:00:00Z'), null
+    );
+    expect(AvailabilityService.evaluateSlot).toHaveBeenCalledWith(
+      CONTEXT, new Date(START), new Date('2026-06-08T10:00:00Z'), 0
     );
     expect(dbClient.release).toHaveBeenCalledOnce();
   });
@@ -183,10 +204,7 @@ describe('AppointmentService.createAppointment', () => {
   });
 
   it('rolls back without inserting when the slot is taken', async () => {
-    vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({
-      available: false,
-      reason: 'Maximum concurrent bookings reached',
-    });
+    slotIs({ available: false, reason: 'Maximum concurrent bookings reached' });
 
     await expect(AppointmentService.createAppointment(GUEST, 1, 7, START)).rejects.toThrow(
       'Maximum concurrent bookings reached'
@@ -208,6 +226,15 @@ describe('AppointmentService.createAppointment', () => {
       'vendor@example.com',
       expect.objectContaining({ clientName: 'Sam Lee' })
     );
+  });
+
+  it('fails before taking a connection when the slot is outside hours', async () => {
+    vi.mocked(AvailabilityService.loadSlotContext).mockResolvedValue({
+      available: false,
+      reason: 'Service not found or inactive',
+    });
+    await expect(AppointmentService.createAppointment(GUEST, 1, 7, START)).rejects.toThrow('Service not found or inactive');
+    expect(dbClient.query).not.toHaveBeenCalled();
   });
 
   it('rejects bookings in the past', async () => {
@@ -285,8 +312,6 @@ describe('AppointmentService manage-token actions', () => {
     });
 
     it('cancels and rebooks atomically under the storefront lock with a new token', async () => {
-      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
-
       const result = await AppointmentService.rescheduleByManageToken(TOKEN, NEW_START);
 
       expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'COMMIT']);
@@ -298,10 +323,7 @@ describe('AppointmentService manage-token actions', () => {
     });
 
     it('rolls back when the new slot is unavailable', async () => {
-      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({
-        available: false,
-        reason: 'Slot is outside working hours',
-      });
+      slotIs({ available: false, reason: 'Slot is outside working hours' });
 
       await expect(AppointmentService.rescheduleByManageToken(TOKEN, NEW_START)).rejects.toThrow(
         'Slot is outside working hours'
@@ -310,9 +332,7 @@ describe('AppointmentService manage-token actions', () => {
       expect(AppointmentModel.createWithClient).not.toHaveBeenCalled();
     });
 
-    it('keeps the drop link only when the new time is inside the drop window, and frees the drop otherwise', async () => {
-      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
-      vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(
+    it('keeps the drop link only when the new time is inside the drop window, and frees the drop otherwise', async () => {      vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(
         makeAppointment({ status: 'confirmed', drop_id: 42 })
       );
       // Drop runs 13:00-15:00 UTC on 06-08
@@ -327,17 +347,14 @@ describe('AppointmentService manage-token actions', () => {
       expect(DropService.notifyWaitlist).toHaveBeenCalledWith(42);
     });
 
-    it("allows moving within the booking's own time when it is the one filling capacity", async () => {
-      // Original is 09:00-10:00 on 06-08; shift by 30 minutes, capacity 1 held by the original itself
-      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({
-        available: false,
-        reason: 'Maximum concurrent bookings reached',
-        currentBookings: 1,
-        maxConcurrent: 1,
-      });
+    it('cancels the original before counting, so its own spot counts as free', async () => {
+      await AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-08T09:30:00Z');
 
-      const result = await AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-08T09:30:00Z');
-      expect(result.new.id).toBe(901);
+      const cancelOrder = vi.mocked(AppointmentModel.updateStatusWithClient).mock.invocationCallOrder[0];
+      const countOrder = vi.mocked(AppointmentModel.countOverlappingAppointmentsWithClient).mock.invocationCallOrder[0];
+      expect(vi.mocked(AppointmentModel.updateStatusWithClient).mock.calls[0][2]).toBe('cancelled');
+      expect(cancelOrder).toBeLessThan(countOrder);
+      expect(vi.mocked(AppointmentModel.countOverlappingAppointmentsWithClient).mock.calls[0][0]).toBe(dbClient);
     });
   });
 });

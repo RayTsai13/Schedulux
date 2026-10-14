@@ -131,19 +131,27 @@ export class AppointmentService {
     clientNotes?: string,
     dropId?: number | null
   ): Promise<Appointment> {
+    // Load rules/drops before taking a connection, so the locked section needs only this client
+    const context = await AvailabilityService.loadSlotContext(storefront.id, service.id, startDatetime);
+    if ('available' in context) {
+      throw new Error(context.reason || 'Slot is no longer available');
+    }
+
     const client = await getClient();
 
     try {
       await client.query('BEGIN');
       await this.lockStorefront(client, storefront.id);
 
-      // Re-check availability within the lock
-      const availabilityResult = await AvailabilityService.isSlotAvailable(
+      // Re-check capacity within the lock, counting on this transaction's connection
+      const overlapping = await AppointmentModel.countOverlappingAppointmentsWithClient(
+        client,
         storefront.id,
-        service.id,
         startDatetime,
-        endDatetime
+        endDatetime,
+        null
       );
+      const availabilityResult = AvailabilityService.evaluateSlot(context, startDatetime, endDatetime, overlapping);
 
       if (!availabilityResult.available) {
         throw new Error(
@@ -536,6 +544,11 @@ export class AppointmentService {
       ? await this.dropContaining(original.drop_id, storefront, newStart, newEnd)
       : null;
 
+    const context = await AvailabilityService.loadSlotContext(storefront.id, service.id, newStart);
+    if ('available' in context) {
+      throw new Error(context.reason || 'New time slot is not available');
+    }
+
     const client = await getClient();
     let cancelled: Appointment;
     let created: Appointment;
@@ -543,7 +556,8 @@ export class AppointmentService {
       await client.query('BEGIN');
       await this.lockStorefront(client, storefront.id);
 
-      // Cancel the old booking first so its own capacity is freed for the check
+      // Cancel the old booking first; the count below runs in this transaction, so it no
+      // longer includes the original and moving within its own time works at full capacity
       const cancelledRow = await AppointmentModel.updateStatusWithClient(
         client,
         original.id,
@@ -554,24 +568,15 @@ export class AppointmentService {
         throw new Error('Failed to cancel original appointment');
       }
 
-      // isSlotAvailable reads outside this transaction, so it still counts the
-      // original booking; subtract it when the two times overlap
-      const availability = await AvailabilityService.isSlotAvailable(
+      const overlapping = await AppointmentModel.countOverlappingAppointmentsWithClient(
+        client,
         storefront.id,
-        service.id,
         newStart,
-        newEnd
+        newEnd,
+        null
       );
-      const overlapsOriginal =
-        new Date(original.requested_start_datetime) < newEnd &&
-        new Date(original.requested_end_datetime) > newStart;
-      const fitsAfterFreeingOriginal =
-        !availability.available &&
-        availability.reason === 'Maximum concurrent bookings reached' &&
-        overlapsOriginal &&
-        (availability.currentBookings ?? 0) - 1 < (availability.maxConcurrent ?? 0);
-
-      if (!availability.available && !fitsAfterFreeingOriginal) {
+      const availability = AvailabilityService.evaluateSlot(context, newStart, newEnd, overlapping);
+      if (!availability.available) {
         throw new Error(availability.reason || 'New time slot is not available');
       }
 
