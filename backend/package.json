@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "test:db": "node scripts/test-database.js",
     "test:connection": "npx ts-node scripts/test-connection.ts",

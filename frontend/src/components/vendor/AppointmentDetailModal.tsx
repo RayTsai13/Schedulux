@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, User, Mail, Phone, MapPin, MessageSquare, DollarSign } from 'lucide-react';
+import { Calendar, Clock, User, MapPin, MessageSquare, DollarSign } from 'lucide-react';
 import { useUpdateAppointmentStatus } from '../../hooks/useAppointments';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
@@ -17,7 +17,6 @@ export default function AppointmentDetailModal({
   isOpen,
   onClose,
   appointment,
-  storefrontId,
 }: AppointmentDetailModalProps) {
   const updateStatus = useUpdateAppointmentStatus();
   const [vendorNotes, setVendorNotes] = useState(appointment.vendor_notes || '');

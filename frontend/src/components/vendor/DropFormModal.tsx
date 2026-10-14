@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, Controller, useWatch } from 'react-hook-form';
+import { useForm, Controller, type Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateDrop, useUpdateDrop, useDeleteDrop } from '../../hooks/useDrops';
@@ -93,7 +93,7 @@ export default function DropFormModal({
     reset,
     formState: { errors },
   } = useForm<DropFormData>({
-    resolver: zodResolver(dropSchema),
+    resolver: zodResolver(dropSchema) as Resolver<DropFormData>, // z.coerce input type is unknown in zod 4
     defaultValues: buildDefaultValues(drop),
   });
 

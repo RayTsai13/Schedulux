@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, MapPin, Instagram } from 'lucide-react';
 
 interface ProfileHeaderProps {

@@ -80,7 +80,7 @@ export default function BookingStepConfirm({
                   name="locationType"
                   value="at_vendor"
                   checked={locationType === 'at_vendor'}
-                  onChange={(e) => onLocationTypeChange('at_vendor')}
+                  onChange={() => onLocationTypeChange('at_vendor')}
                   className="mt-1"
                 />
                 <div className="flex-1">
@@ -99,7 +99,7 @@ export default function BookingStepConfirm({
                 name="locationType"
                 value="at_client"
                 checked={locationType === 'at_client'}
-                onChange={(e) => onLocationTypeChange('at_client')}
+                onChange={() => onLocationTypeChange('at_client')}
                 className="mt-1"
               />
               <div className="flex-1">
