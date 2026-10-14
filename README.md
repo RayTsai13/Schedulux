@@ -75,7 +75,7 @@ cd frontend && cp .env.example .env && npm install && cd ..
 ./start-dev.sh                       # API :3000, app :5173
 ```
 
-Demo logins are in [DEMO_ACCOUNTS.md](DEMO_ACCOUNTS.md). Without `SENDGRID_API_KEY`, emails (including manage links and waitlist notices) are logged to the backend console.
+Demo vendor logins: `midnight@schedulux.dev`, `fixit@schedulux.dev`, `flash@schedulux.dev` (password `Hero123!`). `@sundayflash` has a sold-out drop with a waitlist. Without `SENDGRID_API_KEY`, emails (including manage links and waitlist notices) are logged to the backend console.
 
 Docker: `docker compose -f docker-compose.local.yml up --build` runs Postgres, the API (migrations on start), and the SPA on :8080.
 
