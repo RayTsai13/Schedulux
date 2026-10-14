@@ -4,7 +4,11 @@
 
 **Pattern:** Routes → Services (business logic) → Models (repository/SQL) → PostgreSQL
 
-**Auth flow:** Login → JWT stored in localStorage → Axios interceptor injects `Authorization: Bearer <token>` → backend middleware verifies and attaches `req.user`
+**Availability:** `services/AvailabilityService.ts` is a thin DB adapter around `@schedulux/availability-engine` (`packages/availability-engine`). Priority resolution, DST handling, and slot generation live in the engine. Change behavior there (with engine tests), not in the adapter.
+
+**Auth:**
+- **Vendors** sign in: Login → JWT in localStorage → Axios interceptor sends `Authorization: Bearer <token>` → `authenticateToken` attaches `req.user`. Registration always creates `role: 'vendor'`; login rejects legacy `client`/`admin` rows with a 403.
+- **Guests** have no accounts. Each appointment has a 256-bit hex `manage_token`, returned on booking and emailed. Possession authorizes `/api/bookings/:token/*`. Unknown tokens get the same 404 as missing rows.
 
 **API response wrapper** (all endpoints):
 ```typescript
@@ -16,10 +20,11 @@
 - Wrap all route handlers in try-catch, return consistent `ApiResponse`
 - Never expose internal error details to client
 - Avoid N+1 queries; use `LIMIT`/`OFFSET` for pagination
-- Use parameterized SQL only — never string-concatenate user input
-- `is_verified` is admin-only — cannot be set by vendors via API
-- Email calls are fire-and-forget — never `await` them, never throw on email failure
-- Rate limiting: `authLimiter` (10/15min) on `/api/auth/*`, `apiLimiter` (100/15min) on `/api/*`
+- Use parameterized SQL only — never string-concatenate user input. `StorefrontModel.update` builds SET clauses from object keys, so services must whitelist keys (`UPDATABLE_STOREFRONT_FIELDS`)
+- Email calls are fire-and-forget — never `await` them, never throw on email failure. Escape user-supplied text in templates with `esc()`
+- **Booking writes:** load context (`AvailabilityService.loadSlotContext`) *before* taking a connection, then `BEGIN` → `pg_advisory_xact_lock(41001, storefrontId)` → count overlaps with `countOverlappingAppointmentsWithClient(client, …)` → `evaluateSlot` → insert. Don't make pool queries while holding the lock (that caused pool starvation under load)
+- One storefront ("page") per vendor, enforced in `StorefrontService.create`
+- Rate limiting: `authLimiter` (10/15min, POSTs only) on `/api/auth/*`, `bookingLimiter` (10/15min) on public booking/waitlist writes, `apiLimiter` (100/15min) on `/api/*`
 
 ## Adding a New API Endpoint
 
@@ -32,156 +37,86 @@
 
 ## Database Schema
 
-**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `drops`, `appointments`, `appointment_slots`, `password_reset_tokens`
+**Core tables:** `users`, `storefronts`, `services`, `schedule_rules`, `drops`, `drop_waitlist`, `appointments`, `password_reset_tokens`
 
-**Key storefront fields:**
-- `profile_type`: `individual` | `business`
-- `location_type`: `fixed` | `mobile` | `hybrid`
-- `service_radius`, `service_area_city` (mobile/hybrid)
-- `latitude`, `longitude`, `city`, `state` (geolocation)
-- `avatar_url`, `is_verified` (admin-only), `layout_mode`, `theme_color`, `instagram_handle`
+**Key storefront fields:** `slug` (unique, `^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$`; reserved words in `RESERVED_SLUGS`), `name`, `description`, `address`, `city`, `state`, `timezone`, `avatar_url`, `theme_color`, `instagram_handle`, `is_active`
 
-**Key drops fields:**
-- `title`, `description`, `drop_date`, `start_time`, `end_time`
-- `service_id` (nullable — null = all services)
-- `max_concurrent_appointments`, `is_published`, `is_active`
-- Soft delete via `deleted_at`
-- Integrated into AvailabilityService as priority-100 TimeBlocks (override all rules)
+**Key drops fields:** `title`, `description`, `drop_date`, `start_time`, `end_time`, `service_id` (nullable = all services), `max_concurrent_appointments` (per slot), `is_published`, `is_active`, soft delete via `deleted_at`. Drops are engine *windows* at priority 100 (override all rules, including closures).
 
-**Key appointment fields:** `service_location_type` (`at_vendor`/`at_client`), `client_address`, `drop_id` (nullable FK)
+**Drop spots:** `DropService.countSpots` = slots in the window (sized by the drop's service, or the shortest active service) × capacity; remaining subtracts overlapping bookings across all services. One bookings query for all drops.
 
-**Appointment statuses:** `pending` → `confirmed` → `completed` | `cancelled` | `declined`
+**`drop_waitlist`:** `(drop_id, name, email, notified_at)`, unique on `(drop_id, lower(email))`. Joining is allowed only when `remaining_spots = 0`. On any cancel/decline of a drop booking (or a reschedule out of its window), `DropService.notifyWaitlist` atomically claims un-notified rows (`UPDATE … RETURNING`) and emails them.
 
-**`findByClientId()` JOINs** `services` and `storefronts` to return `service_name` and `storefront_name` alongside each appointment row.
+**Key appointment fields:** `guest_name`, `guest_email`, `guest_phone`, `manage_token`, `client_id` (legacy, nullable), `drop_id` (nullable), `requested_start_datetime`/`requested_end_datetime`
+
+**Appointment statuses:** `pending` → `confirmed` → `completed` | `cancelled` | `declined` | `no_show`
 
 ## Migrations
 
-In production/Docker, migrations run automatically on container startup via `npm run migrate` (`backend/src/migrate.ts`).
+In production/Docker, migrations run automatically on container startup via `npm run migrate` (`backend/src/migrate.ts`, tracks applied files in `schema_migrations`). Locally: `npm run build && npm run migrate`.
 
-For manual application (in order):
-```bash
-psql -d schedulux_primary -f backend/migrations/004_clean_schema.sql
-psql -d schedulux_primary -f backend/migrations/005_marketplace_pivot.sql
-psql -d schedulux_primary -f backend/migrations/006_add_declined_status.sql
-psql -d schedulux_primary -f backend/migrations/007_add_geolocation.sql
-psql -d schedulux_primary -f backend/migrations/008_visual_portfolio.sql
-psql -d schedulux_primary -f backend/migrations/009_add_drops.sql
-psql -d schedulux_primary -f backend/migrations/010_password_reset_tokens.sql
-```
+Files, in order: `004_clean_schema.sql` … `010_password_reset_tokens.sql`, `011_drops_pivot.sql` (guest booking columns, slugs, `drop_waitlist`, drops marketplace/geo/mobile columns).
 
-New migrations go in `backend/migrations/` with the next number prefix (e.g. `011_...sql`). Never edit existing migration files.
+New migrations go in `backend/migrations/` with the next number prefix (e.g. `012_...sql`). Never edit existing migration files.
 
-## Storefront & Service API Endpoints
+## Public Endpoints (no auth)
 
-- `GET /api/storefronts` - vendor's own storefronts (auth required, vendor)
-- `POST /api/storefronts` - create storefront (auth required, vendor)
-- `GET /api/storefronts/:id` - get storefront (auth required)
-- `PUT /api/storefronts/:id` - update storefront (auth required, owner)
-- `DELETE /api/storefronts/:id` - soft delete (auth required, owner)
-- `GET /api/storefronts/:id/services` - list services (auth required)
-- `POST /api/storefronts/:id/services` - create service (auth required, owner)
-- `PUT /api/storefronts/:id/services/:serviceId` - update service (auth required, owner)
-- `DELETE /api/storefronts/:id/services/:serviceId` - soft delete service (auth required, owner)
-- `GET /api/storefronts/:id/rules` - list schedule rules (auth required)
-- `POST /api/storefronts/:id/rules` - create schedule rule (auth required, owner)
-- `PUT /api/storefronts/:id/rules/:ruleId` - update rule (auth required, owner)
-- `DELETE /api/storefronts/:id/rules/:ruleId` - delete rule (auth required, owner)
-- `GET /api/availability?storefront_id=&service_id=&start_date=&end_date=` - available slots (no auth)
+- `GET /api/pages/:slug` - storefront (public fields), active services, upcoming published drops with `total_spots`/`remaining_spots`
+- `GET /api/slugs/:slug/available` - `{ available }` for onboarding
+- `GET /api/storefronts/:id/availability?service_id=&start_date=&end_date=` - bookable slots (≤31 days)
+- `POST /api/appointments` - guest booking (`bookingLimiter`). Body: `{ storefront_id, service_id, start_datetime, guest_name, guest_email, guest_phone?, client_notes?, drop_id? }`. Returns the appointment including `manage_token`
+- `GET /api/bookings/:token` - booking for the token holder (no internal notes)
+- `POST /api/bookings/:token/cancel`
+- `POST /api/bookings/:token/reschedule` - body `{ start_datetime }`; atomic cancel+rebook under the page lock; the new booking gets a **new** token; returns `{ cancelled, new }`
+- `POST /api/drops/:id/waitlist` - body `{ name, email }`; 409 unless sold out
 
-## Image Upload Endpoint
+## Vendor Endpoints (JWT)
 
-- `POST /api/upload/service-image` - upload image to Cloudinary (auth required, vendor)
-  - Content-Type: `multipart/form-data`, field name: `image`
-  - Max size: 5MB
-  - Returns: `{ url: string, public_id: string }`
-  - Gracefully returns 503 if `CLOUDINARY_CLOUD_NAME` is not configured
+- `GET /api/storefronts/mine` - the vendor's page (`data: null` until onboarding)
+- `POST /api/storefronts` - create page (requires `slug`; 409 if taken or if the vendor already has one)
+- `GET / PUT / DELETE /api/storefronts/:id` - owner only
+- `GET / POST /api/storefronts/:id/services`, `PUT / DELETE /api/storefronts/:id/services/:serviceId`
+- `GET / POST /api/storefronts/:id/rules`, `PUT / DELETE /api/storefronts/:id/rules/:ruleId`
+- `GET / POST /api/storefronts/:id/drops` (GET includes spot counts and `waitlist_count`), `GET / PUT / DELETE /api/drops/:id`
+- `GET /api/storefronts/:storefrontId/appointments` - includes `service_name`
+- `GET /api/appointments/:id`, `PATCH /api/appointments/:id/status`, `POST /api/appointments/:id/approve`, `POST /api/appointments/:id/decline`
+- `POST /api/upload/service-image` - Cloudinary upload (503 if unconfigured)
 
-## Drop API Endpoints
+## Auth Endpoints
 
-- `POST /api/storefronts/:id/drops` - create (auth required)
-- `GET /api/storefronts/:id/drops` - list all (auth required, vendor)
-- `GET /api/storefronts/:id/drops/public` - list published future drops (no auth)
-- `GET /api/drops/:id` - get by ID (auth required)
-- `PUT /api/drops/:id` - update (auth required)
-- `DELETE /api/drops/:id` - soft delete (auth required)
-
-## Appointment API Endpoints
-
-- `POST /api/appointments` - create booking (auth required, client)
-- `GET /api/appointments` - list client's own appointments (auth required)
-- `GET /api/appointments/:id` - get single appointment (auth required, owner or vendor)
-- `PATCH /api/appointments/:id/status` - update status (auth required)
-- `POST /api/appointments/:id/reschedule` - atomic cancel+rebook (auth required, client only)
-  - Body: `{ start_datetime: string }` (ISO 8601)
-  - Returns: `{ cancelled: Appointment, new: Appointment }`
-  - Uses advisory lock — rolls back if new slot unavailable
-- `POST /api/appointments/:id/approve` - vendor approval (auth required, vendor)
-- `POST /api/appointments/:id/decline` - vendor decline (auth required, vendor)
-- `GET /api/storefronts/:storefrontId/appointments` - storefront appointments (auth required, vendor)
-
-## Public Marketplace Endpoints (no auth)
-
-- `GET /api/marketplace/search` - geographic + text + filter search with pagination
-- `GET /api/marketplace/storefronts/:id` - storefront detail with services
-
-## Admin API Endpoints
-
-- `GET /api/admin/stats` - platform stats (auth + admin role required)
-- `GET /api/admin/storefronts?limit=20&offset=0` - paginated storefront list with vendor info
-- `PATCH /api/admin/storefronts/:id/verify` - body: `{ is_verified: boolean }`
-
-## Auth API Endpoints
-
-- `POST /api/auth/register` - create account
-- `POST /api/auth/login` - login
-- `GET /api/auth/me` - current user profile
-- `POST /api/auth/forgot-password` - send reset email (always 200, no user enumeration)
-- `POST /api/auth/reset-password` - body: `{ token, password }` — updates password
+- `POST /api/auth/register` (vendor), `POST /api/auth/login`, `GET /api/auth/me`
+- `POST /api/auth/forgot-password` (always 200), `POST /api/auth/reset-password`
 
 ## Email Service
 
-**`backend/src/services/EmailService.ts`** — static methods, fire-and-forget pattern:
+**`backend/src/services/EmailService.ts`** — static methods, fire-and-forget. No-ops (logs to console) when `SENDGRID_API_KEY` is unset.
 
 ```ts
 EmailService.sendWelcome(email, firstName)
-EmailService.sendAppointmentConfirmation(email, details)
-EmailService.sendAppointmentStatusChange(email, details)   // confirmed/cancelled/declined
-EmailService.sendNewBookingNotification(email, details)    // to vendor
-EmailService.sendPasswordReset(email, token)               // link: FRONTEND_URL/reset-password?token=
+EmailService.sendAppointmentConfirmation(email, { …, manageToken })   // guest, includes /manage link
+EmailService.sendAppointmentStatusChange(email, { …, manageToken })   // confirmed/cancelled/declined
+EmailService.sendNewBookingNotification(email, details)               // to vendor
+EmailService.sendWaitlistSpotOpened(email, { name, dropTitle, storefrontName, dropUrl })
+EmailService.sendPasswordReset(email, token)
+pageUrl(slug, dropId?)                                                // FRONTEND_URL/@slug[/drops/id]
 ```
-
-No-ops gracefully when `SENDGRID_API_KEY` is unset (logs to console instead).
-
-## Rate Limiting
-
-**`backend/src/middleware/rateLimiter.ts`**:
-- `authLimiter` — 10 req / 15 min per IP, applied to `/api/auth/*`
-- `apiLimiter` — 100 req / 15 min per IP, applied to `/api/*`
 
 ## Environment Variables
 
-Required at runtime (app exits if missing):
-- `JWT_SECRET` — signs and verifies JWTs
-- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — PostgreSQL connection
+Required at runtime (app exits if missing): `JWT_SECRET`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 
-Optional (features degrade gracefully if unset):
-- `SENDGRID_API_KEY` — emails log to console if missing
-- `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` — email sender identity
-- `FRONTEND_URL` — used in password reset email links (defaults to `http://localhost:5173`)
-- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — image uploads return 503 if missing
+Optional: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`, `FRONTEND_URL` (links in emails; default `http://localhost:5173`), `CLOUDINARY_*`
 
 ## Testing
 
-- Vitest unit tests live in `src/**/__tests__/*.test.ts`; run with `npm test` (no database needed)
-- Mock the model layer with `vi.mock('../../models/<Model>')` and test services through their public static methods
-- Build rows with the helpers in `src/services/__tests__/fixtures.ts`
-- Freeze "now" with `vi.useFakeTimers()` + `vi.setSystemTime()`; tests run with `TZ=UTC` like production
-- Cover timezone edge cases (non-UTC storefronts, evening slots, DST) for anything touching availability
-- Tests are excluded from `dist/` via `tsconfig.build.json` but still type-checked by `npm run typecheck`
-- Not covered: real Postgres behavior (advisory locks, exclusion constraints) — needs integration tests
+- Vitest unit tests in `src/**/__tests__/*.test.ts`; `npm test` (no database needed)
+- Mock the model layer with `vi.mock('../../models/<Model>')`; test services through their public static methods
+- Build rows with `src/services/__tests__/fixtures.ts`
+- Freeze "now" with `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime()` (fake only `Date` when testing fire-and-forget code that awaits `setImmediate`)
+- Pure scheduling logic belongs in the engine package and its tests, which run under `TZ=Europe/Berlin`
+- Real Postgres behavior (advisory locks) is exercised by `npm run demo:race`, not unit tests
 
 ## Debugging
 
-- Console shows 🟢/🔴 per request with duration
-- API test: `curl -H "Authorization: Bearer <token>" http://localhost:3000/api/path`
-- Health check: `curl http://localhost:3000/health` (returns DB connectivity status)
+- Console shows 🟢/🔴 per request with duration; dev mode also logs every query
+- Health check: `curl http://localhost:3000/health`
