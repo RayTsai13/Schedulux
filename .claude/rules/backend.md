@@ -170,6 +170,16 @@ Optional (features degrade gracefully if unset):
 - `FRONTEND_URL` — used in password reset email links (defaults to `http://localhost:5173`)
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — image uploads return 503 if missing
 
+## Testing
+
+- Vitest unit tests live in `src/**/__tests__/*.test.ts`; run with `npm test` (no database needed)
+- Mock the model layer with `vi.mock('../../models/<Model>')` and test services through their public static methods
+- Build rows with the helpers in `src/services/__tests__/fixtures.ts`
+- Freeze "now" with `vi.useFakeTimers()` + `vi.setSystemTime()`; tests run with `TZ=UTC` like production
+- Cover timezone edge cases (non-UTC storefronts, evening slots, DST) for anything touching availability
+- Tests are excluded from `dist/` via `tsconfig.build.json` but still type-checked by `npm run typecheck`
+- Not covered: real Postgres behavior (advisory locks, exclusion constraints) — needs integration tests
+
 ## Debugging
 
 - Console shows 🟢/🔴 per request with duration

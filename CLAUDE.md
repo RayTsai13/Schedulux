@@ -8,11 +8,14 @@ Guidance for Claude Code when working in this repository.
 ./start-dev.sh                          # Start both servers (backend :3000, frontend :5173)
 cd backend && npm run dev               # Backend only
 cd frontend && npm run dev              # Frontend only
-cd backend && npm run build             # Compile TypeScript → dist/
+cd backend && npm run build             # Compile TypeScript → dist/ (tsconfig.build.json, excludes tests)
+cd backend && npm test                  # Vitest unit tests (no DB needed)
+cd backend && npm run typecheck         # tsc --noEmit, includes tests
 cd backend && npm run test:db           # Database schema + connectivity
 cd backend && npm run test:connection   # TypeScript + DB validation
 cd backend && npx ts-node scripts/create-admin.ts  # Create test admin user
 cd frontend && npm run lint
+cd frontend && npm run typecheck        # tsc -b (vite build does not type-check)
 docker compose build                    # Build all containers
 docker compose up                       # Run containerized stack locally
 ```
@@ -34,8 +37,9 @@ docker compose up                       # Run containerized stack locally
 | Email | SendGrid (@sendgrid/mail) |
 | Rate Limiting | express-rate-limit |
 | Image Uploads | Cloudinary (multer + cloudinary SDK) |
+| Testing | Vitest (backend service unit tests, models mocked) |
 | Containers | Docker (multi-stage), nginx (frontend SPA serving), Caddy (reverse proxy + auto HTTPS) |
-| CI/CD | GitHub Actions → SSH deploy to AWS EC2 |
+| CI | GitHub Actions (`.github/workflows/ci.yml`): typecheck, lint, test, build |
 
 ## Environment Setup
 
@@ -72,7 +76,8 @@ VITE_API_URL=http://localhost:3000/api
 ## Deployment
 
 - Full AWS EC2 + RDS setup: `DEPLOYMENT_GUIDE.md`
-- GitHub Actions CI/CD pipeline: `CICD_GUIDE.md`
+- CI checks: `.github/workflows/ci.yml` runs on PRs and pushes to `main`
+- EC2 deploy pipeline: described in `CICD_GUIDE.md` — the deploy workflow is **not** committed to the repo
 - Local Docker stack: `docker compose -f docker-compose.local.yml up`
 - Production Docker stack: `docker compose up` (requires `.env` with RDS credentials)
 
@@ -90,5 +95,9 @@ VITE_API_URL=http://localhost:3000/api
 | Admin dashboard | ✅ Done |
 | Image uploads (Cloudinary) | ✅ Done |
 | Docker + Caddy + nginx | ✅ Done |
-| CI/CD (GitHub Actions → EC2) | ✅ Done |
+| CI checks (GitHub Actions) | ✅ Done |
+| Auto-deploy to EC2 | ⚠️ Documented in `CICD_GUIDE.md`, workflow not committed |
 | Reschedule flow | ✅ Done |
+| Legal pages (privacy, terms, cookies) | ✅ Done — placeholder text, needs legal review |
+| Backend unit tests (availability, booking) | ✅ Done |
+| Design-token rollout | ✅ Done — no hardcoded Tailwind palette colors in `src/` |
