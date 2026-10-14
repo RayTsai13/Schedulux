@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateService, useUpdateService } from '../../hooks/useServices';
@@ -60,7 +60,7 @@ export default function ServiceFormModal({
     watch,
     formState: { errors },
   } = useForm<ServiceFormData>({
-    resolver: zodResolver(serviceSchema),
+    resolver: zodResolver(serviceSchema) as Resolver<ServiceFormData>, // z.coerce input type is unknown in zod 4
     defaultValues: service
       ? {
           name: service.name,

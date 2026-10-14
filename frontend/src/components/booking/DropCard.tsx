@@ -1,4 +1,3 @@
-import React from 'react';
 import { format } from 'date-fns';
 import UniversalCard from '../universal/UniversalCard';
 import UniversalButton from '../universal/UniversalButton';

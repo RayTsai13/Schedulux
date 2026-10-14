@@ -39,3 +39,5 @@ CICD_GUIDE.md
 DEMO_ACCOUNTS.md
 
 lessons/
+# TypeScript incremental build info
+*.tsbuildinfo

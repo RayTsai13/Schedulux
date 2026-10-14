@@ -1,4 +1,3 @@
-import React from 'react';
 import UniversalCard from '../universal/UniversalCard';
 import UniversalButton from '../universal/UniversalButton';
 

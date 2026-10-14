@@ -70,8 +70,9 @@ export const editorialInputClass =
 // ---------------------------------------------------------------------------
 interface AuthLayoutProps {
   children: React.ReactNode;
-  title: string;
-  subtitle: string;
+  /** Omit to skip the brand header when the page renders its own heading */
+  title?: string;
+  subtitle?: string;
   icon?: string;
 }
 
@@ -82,20 +83,22 @@ export default function AuthLayout({ children, title, subtitle, icon = 'nature' 
         <BackgroundDecoration />
         <div className="z-10 w-full max-w-md">
           {/* Brand Anchor */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary-container mb-6">
-              <span
-                className="material-symbols-outlined text-on-secondary-container text-3xl"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                {icon}
-              </span>
+          {title && (
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary-container mb-6">
+                <span
+                  className="material-symbols-outlined text-on-secondary-container text-3xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {icon}
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight text-primary mb-2 font-headline">
+                {title}
+              </h1>
+              <p className="font-body text-on-surface-variant">{subtitle}</p>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary mb-2 font-headline">
-              {title}
-            </h1>
-            <p className="font-body text-on-surface-variant">{subtitle}</p>
-          </div>
+          )}
 
           {/* Content (card + footer links) */}
           {children}

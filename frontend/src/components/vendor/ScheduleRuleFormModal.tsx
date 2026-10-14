@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, Controller, useWatch } from 'react-hook-form';
+import { useForm, Controller, type Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -118,7 +118,7 @@ export default function ScheduleRuleFormModal({
     setValue,
     formState: { errors },
   } = useForm<RuleFormData>({
-    resolver: zodResolver(ruleSchema),
+    resolver: zodResolver(ruleSchema) as Resolver<RuleFormData>, // z.coerce input type is unknown in zod 4
     defaultValues: buildDefaultValues(rule),
   });
 

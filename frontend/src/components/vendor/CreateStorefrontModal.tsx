@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateStorefront } from '../../hooks/useStorefronts';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
-import type { ProfileType, LocationType } from '../../services/api';
 
 // Validation schema
 const storefrontSchema = z.object({
