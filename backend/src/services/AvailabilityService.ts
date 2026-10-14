@@ -25,6 +25,13 @@ import { AvailabilityResponse, SlotAvailabilityResult } from '../types/availabil
 import { ScheduleRule, Drop } from '../types';
 import { toDateStr } from '../utils/dates';
 
+/** Rules and drops for a slot's date, in engine form */
+export interface SlotContext {
+  timezone: string;
+  rules: Rule[];
+  windows: Window[];
+}
+
 export class AvailabilityService {
   /**
    * Get available appointment slots for a storefront/service over a date range
@@ -166,7 +173,35 @@ export class AvailabilityService {
     startDatetime: Date,
     endDatetime: Date
   ): Promise<SlotAvailabilityResult> {
-    // 1. Fetch storefront and service
+    const context = await this.loadSlotContext(storefrontId, serviceId, startDatetime);
+    if ('available' in context) {
+      return context;
+    }
+
+    // Count existing overlapping appointments (all services share capacity)
+    const currentBookings = await AppointmentModel.countOverlappingAppointments(
+      storefrontId,
+      startDatetime,
+      endDatetime,
+      null
+    );
+
+    return this.evaluateSlot(context, startDatetime, endDatetime, currentBookings);
+  }
+
+  /**
+   * Load everything needed to judge a slot except the live booking count:
+   * timezone, rules, and drops for the slot's date.
+   *
+   * Booking writes call this *before* taking their lock, then count overlaps on
+   * the transaction's own connection, so nothing inside the lock needs a second
+   * pool connection (which could starve the pool under contention).
+   */
+  static async loadSlotContext(
+    storefrontId: number,
+    serviceId: number,
+    startDatetime: Date
+  ): Promise<SlotContext | SlotAvailabilityResult> {
     const storefront = await StorefrontModel.findById(storefrontId);
     if (!storefront) {
       return { available: false, reason: 'Storefront not found' };
@@ -177,49 +212,40 @@ export class AvailabilityService {
       return { available: false, reason: 'Service not found or inactive' };
     }
 
-    const timezone = storefront.timezone || 'UTC';
-
-    // 2. Check if slot is in the past
     if (isBefore(startDatetime, new Date())) {
       return { available: false, reason: 'Cannot book slots in the past' };
     }
 
-    // 3. Get effective rules for the date (padded a day each side; see getAvailableSlots)
+    // Padded a day each side; see getAvailableSlots
     const queryStart = addDays(startDatetime, -1);
     const queryEnd = addDays(startDatetime, 1);
 
-    const rules = await ScheduleRuleModel.findByDateRange(
-      storefrontId,
-      serviceId,
-      queryStart,
-      queryEnd
-    );
+    const rules = await ScheduleRuleModel.findByDateRange(storefrontId, serviceId, queryStart, queryEnd);
+    const drops = await DropModel.findActiveByDateRange(storefrontId, queryStart, queryEnd);
+    const applicableDrops = drops.filter((d) => d.service_id === null || d.service_id === serviceId);
 
-    // 3b. Get drops for the date
-    const drops = await DropModel.findActiveByDateRange(
-      storefrontId,
-      queryStart,
-      queryEnd
-    );
-    const applicableDrops = drops.filter(
-      d => d.service_id === null || d.service_id === serviceId
-    );
-
-    // 4. Count existing overlapping appointments (all services share capacity)
-    const currentBookings = await AppointmentModel.countOverlappingAppointments(
-      storefrontId,
-      startDatetime,
-      endDatetime,
-      null
-    );
-
-    // 5. Check working hours (rules + drops) and capacity
-    const result = checkSlot({
-      timezone,
-      start: startDatetime,
-      end: endDatetime,
+    return {
+      timezone: storefront.timezone || 'UTC',
       rules: this.toEngineRules(rules),
       windows: this.toEngineWindows(applicableDrops),
+    };
+  }
+
+  /**
+   * Judge a slot against loaded context and a live overlap count (pure)
+   */
+  static evaluateSlot(
+    context: SlotContext,
+    startDatetime: Date,
+    endDatetime: Date,
+    currentBookings: number
+  ): SlotAvailabilityResult {
+    const result = checkSlot({
+      timezone: context.timezone,
+      start: startDatetime,
+      end: endDatetime,
+      rules: context.rules,
+      windows: context.windows,
       overlapping: currentBookings,
     });
 
