@@ -3,20 +3,29 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const dbClient = { query: vi.fn(), release: vi.fn() };
 
 vi.mock('../../config/database', () => ({
-  pool: {},
   getClient: vi.fn(async () => dbClient),
-  withTransaction: vi.fn(),
 }));
 vi.mock('../../models/Storefront', () => ({ StorefrontModel: { findById: vi.fn() } }));
 vi.mock('../../models/Service', () => ({ ServiceModel: { findById: vi.fn() } }));
 vi.mock('../../models/User', () => ({ UserModel: { findById: vi.fn() } }));
 vi.mock('../../models/Appointment', () => ({
-  AppointmentModel: { findById: vi.fn(), updateStatus: vi.fn(), createWithClient: vi.fn() },
+  AppointmentModel: {
+    findById: vi.fn(),
+    findByManageToken: vi.fn(),
+    updateStatus: vi.fn(),
+    updateStatusWithClient: vi.fn(),
+    createWithClient: vi.fn(),
+  },
 }));
 vi.mock('../EmailService', () => ({
-  EmailService: { sendAppointmentConfirmation: vi.fn(), sendNewBookingNotification: vi.fn() },
+  EmailService: {
+    sendAppointmentConfirmation: vi.fn(),
+    sendNewBookingNotification: vi.fn(),
+    sendAppointmentStatusChange: vi.fn(),
+  },
 }));
 vi.mock('../AvailabilityService', () => ({ AvailabilityService: { isSlotAvailable: vi.fn() } }));
+vi.mock('../DropService', () => ({ DropService: { notifyWaitlist: vi.fn() } }));
 
 import { AppointmentService } from '../AppointmentService';
 import { StorefrontModel } from '../../models/Storefront';
@@ -24,28 +33,37 @@ import { ServiceModel } from '../../models/Service';
 import { UserModel } from '../../models/User';
 import { AppointmentModel } from '../../models/Appointment';
 import { AvailabilityService } from '../AvailabilityService';
+import { DropService } from '../DropService';
 import { EmailService } from '../EmailService';
 import { makeStorefront, makeService, makeAppointment } from './fixtures';
 
 const VENDOR_ID = 100;
-const CLIENT_ID = 200;
 const STRANGER_ID = 300;
+const GUEST = { name: 'Sam Lee', email: 'sam@example.com', phone: '555-0100' };
+const TOKEN = 'a'.repeat(64);
+const LOCK_SQL = 'SELECT pg_advisory_xact_lock($1, $2)';
+
+/** Let fire-and-forget promise chains settle */
+const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-06-01T00:00:00Z'));
   dbClient.query.mockReset().mockResolvedValue({ rows: [] });
   dbClient.release.mockReset();
   vi.mocked(StorefrontModel.findById).mockResolvedValue(makeStorefront({ vendor_id: VENDOR_ID }));
+  vi.mocked(ServiceModel.findById).mockResolvedValue(makeService({ duration_minutes: 45, buffer_time_minutes: 15 }));
 });
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
+const queries = () => dbClient.query.mock.calls.map(([sql]) => sql as string);
+
 describe('AppointmentService.updateStatus', () => {
-  function withAppointment(status: string) {
-    const appointment = makeAppointment({ status: status as never, client_id: CLIENT_ID });
+  function withAppointment(status: string, overrides = {}) {
+    const appointment = makeAppointment({ status: status as never, ...overrides });
     vi.mocked(AppointmentModel.findById).mockResolvedValue(appointment);
     vi.mocked(AppointmentModel.updateStatus).mockImplementation(async (_id, newStatus) => ({
       ...appointment,
@@ -83,22 +101,20 @@ describe('AppointmentService.updateStatus', () => {
     expect(AppointmentModel.updateStatus).not.toHaveBeenCalled();
   });
 
-  it('lets the client cancel their own appointment', async () => {
-    withAppointment('confirmed');
-    const updated = await AppointmentService.updateStatus(500, CLIENT_ID, 'cancelled');
-    expect(updated.status).toBe('cancelled');
-  });
-
-  it.each(['confirmed', 'declined'] as const)('stops the client from setting %s', async (to) => {
-    withAppointment('pending');
-    await expect(AppointmentService.updateStatus(500, CLIENT_ID, to)).rejects.toThrow(
-      'Clients can only cancel appointments'
-    );
-  });
-
-  it('rejects users who are neither the client nor the vendor', async () => {
+  it('rejects anyone but the owning vendor', async () => {
     withAppointment('pending');
     await expect(AppointmentService.updateStatus(500, STRANGER_ID, 'cancelled')).rejects.toThrow('Forbidden');
+  });
+
+  it('emails the guest and frees the drop waitlist when the vendor cancels a drop booking', async () => {
+    withAppointment('confirmed', { drop_id: 42 });
+    await AppointmentService.updateStatus(500, VENDOR_ID, 'cancelled');
+    await flush();
+    expect(DropService.notifyWaitlist).toHaveBeenCalledWith(42);
+    expect(EmailService.sendAppointmentStatusChange).toHaveBeenCalledWith(
+      'sam@example.com',
+      expect.objectContaining({ newStatus: 'cancelled', manageToken: TOKEN })
+    );
   });
 
   it('reports a missing appointment', async () => {
@@ -113,25 +129,18 @@ describe('AppointmentService.createAppointment', () => {
   const START = '2026-06-08T09:00:00Z';
 
   beforeEach(() => {
-    vi.mocked(ServiceModel.findById).mockResolvedValue(
-      makeService({ duration_minutes: 45, buffer_time_minutes: 15 })
-    );
-    vi.mocked(UserModel.findById).mockImplementation(async (id) =>
-      ({ id, email: `user${id}@example.com`, first_name: 'Sam', last_name: 'Lee' }) as never
-    );
+    vi.mocked(UserModel.findById).mockResolvedValue({ id: VENDOR_ID, email: 'vendor@example.com' } as never);
     vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
     vi.mocked(AppointmentModel.createWithClient).mockImplementation(async (_client, data) =>
       makeAppointment({ ...data, id: 900 } as never)
     );
   });
 
-  const queries = () => dbClient.query.mock.calls.map(([sql]) => sql as string);
-
-  it('books inside a transaction after taking the advisory lock', async () => {
-    const appointment = await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START);
+  it('books inside a transaction after taking the storefront lock', async () => {
+    const appointment = await AppointmentService.createAppointment(GUEST, 1, 7, START);
 
     expect(appointment.id).toBe(900);
-    expect(queries()).toEqual(['BEGIN', 'SELECT pg_advisory_xact_lock($1)', 'COMMIT']);
+    expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'COMMIT']);
 
     // Availability is re-checked while holding the lock, for duration + buffer
     const lockOrder = dbClient.query.mock.invocationCallOrder[1];
@@ -142,24 +151,33 @@ describe('AppointmentService.createAppointment', () => {
     expect(AvailabilityService.isSlotAvailable).toHaveBeenCalledWith(
       1, 7, new Date(START), new Date('2026-06-08T10:00:00Z')
     );
-
-    expect(AppointmentModel.createWithClient).toHaveBeenCalledWith(
-      dbClient,
-      expect.objectContaining({ client_id: CLIENT_ID, status: 'pending', price_quoted: 40 })
-    );
     expect(dbClient.release).toHaveBeenCalledOnce();
   });
 
-  it('uses the same lock key for the same slot and a different one for another slot', async () => {
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START);
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START);
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, '2026-06-08T11:00:00Z');
+  it('stores guest details and a fresh 64-char hex manage token', async () => {
+    await AppointmentService.createAppointment(GUEST, 1, 7, START);
+    await AppointmentService.createAppointment(GUEST, 1, 7, START);
 
-    const keys = dbClient.query.mock.calls
-      .filter(([sql]) => sql === 'SELECT pg_advisory_xact_lock($1)')
-      .map(([, params]) => params[0]);
-    expect(keys[0]).toBe(keys[1]);
-    expect(keys[2]).not.toBe(keys[0]);
+    const [first, second] = vi.mocked(AppointmentModel.createWithClient).mock.calls.map(([, data]) => data);
+    expect(first).toMatchObject({
+      guest_name: 'Sam Lee',
+      guest_email: 'sam@example.com',
+      guest_phone: '555-0100',
+      status: 'pending',
+      price_quoted: 40,
+    });
+    expect(first.manage_token).toMatch(/^[0-9a-f]{64}$/);
+    expect(second.manage_token).not.toBe(first.manage_token);
+  });
+
+  it('locks the whole storefront, so overlapping slots at different times serialize', async () => {
+    await AppointmentService.createAppointment(GUEST, 1, 7, START);
+    await AppointmentService.createAppointment(GUEST, 1, 7, '2026-06-08T09:30:00Z');
+
+    const lockParams = dbClient.query.mock.calls.filter(([sql]) => sql === LOCK_SQL).map(([, params]) => params);
+    expect(lockParams).toHaveLength(2);
+    expect(lockParams[0]).toEqual(lockParams[1]);
+    expect(lockParams[0][1]).toBe(1);
   });
 
   it('rolls back without inserting when the slot is taken', async () => {
@@ -168,29 +186,30 @@ describe('AppointmentService.createAppointment', () => {
       reason: 'Maximum concurrent bookings reached',
     });
 
-    await expect(AppointmentService.createAppointment(CLIENT_ID, 1, 7, START)).rejects.toThrow(
+    await expect(AppointmentService.createAppointment(GUEST, 1, 7, START)).rejects.toThrow(
       'Maximum concurrent bookings reached'
     );
-    expect(queries()).toEqual(['BEGIN', 'SELECT pg_advisory_xact_lock($1)', 'ROLLBACK']);
+    expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'ROLLBACK']);
     expect(AppointmentModel.createWithClient).not.toHaveBeenCalled();
     expect(dbClient.release).toHaveBeenCalledOnce();
     expect(EmailService.sendAppointmentConfirmation).not.toHaveBeenCalled();
   });
 
-  it('sends confirmation and vendor emails after booking', async () => {
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START);
+  it('emails the guest their manage link and notifies the vendor', async () => {
+    const appointment = await AppointmentService.createAppointment(GUEST, 1, 7, START);
+    await flush();
     expect(EmailService.sendAppointmentConfirmation).toHaveBeenCalledWith(
-      `user${CLIENT_ID}@example.com`,
-      expect.objectContaining({ serviceName: 'Haircut' })
+      'sam@example.com',
+      expect.objectContaining({ serviceName: 'Haircut', manageToken: appointment.manage_token })
     );
     expect(EmailService.sendNewBookingNotification).toHaveBeenCalledWith(
-      `user${VENDOR_ID}@example.com`,
+      'vendor@example.com',
       expect.objectContaining({ clientName: 'Sam Lee' })
     );
   });
 
   it('rejects bookings in the past', async () => {
-    await expect(AppointmentService.createAppointment(CLIENT_ID, 1, 7, '2026-05-01T09:00:00Z')).rejects.toThrow(
+    await expect(AppointmentService.createAppointment(GUEST, 1, 7, '2026-05-01T09:00:00Z')).rejects.toThrow(
       'Cannot book appointments in the past'
     );
     expect(dbClient.query).not.toHaveBeenCalled();
@@ -198,32 +217,108 @@ describe('AppointmentService.createAppointment', () => {
 
   it('rejects a service from another storefront', async () => {
     vi.mocked(ServiceModel.findById).mockResolvedValue(makeService({ storefront_id: 2 }));
-    await expect(AppointmentService.createAppointment(CLIENT_ID, 1, 7, START)).rejects.toThrow(
+    await expect(AppointmentService.createAppointment(GUEST, 1, 7, START)).rejects.toThrow(
       'Service does not belong to this storefront'
     );
   });
 
-  it('requires an address for at-client bookings with mobile vendors', async () => {
-    vi.mocked(StorefrontModel.findById).mockResolvedValue(makeStorefront({ location_type: 'mobile' }));
-    await expect(
-      AppointmentService.createAppointment(CLIENT_ID, 1, 7, START, undefined, 'at_client', '  ')
-    ).rejects.toThrow('Client address is required for at-client appointments');
+  it('rejects an inactive storefront', async () => {
+    vi.mocked(StorefrontModel.findById).mockResolvedValue(makeStorefront({ is_active: false }));
+    await expect(AppointmentService.createAppointment(GUEST, 1, 7, START)).rejects.toThrow('Storefront not found');
+  });
+});
+
+describe('AppointmentService manage-token actions', () => {
+  it('returns the booking without internal fields', async () => {
+    vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(
+      makeAppointment({ internal_notes: 'secret', client_id: 7, service_name: 'Haircut' })
+    );
+    const booking = await AppointmentService.getByManageToken(TOKEN);
+    expect(booking).toMatchObject({ id: 500, guest_email: 'sam@example.com', service_name: 'Haircut' });
+    expect(booking).not.toHaveProperty('internal_notes');
+    expect(booking).not.toHaveProperty('client_id');
   });
 
-  it('stores the address for at-client bookings with mobile vendors', async () => {
-    vi.mocked(StorefrontModel.findById).mockResolvedValue(makeStorefront({ location_type: 'mobile' }));
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START, undefined, 'at_client', '1 Main St');
-    expect(AppointmentModel.createWithClient).toHaveBeenCalledWith(
-      dbClient,
-      expect.objectContaining({ service_location_type: 'at_client', client_address: '1 Main St' })
+  it('treats an unknown token as not found', async () => {
+    vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(null);
+    await expect(AppointmentService.getByManageToken(TOKEN)).rejects.toThrow('Appointment not found');
+    await expect(AppointmentService.cancelByManageToken(TOKEN)).rejects.toThrow('Appointment not found');
+    await expect(AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-09T09:00:00Z')).rejects.toThrow(
+      'Appointment not found'
     );
   });
 
-  it('forces at-vendor and drops the address for fixed-location storefronts', async () => {
-    await AppointmentService.createAppointment(CLIENT_ID, 1, 7, START, undefined, 'at_client', '1 Main St');
-    expect(AppointmentModel.createWithClient).toHaveBeenCalledWith(
-      dbClient,
-      expect.objectContaining({ service_location_type: 'at_vendor', client_address: undefined })
-    );
+  it('cancels and frees the drop waitlist', async () => {
+    const appointment = makeAppointment({ status: 'confirmed', drop_id: 42 });
+    vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(appointment);
+    vi.mocked(AppointmentModel.updateStatus).mockResolvedValue({ ...appointment, status: 'cancelled' });
+
+    const result = await AppointmentService.cancelByManageToken(TOKEN);
+    expect(result.status).toBe('cancelled');
+    expect(DropService.notifyWaitlist).toHaveBeenCalledWith(42);
+  });
+
+  it.each(['cancelled', 'completed', 'declined'] as const)('refuses to cancel a %s booking', async (status) => {
+    vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(makeAppointment({ status }));
+    await expect(AppointmentService.cancelByManageToken(TOKEN)).rejects.toThrow('Cannot transition');
+  });
+
+  describe('reschedule', () => {
+    const NEW_START = '2026-06-09T09:00:00Z';
+
+    beforeEach(() => {
+      vi.mocked(AppointmentModel.findByManageToken).mockResolvedValue(
+        makeAppointment({ status: 'confirmed', service_name: 'Haircut' })
+      );
+      // Rows as stored: updates return the latest version of the row they touch
+      const rows = new Map<number, ReturnType<typeof makeAppointment>>([[500, makeAppointment({ status: 'confirmed' })]]);
+      vi.mocked(AppointmentModel.updateStatusWithClient).mockImplementation(async (_c, id, status) => {
+        rows.set(id, { ...rows.get(id)!, status: status as never });
+        return rows.get(id)!;
+      });
+      vi.mocked(AppointmentModel.createWithClient).mockImplementation(async (_client, data) => {
+        rows.set(901, makeAppointment({ ...data, id: 901 } as never));
+        return rows.get(901)!;
+      });
+    });
+
+    it('cancels and rebooks atomically under the storefront lock with a new token', async () => {
+      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({ available: true });
+
+      const result = await AppointmentService.rescheduleByManageToken(TOKEN, NEW_START);
+
+      expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'COMMIT']);
+      expect(result.cancelled.status).toBe('cancelled');
+      expect(result.new.id).toBe(901);
+      expect(result.new.manage_token).toMatch(/^[0-9a-f]{64}$/);
+      expect(result.new.manage_token).not.toBe(TOKEN);
+      expect(result.new.service_name).toBe('Haircut');
+    });
+
+    it('rolls back when the new slot is unavailable', async () => {
+      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({
+        available: false,
+        reason: 'Slot is outside working hours',
+      });
+
+      await expect(AppointmentService.rescheduleByManageToken(TOKEN, NEW_START)).rejects.toThrow(
+        'Slot is outside working hours'
+      );
+      expect(queries()).toEqual(['BEGIN', LOCK_SQL, 'ROLLBACK']);
+      expect(AppointmentModel.createWithClient).not.toHaveBeenCalled();
+    });
+
+    it("allows moving within the booking's own time when it is the one filling capacity", async () => {
+      // Original is 09:00-10:00 on 06-08; shift by 30 minutes, capacity 1 held by the original itself
+      vi.mocked(AvailabilityService.isSlotAvailable).mockResolvedValue({
+        available: false,
+        reason: 'Maximum concurrent bookings reached',
+        currentBookings: 1,
+        maxConcurrent: 1,
+      });
+
+      const result = await AppointmentService.rescheduleByManageToken(TOKEN, '2026-06-08T09:30:00Z');
+      expect(result.new.id).toBe(901);
+    });
   });
 });

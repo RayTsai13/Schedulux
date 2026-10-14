@@ -10,20 +10,21 @@ import { Appointment } from '../types';
 import { PoolClient } from 'pg';
 
 export interface CreateAppointmentData {
-  client_id: number;
   storefront_id: number;
   service_id: number;
-  slot_id?: number;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string | null;
+  manage_token: string;
   requested_start_datetime: Date;
   requested_end_datetime: Date;
   status?: 'pending' | 'confirmed';
-  client_notes?: string;
+  client_notes?: string | null;
   price_quoted?: number;
-  // Marketplace location fields
-  service_location_type?: 'at_vendor' | 'at_client';
-  client_address?: string;
   drop_id?: number | null;
 }
+
+type Queryable = { query: (text: string, params?: unknown[]) => Promise<{ rows: any[] }> };
 
 export interface AppointmentQueryOptions {
   status?: string;
@@ -44,44 +45,21 @@ export class AppointmentModel {
   }
 
   /**
-   * Find all appointments for a specific client
+   * Find a booking by its manage token, with names needed to display it
    */
-  static async findByClientId(
-    clientId: number,
-    options?: AppointmentQueryOptions
-  ): Promise<Appointment[]> {
-    let sql = `
-      SELECT a.*, s.name AS service_name, sf.name AS storefront_name
+  static async findByManageToken(token: string): Promise<Appointment | null> {
+    const result = await query(
+      `
+      SELECT a.*, s.name AS service_name, sf.name AS storefront_name,
+             sf.slug AS storefront_slug, sf.timezone AS storefront_timezone
       FROM appointments a
-      LEFT JOIN services s ON a.service_id = s.id
-      LEFT JOIN storefronts sf ON a.storefront_id = sf.id
-      WHERE a.client_id = $1 AND a.deleted_at IS NULL
-    `;
-    const params: any[] = [clientId];
-    let paramIndex = 2;
-
-    if (options?.status) {
-      sql += ` AND a.status = $${paramIndex}`;
-      params.push(options.status);
-      paramIndex++;
-    }
-
-    if (options?.startDate) {
-      sql += ` AND a.requested_start_datetime >= $${paramIndex}`;
-      params.push(options.startDate);
-      paramIndex++;
-    }
-
-    if (options?.endDate) {
-      sql += ` AND a.requested_start_datetime <= $${paramIndex}`;
-      params.push(options.endDate);
-      paramIndex++;
-    }
-
-    sql += ' ORDER BY a.requested_start_datetime ASC';
-
-    const result = await query(sql, params);
-    return result.rows;
+      JOIN services s ON a.service_id = s.id
+      JOIN storefronts sf ON a.storefront_id = sf.id
+      WHERE a.manage_token = $1 AND a.deleted_at IS NULL
+    `,
+      [token]
+    );
+    return result.rows[0] || null;
   }
 
   /**
@@ -230,50 +208,7 @@ export class AppointmentModel {
    * Create a new appointment
    */
   static async create(data: CreateAppointmentData): Promise<Appointment> {
-    const {
-      client_id,
-      storefront_id,
-      service_id,
-      slot_id,
-      requested_start_datetime,
-      requested_end_datetime,
-      status = 'pending',
-      client_notes,
-      price_quoted,
-      // Marketplace location fields
-      service_location_type = 'at_vendor',
-      client_address,
-      drop_id,
-    } = data;
-
-    const result = await query(
-      `
-      INSERT INTO appointments (
-        client_id, storefront_id, service_id, slot_id,
-        requested_start_datetime, requested_end_datetime,
-        status, client_notes, price_quoted,
-        service_location_type, client_address, drop_id
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING *
-    `,
-      [
-        client_id,
-        storefront_id,
-        service_id,
-        slot_id ?? null,
-        requested_start_datetime,
-        requested_end_datetime,
-        status,
-        client_notes ?? null,
-        price_quoted ?? null,
-        service_location_type,
-        client_address ?? null,
-        drop_id ?? null,
-      ]
-    );
-
-    return result.rows[0];
+    return this.insert({ query }, data);
   }
 
   /**
@@ -284,46 +219,33 @@ export class AppointmentModel {
     client: PoolClient,
     data: CreateAppointmentData
   ): Promise<Appointment> {
-    const {
-      client_id,
-      storefront_id,
-      service_id,
-      slot_id,
-      requested_start_datetime,
-      requested_end_datetime,
-      status = 'pending',
-      client_notes,
-      price_quoted,
-      // Marketplace location fields
-      service_location_type = 'at_vendor',
-      client_address,
-      drop_id,
-    } = data;
+    return this.insert(client, data);
+  }
 
-    const result = await client.query(
+  private static async insert(db: Queryable, data: CreateAppointmentData): Promise<Appointment> {
+    const result = await db.query(
       `
       INSERT INTO appointments (
-        client_id, storefront_id, service_id, slot_id,
+        storefront_id, service_id, guest_name, guest_email, guest_phone, manage_token,
         requested_start_datetime, requested_end_datetime,
-        status, client_notes, price_quoted,
-        service_location_type, client_address, drop_id
+        status, client_notes, price_quoted, drop_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `,
       [
-        client_id,
-        storefront_id,
-        service_id,
-        slot_id ?? null,
-        requested_start_datetime,
-        requested_end_datetime,
-        status,
-        client_notes ?? null,
-        price_quoted ?? null,
-        service_location_type,
-        client_address ?? null,
-        drop_id ?? null,
+        data.storefront_id,
+        data.service_id,
+        data.guest_name,
+        data.guest_email,
+        data.guest_phone ?? null,
+        data.manage_token,
+        data.requested_start_datetime,
+        data.requested_end_datetime,
+        data.status ?? 'pending',
+        data.client_notes ?? null,
+        data.price_quoted ?? null,
+        data.drop_id ?? null,
       ]
     );
 
@@ -445,19 +367,6 @@ export class AppointmentModel {
   /**
    * Soft delete an appointment
    */
-  static async countAll(): Promise<number> {
-    const result = await query('SELECT COUNT(*)::int FROM appointments', []);
-    return result.rows[0].count;
-  }
-
-  static async countByStatus(): Promise<{ status: string; count: number }[]> {
-    const result = await query(
-      'SELECT status, COUNT(*)::int as count FROM appointments GROUP BY status',
-      []
-    );
-    return result.rows;
-  }
-
   static async softDelete(id: number): Promise<boolean> {
     const result = await query(
       `

@@ -27,3 +27,16 @@ export const apiLimiter = rateLimit({
     } as ApiResponse<null>,
 });
 
+
+// Public booking actions (create, cancel, reschedule) — 10 per 15 minutes per IP
+export const bookingLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        data: null,
+        message: 'Too many booking attempts. Please try again in 15 minutes.',
+    } as ApiResponse<null>,
+});
