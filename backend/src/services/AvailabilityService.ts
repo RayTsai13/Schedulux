@@ -14,7 +14,6 @@ import {
   addMinutes,
   addDays,
   startOfDay,
-  endOfDay,
   isBefore,
   isAfter,
   isEqual,
@@ -95,42 +94,52 @@ export class AvailabilityService {
       throw new Error('Date range cannot exceed 31 days');
     }
 
-    // 4. Fetch schedule rules for the date range
+    // 4. Fetch schedule rules and published drops for the date range.
+    // The model queries compare calendar dates in the DB session timezone, which
+    // can differ from the storefront's by a day, so pad the range on both sides.
+    // Exact per-day matching happens in getEffectiveTimeBlocksForDate / getDropTimeBlocksForDate.
+    const queryStart = addDays(startDate, -1);
+    const queryEnd = addDays(endDate, 1);
+
     const rules = await ScheduleRuleModel.findByDateRange(
       storefrontId,
       serviceId,
-      startDate,
-      endDate
+      queryStart,
+      queryEnd
     );
 
     // 4b. Fetch published drops for the date range
     const drops = await DropModel.findActiveByDateRange(
       storefrontId,
-      startDate,
-      endDate
+      queryStart,
+      queryEnd
     );
     // Filter drops by service (null service_id = applies to all)
     const applicableDrops = drops.filter(
       d => d.service_id === null || d.service_id === serviceId
     );
 
-    // 5. Fetch existing appointments in the range
-    const rangeStart = startOfDay(startDate);
-    const rangeEnd = endOfDay(endDate);
+    // 5. Fetch existing appointments from local midnight on the start date
+    // to local midnight after the end date
+    const rangeEnd = this.parseLocalDate(this.nextDateStr(endDateStr), timezone);
     const existingAppointments = await AppointmentModel.findActiveInRange(
       storefrontId,
-      rangeStart,
+      startDate,
       rangeEnd,
       null // Check all services for concurrent booking limits
     );
 
-    // 6. Generate slots for each day in the range
+    // 6. Generate slots for each local calendar day in the range.
+    // Iterate over date strings, not by adding 24h, so DST changes don't skip or repeat a day.
     const allSlots: AvailableSlot[] = [];
-    let currentDate = startDate;
 
-    while (!isAfter(currentDate, endDate)) {
+    for (
+      let dateStr = startDateStr;
+      dateStr <= endDateStr;
+      dateStr = this.nextDateStr(dateStr)
+    ) {
       const daySlots = this.generateSlotsForDay(
-        currentDate,
+        dateStr,
         timezone,
         rules,
         existingAppointments,
@@ -140,7 +149,6 @@ export class AvailabilityService {
         applicableDrops
       );
       allSlots.push(...daySlots);
-      currentDate = addDays(currentDate, 1);
     }
 
     return {
@@ -190,33 +198,36 @@ export class AvailabilityService {
       return { available: false, reason: 'Cannot book slots in the past' };
     }
 
-    // 3. Get effective rules for the date
+    // 3. Get effective rules for the date (padded a day each side; see getAvailableSlots)
+    const queryStart = addDays(startDatetime, -1);
+    const queryEnd = addDays(startDatetime, 1);
+
     const rules = await ScheduleRuleModel.findByDateRange(
       storefrontId,
       serviceId,
-      startDatetime,
-      startDatetime
+      queryStart,
+      queryEnd
     );
 
     // 3b. Get drops for the date
     const drops = await DropModel.findActiveByDateRange(
       storefrontId,
-      startDatetime,
-      startDatetime
+      queryStart,
+      queryEnd
     );
     const applicableDrops = drops.filter(
       d => d.service_id === null || d.service_id === serviceId
     );
 
-    // 4. Check if slot falls within working hours (rules + drops)
-    const localStart = toZonedTime(startDatetime, timezone);
+    // 4. Check if slot falls within working hours (rules + drops).
+    // Pass the UTC instant; the helpers convert to the storefront timezone themselves.
     const ruleBlocks = this.getEffectiveTimeBlocksForDate(
-      localStart,
+      startDatetime,
       timezone,
       rules
     );
     const dropBlocks = this.getDropTimeBlocksForDate(
-      localStart,
+      startDatetime,
       timezone,
       applicableDrops
     );
@@ -276,7 +287,7 @@ export class AvailabilityService {
    *                       V1: Always 0 (future-proofing for V2 dynamic travel time calculation)
    */
   private static generateSlotsForDay(
-    date: Date,
+    dateStr: string,
     timezone: string,
     allRules: ScheduleRule[],
     allAppointments: any[],
@@ -285,19 +296,21 @@ export class AvailabilityService {
     travelBuffer: number = 0,
     allDrops: Drop[] = []
   ): AvailableSlot[] {
+    // Local day boundaries as UTC instants
+    const dayStart = this.parseLocalDate(dateStr, timezone);
+    const dayEnd = this.parseLocalDate(this.nextDateStr(dateStr), timezone);
+
     // Get effective time blocks for this day (from rules)
-    const timeBlocks = this.getEffectiveTimeBlocksForDate(date, timezone, allRules);
+    const timeBlocks = this.getEffectiveTimeBlocksForDate(dayStart, timezone, allRules);
 
     // Inject drop-based time blocks (priority: 100, overrides rules)
-    const dropBlocks = this.getDropTimeBlocksForDate(date, timezone, allDrops);
+    const dropBlocks = this.getDropTimeBlocksForDate(dayStart, timezone, allDrops);
     timeBlocks.push(...dropBlocks);
 
     // Re-merge to resolve overlaps with drop priority
     const mergedBlocks = this.mergeTimeBlocks(timeBlocks);
 
     // Filter appointments for this day
-    const dayStart = startOfDay(date);
-    const dayEnd = endOfDay(date);
     const dayAppointments = allAppointments.filter((apt) => {
       const aptStart = new Date(apt.requested_start_datetime);
       const aptEnd = new Date(apt.requested_end_datetime);
@@ -575,6 +588,15 @@ export class AvailabilityService {
         dropId: drop.id,
       };
     });
+  }
+
+  /**
+   * Return the calendar date after a YYYY-MM-DD string (timezone-independent)
+   */
+  private static nextDateStr(dateStr: string): string {
+    const d = new Date(`${dateStr}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
   }
 
   /**
