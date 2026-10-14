@@ -15,7 +15,8 @@
     "db:test": "node scripts/test-database.js",
     "db:check": "node scripts/test-database.js",
     "seed:heroes": "npx ts-node scripts/seed-heroes.ts",
-    "migrate": "node dist/migrate.js"
+    "migrate": "node dist/migrate.js",
+    "demo:race": "npx ts-node scripts/race-demo.ts"
   },
   "keywords": [],
   "author": "",
