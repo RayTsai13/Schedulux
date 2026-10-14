@@ -31,14 +31,10 @@ logs
 *.log
 
 
-docs/spec
-
-# Deployment (contains secrets)
-DEPLOYMENT_GUIDE.md
-CICD_GUIDE.md
+# Local-only notes (real infrastructure IDs, demo credentials)
+*.local.md
 DEMO_ACCOUNTS.md
 
-lessons/
 # TypeScript incremental build info
 *.tsbuildinfo
 

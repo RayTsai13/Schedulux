@@ -22,7 +22,7 @@ Two audiences:
 - Vendor dashboard pages get the page via `useVendorPage()` (context from `<VendorRoute>`); never fetch a storefront by URL id
 - Show booking times in the **vendor's** timezone with `formatInZone` / `formatCalendarDate` / `formatClock` from `lib/booking.ts`, not the viewer's
 - TailwindCSS utility classes only (no CSS files). Use `clsx` or `cn()` (from `lib/utils.ts`) for conditionals
-- **Colors: use design tokens only** (`styles/tokens.css`, mapped in `tailwind.config.js`) — never Tailwind palette colors like `red-500` or `gray-100`. Conventions:
+- **Colors: use design tokens only** (`styles/tokens.css`, mapped in `tailwind.config.js`; overview in `docs/design-system.md`) — never Tailwind palette colors like `red-500` or `gray-100`. Conventions:
   - errors → `text-error`, `bg-error-container`, `text-on-error-container`
   - success/confirmed → `bg-secondary-container`, `text-on-secondary-container`
   - pending/warning, drops → `bg-tertiary-fixed`, `text-on-tertiary-fixed`
