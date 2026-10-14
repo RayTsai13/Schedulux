@@ -37,3 +37,31 @@ export interface UpdateDropRequest {
   is_published?: boolean;
   is_active?: boolean;
 }
+
+/** Spot counts for a drop, computed from its window, capacity, and current bookings */
+export interface DropSpots {
+  /** Bookable spots in the whole window (slots × capacity) */
+  total_spots: number;
+  /** Spots still open right now */
+  remaining_spots: number;
+}
+
+export type PublicDrop = Drop & DropSpots;
+
+export type VendorDrop = Drop & DropSpots & { waitlist_count: number };
+
+export interface DropWaitlistEntry {
+  id: number;
+  drop_id: number;
+  name: string;
+  email: string;
+  created_at: Date;
+  notified_at: Date | null;
+}
+
+/** Everything the public booking page needs in one response */
+export interface PublicPage {
+  storefront: import('./storefront').PublicStorefront;
+  services: import('./service').Service[];
+  drops: PublicDrop[];
+}

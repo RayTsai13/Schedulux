@@ -251,10 +251,9 @@ import serviceRoutes from './routes/services';
 import scheduleRuleRoutes from './routes/schedule-rules';
 import availabilityRoutes from './routes/availability';
 import appointmentRoutes from './routes/appointments';
-import marketplaceRoutes from './routes/marketplace';
 import dropRoutes from './routes/drops';
 import uploadRoutes from './routes/upload';
-import adminRoutes from './routes/admin';
+import pageRoutes from './routes/pages';
 
 // Authentication routes - handles user registration and login
 app.use('/api/auth', authRoutes);
@@ -284,12 +283,8 @@ app.use('/api', dropRoutes);
 // Upload routes - image upload to Cloudinary
 app.use('/api/upload', uploadRoutes);
 
-// Marketplace routes - public discovery endpoints (no auth required)
-// Note: Routes are mounted at /api/marketplace for public storefront search
-app.use('/api/marketplace', marketplaceRoutes);
-
-// Admin routes - protected, requires admin role
-app.use('/api/admin', adminRoutes);
+// Public booking pages - /api/pages/:slug and /api/slugs/:slug/available (no auth)
+app.use('/api', pageRoutes);
 
 // Basic API info endpoint
 app.get('/api', (req: Request, res: Response) => {

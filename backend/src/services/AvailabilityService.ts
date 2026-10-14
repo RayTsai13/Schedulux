@@ -6,7 +6,7 @@
  * to API shapes. Priority resolution and slot generation live in the engine.
  */
 
-import { addDays, format, isAfter, isBefore } from 'date-fns';
+import { addDays, isAfter, isBefore } from 'date-fns';
 import {
   computeSlots,
   checkSlot,
@@ -23,6 +23,7 @@ import { DropModel } from '../models/Drop';
 import { AppointmentModel } from '../models/Appointment';
 import { AvailabilityResponse, SlotAvailabilityResult } from '../types/availability';
 import { ScheduleRule, Drop } from '../types';
+import { toDateStr } from '../utils/dates';
 
 export class AvailabilityService {
   /**
@@ -244,17 +245,12 @@ export class AvailabilityService {
     };
   }
 
-  /** Normalize a DATE column (pg returns a Date at local midnight) to YYYY-MM-DD */
-  private static dateStr(value: Date | string): string {
-    return typeof value === 'string' ? value.substring(0, 10) : format(value, 'yyyy-MM-dd');
-  }
-
   private static toEngineRules(rules: ScheduleRule[]): Rule[] {
     return rules.map((rule) => ({
       id: rule.id,
       type: rule.rule_type,
       dayOfWeek: rule.day_of_week,
-      date: rule.specific_date ? this.dateStr(rule.specific_date) : null,
+      date: rule.specific_date ? toDateStr(rule.specific_date) : null,
       month: rule.month,
       year: rule.year,
       start: rule.start_time,
@@ -265,10 +261,10 @@ export class AvailabilityService {
     }));
   }
 
-  private static toEngineWindows(drops: Drop[]): Window[] {
+  static toEngineWindows(drops: Drop[]): Window[] {
     return drops.map((drop) => ({
       id: drop.id,
-      date: this.dateStr(drop.drop_date),
+      date: toDateStr(drop.drop_date),
       start: drop.start_time,
       end: drop.end_time,
       capacity: drop.max_concurrent_appointments,

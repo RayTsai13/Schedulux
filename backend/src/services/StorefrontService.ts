@@ -13,7 +13,16 @@
  */
 
 import { StorefrontModel } from '../models/Storefront';
-import { Storefront, CreateStorefrontRequest, UpdateStorefrontRequest } from '../types';
+import { ServiceModel } from '../models/Service';
+import {
+  Storefront,
+  Service,
+  CreateStorefrontRequest,
+  UpdateStorefrontRequest,
+  UPDATABLE_STOREFRONT_FIELDS,
+  SLUG_PATTERN,
+  RESERVED_SLUGS,
+} from '../types';
 
 export class StorefrontService {
 
@@ -40,74 +49,72 @@ export class StorefrontService {
   }
 
   /**
-   * Create a new storefront for a vendor
-   *
-   * Validation rules based on location_type:
-   * - 'fixed': Address is REQUIRED (brick-and-mortar business)
-   * - 'mobile': Address is OPTIONAL, service_radius and service_area_city are REQUIRED
-   * - 'hybrid': Both address (optional) and service_radius/service_area_city are applicable
+   * Validate a requested slug: format, reserved words, and uniqueness
+   */
+  private static async assertSlugAvailable(slug: string, excludeId?: number): Promise<void> {
+    if (!SLUG_PATTERN.test(slug)) {
+      throw new Error('Invalid slug: use 3-30 lowercase letters, numbers, or dashes');
+    }
+    if (RESERVED_SLUGS.has(slug) || (await StorefrontModel.slugExists(slug, excludeId))) {
+      throw new Error('Slug is already taken');
+    }
+  }
+
+  /**
+   * Whether a slug can be claimed (used by onboarding as the vendor types)
+   */
+  static async isSlugAvailable(slug: string): Promise<boolean> {
+    try {
+      await this.assertSlugAvailable(slug.toLowerCase());
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Create the vendor's booking page. Each vendor has exactly one.
    *
    * @param vendorId - The ID of the vendor creating the storefront
    * @param data - Storefront creation data
    * @returns Promise<Storefront> - The newly created storefront
    */
   static async create(vendorId: number, data: CreateStorefrontRequest): Promise<Storefront> {
-    // Basic validation
     if (!data.name || data.name.trim().length === 0) {
       throw new Error('Storefront name is required');
     }
 
-    // Determine effective location type (default to 'fixed')
-    const locationType = data.location_type || 'fixed';
-
-    // Validation based on location_type
-    if (locationType === 'fixed') {
-      // Fixed locations MUST have an address
-      if (!data.address || data.address.trim().length === 0) {
-        throw new Error('Address is required for fixed-location storefronts');
-      }
+    const existing = await StorefrontModel.findByVendorId(vendorId);
+    if (existing.length > 0) {
+      throw new Error('You already have a booking page');
     }
 
-    if (locationType === 'mobile' || locationType === 'hybrid') {
-      // Mobile/hybrid vendors MUST specify service area
-      if (!data.service_radius || data.service_radius < 1) {
-        throw new Error('Service radius is required for mobile/hybrid vendors');
-      }
-      if (!data.service_area_city || data.service_area_city.trim().length === 0) {
-        throw new Error('Service area city is required for mobile/hybrid vendors');
-      }
-    }
+    const slug = (data.slug || '').toLowerCase();
+    await this.assertSlugAvailable(slug);
 
-    // Profile type validation (informational, name semantics)
-    // If profile_type is 'individual', name represents the person's name
-    // If profile_type is 'business', name represents the brand/business name
-    // No enforcement needed, but could log for analytics
-
-    // Geolocation validation (V1: optional, V2: auto-geocode)
-    // Log warning if fixed-location storefront has no coordinates (won't appear in geographic search)
-    if (locationType === 'fixed') {
-      if (!data.latitude || !data.longitude) {
-        console.warn(
-          `[StorefrontService] Fixed-location storefront '${data.name}' created without coordinates - will not appear in geographic marketplace search. Consider adding latitude/longitude or city/state for discoverability.`
-        );
-      }
-    }
-
-    // Remove is_verified if present (admin-only field)
-    const sanitizedData = { ...data };
-    delete (sanitizedData as any).is_verified;
-
-    return await StorefrontModel.create(vendorId, sanitizedData);
+    return await StorefrontModel.create(vendorId, { ...data, slug });
   }
 
   /**
-   * Get all storefronts owned by a vendor
-   *
-   * @param vendorId - The ID of the vendor
-   * @returns Promise<Storefront[]> - Array of storefronts owned by the vendor
+   * Get the vendor's booking page, or null if they haven't created one yet
    */
-  static async getAllByVendor(vendorId: number): Promise<Storefront[]> {
-    return await StorefrontModel.findByVendorId(vendorId);
+  static async getForVendor(vendorId: number): Promise<Storefront | null> {
+    const storefronts = await StorefrontModel.findByVendorId(vendorId);
+    return storefronts[0] ?? null;
+  }
+
+  /**
+   * Public view of a booking page: storefront plus active services
+   */
+  static async getPublicBySlug(
+    slug: string
+  ): Promise<{ storefront: Storefront; services: Service[] } | null> {
+    const storefront = await StorefrontModel.findPublicBySlug(slug.toLowerCase());
+    if (!storefront) {
+      return null;
+    }
+    const services = await ServiceModel.findActiveByStorefrontId(storefront.id);
+    return { storefront, services };
   }
 
   /**
@@ -125,11 +132,6 @@ export class StorefrontService {
   /**
    * Update a storefront with ownership verification
    *
-   * Validation rules based on location_type (same as create):
-   * - 'fixed': Address is REQUIRED
-   * - 'mobile': service_radius and service_area_city are REQUIRED
-   * - 'hybrid': service_radius and service_area_city are REQUIRED
-   *
    * @param storefrontId - The ID of the storefront to update
    * @param vendorId - The ID of the vendor requesting the update
    * @param data - Partial storefront data to update
@@ -144,36 +146,27 @@ export class StorefrontService {
     // Verify ownership before allowing update
     const storefront = await this.verifyOwnership(storefrontId, vendorId);
 
-    // Determine the effective location type after update
-    const newLocationType = data.location_type ?? storefront.location_type;
-
-    // Validate based on location_type
-    if (newLocationType === 'fixed') {
-      // For fixed locations, address is required
-      const newAddress = data.address ?? storefront.address;
-      if (!newAddress || newAddress.trim().length === 0) {
-        throw new Error('Address is required for fixed-location storefronts');
+    // Only pass through fields vendors may change (keys become SQL column names)
+    const sanitizedData: Record<string, unknown> = {};
+    for (const field of UPDATABLE_STOREFRONT_FIELDS) {
+      if (data[field] !== undefined) {
+        sanitizedData[field] = data[field];
       }
     }
 
-    if (newLocationType === 'mobile' || newLocationType === 'hybrid') {
-      // For mobile/hybrid, service area is required
-      const newRadius = data.service_radius ?? storefront.service_radius;
-      const newCity = data.service_area_city ?? storefront.service_area_city;
-      if (!newRadius || newRadius < 1) {
-        throw new Error('Service radius is required for mobile/hybrid vendors');
-      }
-      if (!newCity || newCity.trim().length === 0) {
-        throw new Error('Service area city is required for mobile/hybrid vendors');
+    if (typeof sanitizedData.slug === 'string') {
+      sanitizedData.slug = sanitizedData.slug.toLowerCase();
+      if (sanitizedData.slug !== storefront.slug) {
+        await this.assertSlugAvailable(sanitizedData.slug as string, storefrontId);
       }
     }
 
-    // Remove is_verified if present (admin-only field)
-    const sanitizedData = { ...data };
-    delete (sanitizedData as any).is_verified;
+    if (Object.keys(sanitizedData).length === 0) {
+      return storefront;
+    }
 
     // Perform the update
-    const updated = await StorefrontModel.update(storefrontId, sanitizedData);
+    const updated = await StorefrontModel.update(storefrontId, sanitizedData as Partial<Storefront>);
 
     if (!updated) {
       throw new Error('Failed to update storefront');

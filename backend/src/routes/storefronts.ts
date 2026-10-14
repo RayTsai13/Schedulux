@@ -11,7 +11,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { StorefrontService } from '../services/StorefrontService';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { ApiResponse, ValidationError, CreateStorefrontRequest, UpdateStorefrontRequest } from '../types';
+import { ApiResponse, ValidationError, CreateStorefrontRequest, UpdateStorefrontRequest, SLUG_PATTERN } from '../types';
 
 const router = Router();
 
@@ -37,6 +37,12 @@ const validateCreate = [
     .isLength({ min: 1, max: 100 })
     .withMessage('Name is required and must be less than 100 characters'),
 
+  body('slug')
+    .trim()
+    .toLowerCase()
+    .matches(SLUG_PATTERN)
+    .withMessage('Slug must be 3-30 lowercase letters, numbers, or dashes'),
+
   body('description')
     .optional()
     .trim()
@@ -65,43 +71,10 @@ const validateCreate = [
     .isLength({ min: 1, max: 50 })
     .withMessage('Timezone must be a valid timezone string'),
 
-  // Marketplace fields
-  body('profile_type')
-    .optional()
-    .isIn(['individual', 'business'])
-    .withMessage('profile_type must be individual or business'),
-
-  body('location_type')
-    .optional()
-    .isIn(['fixed', 'mobile', 'hybrid'])
-    .withMessage('location_type must be fixed, mobile, or hybrid'),
-
-  body('service_radius')
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('service_radius must be between 1 and 100 miles'),
-
-  body('service_area_city')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('service_area_city must be less than 100 characters'),
-
   body('avatar_url')
-    .optional()
+    .optional({ values: 'null' })
     .isURL()
     .withMessage('avatar_url must be a valid URL'),
-
-  // Geolocation fields (Phase 3: Marketplace Discovery)
-  body('latitude')
-    .optional()
-    .isFloat({ min: -90, max: 90 })
-    .withMessage('Latitude must be between -90 and 90'),
-
-  body('longitude')
-    .optional()
-    .isFloat({ min: -180, max: 180 })
-    .withMessage('Longitude must be between -180 and 180'),
 
   body('city')
     .optional()
@@ -113,7 +86,18 @@ const validateCreate = [
     .optional()
     .trim()
     .isLength({ max: 50 })
-    .withMessage('State must be less than 50 characters')
+    .withMessage('State must be less than 50 characters'),
+
+  body('theme_color')
+    .optional()
+    .isLength({ min: 1, max: 20 })
+    .withMessage('theme_color must be less than 20 characters'),
+
+  body('instagram_handle')
+    .optional({ values: 'null' })
+    .trim()
+    .matches(/^@?[A-Za-z0-9._]{1,30}$/)
+    .withMessage('instagram_handle must be a valid Instagram username'),
 ];
 
 /**
@@ -124,7 +108,19 @@ const validateUpdate = [
     .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Name must be between 1 and 100 characters'),
+    .withMessage('Name must be less than 100 characters'),
+
+  body('slug')
+    .optional()
+    .trim()
+    .toLowerCase()
+    .matches(SLUG_PATTERN)
+    .withMessage('Slug must be 3-30 lowercase letters, numbers, or dashes'),
+
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('is_active must be a boolean'),
 
   body('description')
     .optional()
@@ -154,48 +150,10 @@ const validateUpdate = [
     .isLength({ min: 1, max: 50 })
     .withMessage('Timezone must be a valid timezone string'),
 
-  body('is_active')
-    .optional()
-    .isBoolean()
-    .withMessage('is_active must be a boolean'),
-
-  // Marketplace fields
-  body('profile_type')
-    .optional()
-    .isIn(['individual', 'business'])
-    .withMessage('profile_type must be individual or business'),
-
-  body('location_type')
-    .optional()
-    .isIn(['fixed', 'mobile', 'hybrid'])
-    .withMessage('location_type must be fixed, mobile, or hybrid'),
-
-  body('service_radius')
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('service_radius must be between 1 and 100 miles'),
-
-  body('service_area_city')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('service_area_city must be less than 100 characters'),
-
   body('avatar_url')
-    .optional()
+    .optional({ values: 'null' })
     .isURL()
     .withMessage('avatar_url must be a valid URL'),
-
-  // Geolocation fields (Phase 3: Marketplace Discovery)
-  body('latitude')
-    .optional()
-    .isFloat({ min: -90, max: 90 })
-    .withMessage('Latitude must be between -90 and 90'),
-
-  body('longitude')
-    .optional()
-    .isFloat({ min: -180, max: 180 })
-    .withMessage('Longitude must be between -180 and 180'),
 
   body('city')
     .optional()
@@ -207,7 +165,18 @@ const validateUpdate = [
     .optional()
     .trim()
     .isLength({ max: 50 })
-    .withMessage('State must be less than 50 characters')
+    .withMessage('State must be less than 50 characters'),
+
+  body('theme_color')
+    .optional()
+    .isLength({ min: 1, max: 20 })
+    .withMessage('theme_color must be less than 20 characters'),
+
+  body('instagram_handle')
+    .optional({ values: 'null' })
+    .trim()
+    .matches(/^@?[A-Za-z0-9._]{1,30}$/)
+    .withMessage('instagram_handle must be a valid Instagram username'),
 ];
 
 // ============================================================================
@@ -267,7 +236,16 @@ const handleServiceError = (error: any, res: Response, next: NextFunction) => {
     return res.status(403).json(response);
   }
 
-  if (error.message.includes('required')) {
+  if (error.message === 'Slug is already taken' || error.message === 'You already have a booking page') {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: 'Conflict',
+      message: error.message
+    };
+    return res.status(409).json(response);
+  }
+
+  if (error.message.includes('required') || error.message.startsWith('Invalid slug')) {
     const response: ApiResponse<null> = {
       success: false,
       error: 'Bad request',
@@ -285,18 +263,18 @@ const handleServiceError = (error: any, res: Response, next: NextFunction) => {
 // ============================================================================
 
 /**
- * GET /api/storefronts - Get all storefronts for the authenticated vendor
+ * GET /api/storefronts/mine - The authenticated vendor's booking page (null if not created yet)
  */
-router.get('/',
+router.get('/mine',
   authenticateToken,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const storefronts = await StorefrontService.getAllByVendor(req.user!.userId);
+      const storefront = await StorefrontService.getForVendor(req.user!.userId);
 
-      const response: ApiResponse<typeof storefronts> = {
+      const response: ApiResponse<typeof storefront> = {
         success: true,
-        data: storefronts,
-        message: `Found ${storefronts.length} storefront${storefronts.length !== 1 ? 's' : ''}`
+        data: storefront,
+        message: storefront ? 'Storefront retrieved successfully' : 'No booking page yet'
       };
 
       res.status(200).json(response);

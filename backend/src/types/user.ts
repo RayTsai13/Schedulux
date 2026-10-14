@@ -6,6 +6,7 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
+  /** Only vendors can sign in; 'client' and 'admin' rows are legacy */
   role: 'vendor' | 'client' | 'admin';
   timezone: string;
   is_active: boolean;
@@ -20,7 +21,7 @@ export interface CreateUserRequest {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: 'vendor' | 'client';
+  role: 'vendor';
   timezone?: string;
 }
 

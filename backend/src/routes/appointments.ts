@@ -1,16 +1,18 @@
 /**
  * Appointment Routes - API endpoints for booking management
  *
- * All routes require authentication:
- * - Clients can book, view their appointments, and cancel
- * - Vendors can view storefront appointments, confirm, complete, and mark no-show
+ * - Guests book without an account (POST /appointments) and manage their
+ *   booking with the secret token they receive (/bookings/:token)
+ * - Vendors (authenticated) view storefront appointments, approve, decline,
+ *   cancel, complete, and mark no-show
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { AppointmentService } from '../services/AppointmentService';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { ApiResponse, Appointment } from '../types';
+import { bookingLimiter } from '../middleware/rateLimiter';
+import { ApiResponse, Appointment, ManagedAppointment } from '../types';
 
 const router = Router();
 
@@ -37,17 +39,34 @@ const validateCreateAppointment = [
     .isLength({ max: 1000 })
     .withMessage('client_notes must be less than 1000 characters'),
 
-  // Marketplace location fields
-  body('service_location_type')
-    .optional()
-    .isIn(['at_vendor', 'at_client'])
-    .withMessage('service_location_type must be at_vendor or at_client'),
+  body('drop_id')
+    .optional({ values: 'null' })
+    .isInt({ min: 1 })
+    .withMessage('drop_id must be a positive integer'),
 
-  body('client_address')
-    .optional()
+  body('guest_name')
     .trim()
-    .isLength({ max: 500 })
-    .withMessage('client_address must be less than 500 characters'),
+    .isLength({ min: 1, max: 100 })
+    .withMessage('guest_name is required and must be less than 100 characters'),
+
+  body('guest_email')
+    .trim()
+    .isEmail()
+    .isLength({ max: 255 })
+    .withMessage('guest_email must be a valid email address'),
+
+  body('guest_phone')
+    .optional({ values: 'falsy' })
+    .trim()
+    .matches(/^[+()\-.\s\d]{7,30}$/)
+    .withMessage('guest_phone must be a valid phone number'),
+];
+
+const validateManageToken = [
+  param('token')
+    .isHexadecimal()
+    .isLength({ min: 64, max: 64 })
+    .withMessage('Invalid booking link'),
 ];
 
 const validateAppointmentId = [
@@ -159,6 +178,7 @@ const handleServiceError = (
   if (message === 'Storefront not found' ||
       message === 'Service not found' ||
       message === 'Appointment not found') {
+    // Same response for unknown tokens and missing rows, so tokens can't be probed
     const response: ApiResponse<null> = {
       success: false,
       error: 'Not found',
@@ -192,8 +212,6 @@ const handleServiceError = (
       message.includes('not active') ||
       message.includes('Cannot transition') ||
       message.includes('can only cancel') ||
-      message.includes('does not offer mobile') ||
-      message.includes('Client address is required') ||
       message.includes('Cannot approve') ||
       message.includes('Cannot decline') ||
       message.includes('Only vendors can') ||
@@ -218,48 +236,48 @@ const handleServiceError = (
 /**
  * POST /appointments
  *
- * Create a new appointment (book a slot).
- * Requires authentication.
+ * Book a slot as a guest (no account required).
  *
  * Body:
  * - storefront_id: Required. Storefront to book at.
  * - service_id: Required. Service to book.
  * - start_datetime: Required. ISO 8601 datetime for the appointment start.
+ * - guest_name, guest_email: Required. Contact details.
+ * - guest_phone: Optional.
  * - client_notes: Optional. Notes for the vendor.
+ * - drop_id: Optional. The drop this booking is for.
  *
  * Response:
- * - 201: Appointment created successfully
+ * - 201: Appointment created; includes manage_token for /bookings/:token
  * - 400: Invalid parameters
- * - 401: Not authenticated
  * - 404: Storefront or service not found
  * - 409: Slot not available (conflict)
+ * - 429: Too many bookings from this IP
  */
 router.post(
   '/appointments',
+  bookingLimiter,
   validateCreateAppointment,
   handleValidationErrors,
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const clientId = req.user!.userId;
       const {
         storefront_id,
         service_id,
         start_datetime,
         client_notes,
-        service_location_type,
-        client_address,
-        drop_id
+        drop_id,
+        guest_name,
+        guest_email,
+        guest_phone,
       } = req.body;
 
       const appointment = await AppointmentService.createAppointment(
-        clientId,
+        { name: guest_name, email: guest_email, phone: guest_phone || undefined },
         storefront_id,
         service_id,
         start_datetime,
         client_notes,
-        service_location_type || 'at_vendor',
-        client_address,
         drop_id
       );
 
@@ -276,55 +294,27 @@ router.post(
   }
 );
 
+// ============================================================================
+// GUEST SELF-SERVICE ROUTES (authorized by manage token)
+// ============================================================================
+
 /**
- * GET /appointments
+ * GET /bookings/:token
  *
- * Get the current user's appointments (as a client).
- * Requires authentication.
- *
- * Query Parameters:
- * - status: Optional. Filter by status (pending, confirmed, etc.)
- * - upcoming: Optional. Only show future appointments (true/false)
- *
- * Response:
- * - 200: List of appointments
- * - 401: Not authenticated
+ * View a booking using its manage token.
  */
 router.get(
-  '/appointments',
-  validateQueryParams,
+  '/bookings/:token',
+  validateManageToken,
   handleValidationErrors,
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const clientId = req.user!.userId;
-      const options: any = {};
+      const appointment = await AppointmentService.getByManageToken(req.params.token);
 
-      if (req.query.status) {
-        options.status = req.query.status as string;
-      }
-
-      if (req.query.upcoming === 'true') {
-        options.upcoming = true;
-      }
-
-      if (req.query.start_date) {
-        options.startDate = new Date(req.query.start_date as string);
-      }
-
-      if (req.query.end_date) {
-        options.endDate = new Date(req.query.end_date as string);
-      }
-
-      const appointments = await AppointmentService.getClientAppointments(
-        clientId,
-        options
-      );
-
-      const response: ApiResponse<Appointment[]> = {
+      const response: ApiResponse<ManagedAppointment> = {
         success: true,
-        data: appointments,
-        message: `Found ${appointments.length} appointments`,
+        data: appointment,
+        message: 'Booking retrieved successfully',
       };
 
       res.json(response);
@@ -335,10 +325,82 @@ router.get(
 );
 
 /**
+ * POST /bookings/:token/cancel
+ *
+ * Guest cancels their booking.
+ */
+router.post(
+  '/bookings/:token/cancel',
+  bookingLimiter,
+  validateManageToken,
+  handleValidationErrors,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const appointment = await AppointmentService.cancelByManageToken(req.params.token);
+
+      const response: ApiResponse<ManagedAppointment> = {
+        success: true,
+        data: appointment,
+        message: 'Booking cancelled',
+      };
+
+      res.json(response);
+    } catch (error) {
+      handleServiceError(error, res, next);
+    }
+  }
+);
+
+/**
+ * POST /bookings/:token/reschedule
+ *
+ * Atomically cancel the booking and rebook at a new time.
+ *
+ * Body:
+ * - start_datetime: Required. ISO 8601 datetime for the new start.
+ *
+ * Response:
+ * - 200: { cancelled, new } — the new booking has a new manage_token
+ * - 409: New slot not available (original booking untouched)
+ */
+router.post(
+  '/bookings/:token/reschedule',
+  bookingLimiter,
+  validateManageToken,
+  [
+    body('start_datetime')
+      .isISO8601()
+      .withMessage('start_datetime must be a valid ISO 8601 datetime'),
+  ],
+  handleValidationErrors,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await AppointmentService.rescheduleByManageToken(
+        req.params.token,
+        req.body.start_datetime
+      );
+
+      const response: ApiResponse<{ cancelled: ManagedAppointment; new: ManagedAppointment }> = {
+        success: true,
+        data: result,
+        message: 'Booking rescheduled successfully',
+      };
+
+      res.json(response);
+    } catch (error) {
+      handleServiceError(error, res, next);
+    }
+  }
+);
+
+// ============================================================================
+// VENDOR ROUTES
+// ============================================================================
+
+/**
  * GET /appointments/:id
  *
- * Get a single appointment by ID.
- * User must be the client who booked it or the vendor who owns the storefront.
+ * Get a single appointment by ID (vendor who owns the storefront).
  *
  * Response:
  * - 200: Appointment details
@@ -386,9 +448,7 @@ router.get(
 /**
  * PATCH /appointments/:id/status
  *
- * Update appointment status.
- * - Clients can cancel their pending/confirmed appointments
- * - Vendors can confirm, cancel, complete, or mark no-show
+ * Update appointment status (vendor only): confirm, cancel, complete, or mark no-show.
  *
  * Body:
  * - status: Required. New status (confirmed, cancelled, completed, no_show)
@@ -490,58 +550,6 @@ router.get(
         success: true,
         data: appointments,
         message: `Found ${appointments.length} appointments`,
-      };
-
-      res.json(response);
-    } catch (error) {
-      handleServiceError(error, res, next);
-    }
-  }
-);
-
-/**
- * POST /appointments/:id/reschedule
- *
- * Reschedule an appointment (client only).
- * Atomically cancels the old appointment and creates a new one at the specified time.
- *
- * Body:
- * - start_datetime: Required. ISO 8601 datetime for the new appointment start.
- *
- * Response:
- * - 200: Reschedule successful (returns cancelled + new appointment)
- * - 400: Invalid parameters or status
- * - 401: Not authenticated
- * - 403: Not the client who booked it
- * - 404: Appointment not found
- * - 409: New slot not available
- */
-router.post(
-  '/appointments/:id/reschedule',
-  validateAppointmentId,
-  [
-    body('start_datetime')
-      .isISO8601()
-      .withMessage('start_datetime must be a valid ISO 8601 datetime'),
-  ],
-  handleValidationErrors,
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const appointmentId = parseInt(req.params.id, 10);
-      const clientId = req.user!.userId;
-      const { start_datetime } = req.body;
-
-      const result = await AppointmentService.rescheduleAppointment(
-        appointmentId,
-        clientId,
-        start_datetime
-      );
-
-      const response: ApiResponse<{ cancelled: Appointment; new: Appointment }> = {
-        success: true,
-        data: result,
-        message: 'Appointment rescheduled successfully',
       };
 
       res.json(response);

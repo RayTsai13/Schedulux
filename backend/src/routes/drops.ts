@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { DropService } from '../services/DropService';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { bookingLimiter } from '../middleware/rateLimiter';
 import { ApiResponse, ValidationError, CreateDropRequest, UpdateDropRequest } from '../types';
 
 const router = Router();
@@ -111,6 +112,19 @@ const validateUpdate = [
     .withMessage('is_active must be a boolean'),
 ];
 
+const validateWaitlist = [
+  body('name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name is required and must be under 100 characters'),
+
+  body('email')
+    .trim()
+    .isEmail()
+    .isLength({ max: 255 })
+    .withMessage('A valid email is required'),
+];
+
 // ============================================================================
 // VALIDATION ERROR HANDLER
 // ============================================================================
@@ -156,6 +170,14 @@ const handleServiceError = (error: any, res: Response, next: NextFunction) => {
       success: false,
       error: 'Not found',
       message: 'Storefront not found'
+    });
+  }
+
+  if (error.message === 'Drop still has open spots' || error.message === 'Drop has already ended') {
+    return res.status(409).json({
+      success: false,
+      error: 'Conflict',
+      message: error.message
     });
   }
 
@@ -238,23 +260,25 @@ router.get('/storefronts/:storefrontId/drops',
 );
 
 /**
- * GET /api/storefronts/:storefrontId/drops/public - Get published drops (PUBLIC)
+ * POST /api/drops/:id/waitlist - Join the waitlist for a sold-out drop (PUBLIC)
  */
-router.get('/storefronts/:storefrontId/drops/public',
-  validateStorefrontId,
+router.post('/drops/:id/waitlist',
+  bookingLimiter,
+  validateDropId,
+  validateWaitlist,
   handleValidationErrors,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const storefrontId = parseInt(req.params.storefrontId, 10);
-      const drops = await DropService.getPublicDrops(storefrontId);
+      const dropId = parseInt(req.params.id, 10);
+      await DropService.joinWaitlist(dropId, req.body.name, req.body.email);
 
-      const response: ApiResponse<typeof drops> = {
+      const response: ApiResponse<null> = {
         success: true,
-        data: drops,
-        message: `Found ${drops.length} upcoming drop${drops.length !== 1 ? 's' : ''}`
+        data: null,
+        message: "You're on the waitlist. We'll email you if a spot opens."
       };
 
-      res.status(200).json(response);
+      res.status(201).json(response);
     } catch (error) {
       handleServiceError(error, res, next);
     }
