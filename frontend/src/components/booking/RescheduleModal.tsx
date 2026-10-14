@@ -60,7 +60,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
         {step === 'select' && (
           <>
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mb-4 p-3 bg-error-container border border-error/30 rounded-lg text-sm text-on-error-container">
                 {error}
               </div>
             )}
@@ -83,17 +83,17 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               {/* Old time */}
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-center">
-                <p className="text-xs font-medium text-red-600 mb-2">Current Time</p>
+              <div className="p-4 bg-error-container border border-error/30 rounded-xl text-center">
+                <p className="text-xs font-medium text-error mb-2">Current Time</p>
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <Calendar className="w-4 h-4 text-red-500" />
-                  <span className="text-sm font-semibold text-red-900">
+                  <Calendar className="w-4 h-4 text-error" />
+                  <span className="text-sm font-semibold text-on-error-container">
                     {format(new Date(appointment.requested_start_datetime), 'MMM d, yyyy')}
                   </span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4 text-red-500" />
-                  <span className="text-sm text-red-800">
+                  <Clock className="w-4 h-4 text-error" />
+                  <span className="text-sm text-on-error-container">
                     {format(new Date(appointment.requested_start_datetime), 'h:mm a')}
                   </span>
                 </div>
@@ -105,17 +105,17 @@ export default function RescheduleModal({ isOpen, onClose, appointment }: Resche
               </div>
 
               {/* New time */}
-              <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                <p className="text-xs font-medium text-green-600 mb-2">New Time</p>
+              <div className="p-4 bg-secondary-container border border-secondary/30 rounded-xl text-center">
+                <p className="text-xs font-medium text-secondary mb-2">New Time</p>
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <Calendar className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-semibold text-green-900">
+                  <Calendar className="w-4 h-4 text-secondary" />
+                  <span className="text-sm font-semibold text-on-secondary-container">
                     {selectedDate && format(selectedDate, 'MMM d, yyyy')}
                   </span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-800">
+                  <Clock className="w-4 h-4 text-secondary" />
+                  <span className="text-sm text-on-secondary-container">
                     {selectedSlot.local_start_time}
                   </span>
                 </div>

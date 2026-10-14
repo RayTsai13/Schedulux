@@ -113,7 +113,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
           {/* Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-on-surface mb-2">
-              Business Name <span className="text-red-500">*</span>
+              Business Name <span className="text-error">*</span>
             </label>
             <input
               id="name"
@@ -123,7 +123,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
               placeholder="e.g., The Midnight Barber"
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.name.message}</p>
             )}
           </div>
 
@@ -145,7 +145,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
         {/* Profile Type */}
         <div>
           <label className="block text-sm font-medium text-on-surface mb-3">
-            Profile Type <span className="text-red-500">*</span>
+            Profile Type <span className="text-error">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="relative">
@@ -178,7 +178,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
         {/* Location Type */}
         <div>
           <label className="block text-sm font-medium text-on-surface mb-3">
-            Location Type <span className="text-red-500">*</span>
+            Location Type <span className="text-error">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
             <label className="relative">
@@ -227,7 +227,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-on-surface mb-2">
-                Address <span className="text-red-500">*</span>
+                Address <span className="text-error">*</span>
               </label>
               <input
                 id="address"
@@ -237,14 +237,14 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 placeholder="123 Main St"
               />
               {errors.address && (
-                <p className="mt-1 text-sm text-red-500">{errors.address.message}</p>
+                <p className="mt-1 text-sm text-error">{errors.address.message}</p>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="city" className="block text-sm font-medium text-on-surface mb-2">
-                  City <span className="text-red-500">*</span>
+                  City <span className="text-error">*</span>
                 </label>
                 <input
                   id="city"
@@ -256,7 +256,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
               </div>
               <div>
                 <label htmlFor="state" className="block text-sm font-medium text-on-surface mb-2">
-                  State <span className="text-red-500">*</span>
+                  State <span className="text-error">*</span>
                 </label>
                 <input
                   id="state"
@@ -277,7 +277,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
 
             <div>
               <label htmlFor="service_area_city" className="block text-sm font-medium text-on-surface mb-2">
-                Service Area City <span className="text-red-500">*</span>
+                Service Area City <span className="text-error">*</span>
               </label>
               <input
                 id="service_area_city"
@@ -287,13 +287,13 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 placeholder="San Francisco"
               />
               {errors.service_area_city && (
-                <p className="mt-1 text-sm text-red-500">{errors.service_area_city.message}</p>
+                <p className="mt-1 text-sm text-error">{errors.service_area_city.message}</p>
               )}
             </div>
 
             <div>
               <label htmlFor="service_radius" className="block text-sm font-medium text-on-surface mb-2">
-                Service Radius (miles) <span className="text-red-500">*</span>
+                Service Radius (miles) <span className="text-error">*</span>
               </label>
               <Controller
                 name="service_radius"
@@ -310,7 +310,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 )}
               />
               {errors.service_radius && (
-                <p className="mt-1 text-sm text-red-500">{errors.service_radius.message}</p>
+                <p className="mt-1 text-sm text-error">{errors.service_radius.message}</p>
               )}
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function CreateStorefrontModal({ isOpen, onClose }: CreateStorefr
                 placeholder="contact@business.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-error">{errors.email.message}</p>
               )}
             </div>
           </div>

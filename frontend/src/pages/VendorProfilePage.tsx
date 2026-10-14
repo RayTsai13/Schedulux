@@ -319,7 +319,7 @@ export default function VendorProfilePage() {
             </p>
             <button
               onClick={() => openBooking()}
-              className="bg-surface-container-lowest text-primary px-10 py-4 rounded-md font-headline font-bold hover:bg-white transition-all"
+              className="bg-surface-container-lowest text-primary px-10 py-4 rounded-md font-headline font-bold hover:bg-surface-bright transition-all"
             >
               Book Now
             </button>

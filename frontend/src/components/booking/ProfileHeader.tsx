@@ -28,8 +28,8 @@ export default function ProfileHeader({
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-container-lowest shadow-lg mx-auto object-cover"
           />
         ) : (
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-container-lowest shadow-lg mx-auto bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-            <span className="text-4xl font-bold text-white">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-container-lowest shadow-lg mx-auto bg-gradient-to-br from-primary to-tertiary-container flex items-center justify-center">
+            <span className="text-4xl font-bold text-on-primary">
               {name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -40,7 +40,7 @@ export default function ProfileHeader({
       <div className="flex items-center justify-center gap-3 mb-4">
         <h1 className="text-4xl font-bold text-on-surface">{name}</h1>
         {verified && (
-          <CheckCircle className="h-8 w-8 text-blue-500 flex-shrink-0" />
+          <CheckCircle className="h-8 w-8 text-primary flex-shrink-0" />
         )}
       </div>
 
@@ -63,7 +63,7 @@ export default function ProfileHeader({
           href={`https://instagram.com/${instagram.replace('@', '')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-zinc-100 text-on-surface-variant rounded-full px-4 py-2 hover:bg-zinc-200 transition-colors"
+          className="inline-flex items-center gap-2 bg-surface-container text-on-surface-variant rounded-full px-4 py-2 hover:bg-surface-container-high transition-colors"
         >
           <Instagram className="h-4 w-4" />
           <span className="text-sm font-medium">@{instagram.replace('@', '')}</span>

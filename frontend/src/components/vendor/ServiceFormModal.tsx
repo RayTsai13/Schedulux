@@ -240,7 +240,7 @@ export default function ServiceFormModal({
                     <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
-                {/* Remove button */}
+                {/* Remove button — black/white overlay is intentional so it stays legible on any photo */}
                 {!isUploading && (
                   <button
                     type="button"
@@ -272,14 +272,14 @@ export default function ServiceFormModal({
             className="hidden"
           />
           {uploadError && (
-            <p className="mt-1 text-sm text-red-500">{uploadError}</p>
+            <p className="mt-1 text-sm text-error">{uploadError}</p>
           )}
         </div>
 
         {/* Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-on-surface mb-2">
-            Service Name <span className="text-red-500">*</span>
+            Service Name <span className="text-error">*</span>
           </label>
           <input
             id="name"
@@ -289,7 +289,7 @@ export default function ServiceFormModal({
             placeholder="e.g., Classic Fade"
           />
           {errors.name && (
-            <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+            <p className="mt-1 text-sm text-error">{errors.name.message}</p>
           )}
         </div>
 
@@ -311,7 +311,7 @@ export default function ServiceFormModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="duration_minutes" className="block text-sm font-medium text-on-surface mb-2">
-              Duration (minutes) <span className="text-red-500">*</span>
+              Duration (minutes) <span className="text-error">*</span>
             </label>
             <Controller
               name="duration_minutes"
@@ -328,7 +328,7 @@ export default function ServiceFormModal({
               )}
             />
             {errors.duration_minutes && (
-              <p className="mt-1 text-sm text-red-500">{errors.duration_minutes.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.duration_minutes.message}</p>
             )}
           </div>
 
@@ -351,7 +351,7 @@ export default function ServiceFormModal({
               )}
             />
             {errors.buffer_time_minutes && (
-              <p className="mt-1 text-sm text-red-500">{errors.buffer_time_minutes.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.buffer_time_minutes.message}</p>
             )}
           </div>
         </div>
@@ -379,7 +379,7 @@ export default function ServiceFormModal({
               )}
             />
             {errors.price && (
-              <p className="mt-1 text-sm text-red-500">{errors.price.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.price.message}</p>
             )}
           </div>
 

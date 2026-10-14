@@ -91,19 +91,19 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`relative bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
+        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+          <h2 id="modal-title" className="text-xl font-semibold text-on-surface">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-outline hover:text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />

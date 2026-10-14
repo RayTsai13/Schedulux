@@ -104,12 +104,12 @@ function fmt12(time: string): string {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-700',
-  confirmed: 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
-  cancelled: 'bg-zinc-100 text-zinc-500',
-  declined: 'bg-zinc-100 text-zinc-500',
-  no_show: 'bg-red-100 text-red-600',
+  pending: 'bg-tertiary-fixed text-on-tertiary-fixed',
+  confirmed: 'bg-secondary-container text-on-secondary-container',
+  completed: 'bg-secondary-fixed text-on-secondary-fixed',
+  cancelled: 'bg-error-container text-on-error-container',
+  declined: 'bg-surface-container-high text-on-surface-variant',
+  no_show: 'bg-error-container text-on-error-container',
 };
 
 // ─── component ──────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ export default function AvailabilityTab({
                 {/* availability dot */}
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 ${
-                    rule.is_available ? 'bg-green-500' : 'bg-red-400'
+                    rule.is_available ? 'bg-secondary' : 'bg-error/80'
                   }`}
                 />
                 {/* label */}
@@ -281,7 +281,7 @@ export default function AvailabilityTab({
                 </button>
                 <button
                   onClick={() => onDeleteRule(rule.id)}
-                  className="p-0.5 text-on-surface-variant hover:text-red-500 transition-colors"
+                  className="p-0.5 text-on-surface-variant hover:text-error transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -350,7 +350,7 @@ export default function AvailabilityTab({
               : [];
             const ruleBars = timeBarsForRules(applicableRules);
 
-            // Drop bars (left side, purple/accent)
+            // Drop bars (left side, tertiary accent)
             const applicableDrops = inMonth && !isPast && drops
               ? dropsForDay(day, drops)
               : [];
@@ -399,7 +399,7 @@ export default function AvailabilityTab({
                   <span
                     key={`rule-${i}`}
                     className={`absolute right-1 w-1.5 rounded-full ${
-                      bar.isAvailable ? 'bg-green-400' : 'bg-red-300'
+                      bar.isAvailable ? 'bg-secondary/60' : 'bg-error/50'
                     }`}
                     style={{
                       top: `${bar.topPct}%`,
@@ -409,11 +409,11 @@ export default function AvailabilityTab({
                   />
                 ))}
 
-                {/* Drop time-window bars (left-center, purple) */}
+                {/* Drop time-window bars (left-center, tertiary accent) */}
                 {inMonth && !isPast && dropBars.map((bar, i) => (
                   <span
                     key={`drop-${i}`}
-                    className="absolute right-3.5 w-1.5 rounded-full bg-violet-400"
+                    className="absolute right-3.5 w-1.5 rounded-full bg-tertiary-fixed-dim"
                     style={{
                       top: `${bar.topPct}%`,
                       height: `${bar.heightPct}%`,
@@ -435,15 +435,15 @@ export default function AvailabilityTab({
         {/* Legend */}
         <div className="flex items-center gap-5 mt-5 pt-4 border-t border-outline-variant flex-wrap">
           <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
-            <span className="w-1.5 h-4 rounded-full bg-green-400 inline-block" />
+            <span className="w-1.5 h-4 rounded-full bg-secondary/60 inline-block" />
             Open window
           </div>
           <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
-            <span className="w-1.5 h-4 rounded-full bg-red-300 inline-block" />
+            <span className="w-1.5 h-4 rounded-full bg-error/50 inline-block" />
             Closed / blocked
           </div>
           <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
-            <span className="w-1.5 h-4 rounded-full bg-violet-400 inline-block" />
+            <span className="w-1.5 h-4 rounded-full bg-tertiary-fixed-dim inline-block" />
             Drop
           </div>
           <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
@@ -479,7 +479,7 @@ export default function AvailabilityTab({
               <div className="space-y-1.5">
                 {popoverDrops.map((drop) => (
                   <div key={drop.id} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full shrink-0 bg-violet-500" />
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-tertiary-fixed-dim" />
                     <span className="text-xs text-on-surface font-medium truncate">
                       {drop.title}
                     </span>
@@ -489,8 +489,8 @@ export default function AvailabilityTab({
                     <span
                       className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-medium ${
                         drop.is_published
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-zinc-100 text-zinc-500'
+                          ? 'bg-secondary-container text-on-secondary-container'
+                          : 'bg-surface-container-high text-on-surface-variant'
                       }`}
                     >
                       {drop.is_published ? 'Live' : 'Draft'}
@@ -514,7 +514,7 @@ export default function AvailabilityTab({
                   <div key={rule.id} className="flex items-center gap-2">
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
-                        rule.is_available ? 'bg-green-500' : 'bg-red-400'
+                        rule.is_available ? 'bg-secondary' : 'bg-error/80'
                       }`}
                     />
                     <span className="text-xs text-on-surface">
@@ -523,8 +523,8 @@ export default function AvailabilityTab({
                     <span
                       className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-medium ${
                         rule.is_available
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-600'
+                          ? 'bg-secondary-container text-on-secondary-container'
+                          : 'bg-error-container text-error'
                       }`}
                     >
                       {rule.is_available ? 'Open' : 'Closed'}
@@ -555,7 +555,7 @@ export default function AvailabilityTab({
                     </span>
                     <span
                       className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-medium capitalize ${
-                        STATUS_COLOR[apt.status] ?? 'bg-zinc-100 text-zinc-500'
+                        STATUS_COLOR[apt.status] ?? 'bg-surface-container-high text-on-surface-variant'
                       }`}
                     >
                       {apt.status}
