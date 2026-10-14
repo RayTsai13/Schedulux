@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, Controller, useWatch } from 'react-hook-form';
+import { useForm, Controller, type Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -118,7 +118,7 @@ export default function ScheduleRuleFormModal({
     setValue,
     formState: { errors },
   } = useForm<RuleFormData>({
-    resolver: zodResolver(ruleSchema),
+    resolver: zodResolver(ruleSchema) as Resolver<RuleFormData>, // z.coerce input type is unknown in zod 4
     defaultValues: buildDefaultValues(rule),
   });
 
@@ -190,7 +190,7 @@ export default function ScheduleRuleFormModal({
         {/* Rule Type */}
         <div>
           <label className="block text-sm font-medium text-on-surface mb-2">
-            Rule Type <span className="text-red-500">*</span>
+            Rule Type <span className="text-error">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
             {(['weekly', 'daily', 'monthly'] as const).map((type) => (
@@ -220,7 +220,7 @@ export default function ScheduleRuleFormModal({
         {ruleType === 'weekly' && (
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              Day of Week <span className="text-red-500">*</span>
+              Day of Week <span className="text-error">*</span>
             </label>
             <Controller
               name="day_of_week"
@@ -235,7 +235,7 @@ export default function ScheduleRuleFormModal({
                       className={
                         'py-2 rounded-lg border text-xs font-medium transition-all ' +
                         (field.value === idx
-                          ? 'border-primary bg-primary text-white'
+                          ? 'border-primary bg-primary text-on-primary'
                           : 'border-outline-variant text-on-surface-variant hover:border-primary/50')
                       }
                     >
@@ -246,7 +246,7 @@ export default function ScheduleRuleFormModal({
               )}
             />
             {errors.day_of_week && (
-              <p className="mt-1 text-sm text-red-500">{errors.day_of_week.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.day_of_week.message}</p>
             )}
           </div>
         )}
@@ -254,7 +254,7 @@ export default function ScheduleRuleFormModal({
         {ruleType === 'daily' && (
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              Specific Date <span className="text-red-500">*</span>
+              Specific Date <span className="text-error">*</span>
             </label>
             <input
               type="date"
@@ -262,7 +262,7 @@ export default function ScheduleRuleFormModal({
               className={inputClass}
             />
             {errors.specific_date && (
-              <p className="mt-1 text-sm text-red-500">{errors.specific_date.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.specific_date.message}</p>
             )}
           </div>
         )}
@@ -271,7 +271,7 @@ export default function ScheduleRuleFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-on-surface mb-2">
-                Month <span className="text-red-500">*</span>
+                Month <span className="text-error">*</span>
               </label>
               <Controller
                 name="month"
@@ -290,7 +290,7 @@ export default function ScheduleRuleFormModal({
                 )}
               />
               {errors.month && (
-                <p className="mt-1 text-sm text-red-500">{errors.month.message}</p>
+                <p className="mt-1 text-sm text-error">{errors.month.message}</p>
               )}
             </div>
             <div>
@@ -311,20 +311,20 @@ export default function ScheduleRuleFormModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              Start Time <span className="text-red-500">*</span>
+              Start Time <span className="text-error">*</span>
             </label>
             <input type="time" {...register('start_time')} className={inputClass} />
             {errors.start_time && (
-              <p className="mt-1 text-sm text-red-500">{errors.start_time.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.start_time.message}</p>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              End Time <span className="text-red-500">*</span>
+              End Time <span className="text-error">*</span>
             </label>
             <input type="time" {...register('end_time')} className={inputClass} />
             {errors.end_time && (
-              <p className="mt-1 text-sm text-red-500">{errors.end_time.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.end_time.message}</p>
             )}
           </div>
         </div>
@@ -343,8 +343,8 @@ export default function ScheduleRuleFormModal({
                   className={
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (field.value
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-outline-variant text-on-surface-variant hover:border-green-300')
+                      ? 'border-secondary bg-secondary-container text-on-secondary-container'
+                      : 'border-outline-variant text-on-surface-variant hover:border-secondary/30')
                   }
                 >
                   Open
@@ -355,8 +355,8 @@ export default function ScheduleRuleFormModal({
                   className={
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (!field.value
-                      ? 'border-red-400 bg-red-50 text-red-600'
-                      : 'border-outline-variant text-on-surface-variant hover:border-red-300')
+                      ? 'border-error bg-error-container text-error'
+                      : 'border-outline-variant text-on-surface-variant hover:border-error/30')
                   }
                 >
                   Closed / Blocked
@@ -391,7 +391,7 @@ export default function ScheduleRuleFormModal({
               )}
             />
             {errors.max_concurrent_appointments && (
-              <p className="mt-1 text-sm text-red-500">{errors.max_concurrent_appointments.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.max_concurrent_appointments.message}</p>
             )}
           </div>
         )}
@@ -417,7 +417,7 @@ export default function ScheduleRuleFormModal({
               variant="ghost"
               onClick={handleDelete}
               disabled={deleteRule.isPending}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              className="text-error hover:text-error hover:bg-error-container"
             >
               Delete
             </UniversalButton>

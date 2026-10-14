@@ -1,5 +1,7 @@
 # Schedulux Project Analysis
 
+> **Historical snapshot (January 2026).** Much of the "remaining work" below has since shipped. For current status see the Project Status table in `CLAUDE.md`.
+
 **Last Updated:** January 14, 2026
 **Branch:** main
 **Status:** Availability Engine & Booking API Complete - Phase 3a/3b Finished, Ready for Calendar UI  

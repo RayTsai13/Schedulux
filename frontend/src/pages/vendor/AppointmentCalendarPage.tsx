@@ -228,7 +228,7 @@ export default function AppointmentCalendarPage() {
                         {apt.service_name || `Service #${apt.service_id}`}
                       </p>
                       <p className="text-xs text-on-surface-variant">
-                        Client: {apt.client_name || `#${apt.client_id}`}
+                        Client #{apt.client_id}
                       </p>
                       <div className="mt-2 flex gap-2">
                         <span className={`text-[10px] px-2 py-0.5 ${DOT_COLORS[apt.status] || 'bg-surface-container'} rounded-full font-bold capitalize`}>

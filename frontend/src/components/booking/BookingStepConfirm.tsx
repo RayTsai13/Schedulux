@@ -80,7 +80,7 @@ export default function BookingStepConfirm({
                   name="locationType"
                   value="at_vendor"
                   checked={locationType === 'at_vendor'}
-                  onChange={(e) => onLocationTypeChange('at_vendor')}
+                  onChange={() => onLocationTypeChange('at_vendor')}
                   className="mt-1"
                 />
                 <div className="flex-1">
@@ -99,7 +99,7 @@ export default function BookingStepConfirm({
                 name="locationType"
                 value="at_client"
                 checked={locationType === 'at_client'}
-                onChange={(e) => onLocationTypeChange('at_client')}
+                onChange={() => onLocationTypeChange('at_client')}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -116,7 +116,7 @@ export default function BookingStepConfirm({
           {locationType === 'at_client' && (
             <div className="mt-3">
               <label className="block text-sm font-medium text-on-surface mb-2">
-                Your Address <span className="text-red-500">*</span>
+                Your Address <span className="text-error">*</span>
               </label>
               <input
                 type="text"
@@ -147,8 +147,8 @@ export default function BookingStepConfirm({
 
       {/* Error Display */}
       {error && (
-        <UniversalCard className="bg-red-50 border-2 border-red-200">
-          <p className="text-red-700 text-sm">{error}</p>
+        <UniversalCard className="bg-error-container border-2 border-error/30">
+          <p className="text-on-error-container text-sm">{error}</p>
         </UniversalCard>
       )}
     </div>

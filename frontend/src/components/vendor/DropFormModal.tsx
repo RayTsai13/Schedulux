@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, Controller, useWatch } from 'react-hook-form';
+import { useForm, Controller, type Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateDrop, useUpdateDrop, useDeleteDrop } from '../../hooks/useDrops';
@@ -93,7 +93,7 @@ export default function DropFormModal({
     reset,
     formState: { errors },
   } = useForm<DropFormData>({
-    resolver: zodResolver(dropSchema),
+    resolver: zodResolver(dropSchema) as Resolver<DropFormData>, // z.coerce input type is unknown in zod 4
     defaultValues: buildDefaultValues(drop),
   });
 
@@ -150,7 +150,7 @@ export default function DropFormModal({
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-on-surface mb-2">
-            Title <span className="text-red-500">*</span>
+            Title <span className="text-error">*</span>
           </label>
           <input
             type="text"
@@ -159,18 +159,18 @@ export default function DropFormModal({
             className={inputClass}
           />
           {errors.title && (
-            <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>
+            <p className="mt-1 text-sm text-error">{errors.title.message}</p>
           )}
         </div>
 
         {/* Date */}
         <div>
           <label className="block text-sm font-medium text-on-surface mb-2">
-            Date <span className="text-red-500">*</span>
+            Date <span className="text-error">*</span>
           </label>
           <input type="date" {...register('drop_date')} className={inputClass} />
           {errors.drop_date && (
-            <p className="mt-1 text-sm text-red-500">{errors.drop_date.message}</p>
+            <p className="mt-1 text-sm text-error">{errors.drop_date.message}</p>
           )}
         </div>
 
@@ -178,20 +178,20 @@ export default function DropFormModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              Start Time <span className="text-red-500">*</span>
+              Start Time <span className="text-error">*</span>
             </label>
             <input type="time" {...register('start_time')} className={inputClass} />
             {errors.start_time && (
-              <p className="mt-1 text-sm text-red-500">{errors.start_time.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.start_time.message}</p>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-on-surface mb-2">
-              End Time <span className="text-red-500">*</span>
+              End Time <span className="text-error">*</span>
             </label>
             <input type="time" {...register('end_time')} className={inputClass} />
             {errors.end_time && (
-              <p className="mt-1 text-sm text-red-500">{errors.end_time.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.end_time.message}</p>
             )}
           </div>
         </div>
@@ -243,7 +243,7 @@ export default function DropFormModal({
             )}
           />
           {errors.max_concurrent_appointments && (
-            <p className="mt-1 text-sm text-red-500">{errors.max_concurrent_appointments.message}</p>
+            <p className="mt-1 text-sm text-error">{errors.max_concurrent_appointments.message}</p>
           )}
         </div>
 
@@ -286,8 +286,8 @@ export default function DropFormModal({
                   className={
                     'py-2 px-4 rounded-xl border-2 text-sm font-medium transition-all ' +
                     (field.value
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-outline-variant text-on-surface-variant hover:border-green-300')
+                      ? 'border-secondary bg-secondary-container text-on-secondary-container'
+                      : 'border-outline-variant text-on-surface-variant hover:border-secondary/30')
                   }
                 >
                   Published
@@ -310,7 +310,7 @@ export default function DropFormModal({
               variant="ghost"
               onClick={handleDelete}
               disabled={deleteDrop.isPending}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              className="text-error hover:text-error hover:bg-error-container"
             >
               Delete
             </UniversalButton>

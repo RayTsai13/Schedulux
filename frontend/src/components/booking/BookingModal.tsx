@@ -3,7 +3,7 @@ import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
 import { useAuth } from '../../hooks/useAuth';
 import { useCreateAppointment } from '../../hooks/useAppointments';
-import type { PublicStorefrontDetail, AvailableSlot, ServiceLocationType } from '../../services/api';
+import type { PublicStorefrontDetail, AvailableSlot, ServiceLocationType, Appointment } from '../../services/api';
 import BookingStepService from './BookingStepService';
 import BookingStepDateTime from './BookingStepDateTime';
 import BookingStepConfirm from './BookingStepConfirm';
@@ -31,7 +31,7 @@ interface BookingState {
   clientNotes: string;
   isSubmitting: boolean;
   error: string | null;
-  createdAppointment: any | null;
+  createdAppointment: Appointment | null;
   dropId: number | null;
 }
 
@@ -203,11 +203,12 @@ export default function BookingModal({
 
       if (response.success && response.data) {
         // Success! Move to step 4
+        const created = response.data;
         setState(prev => ({
           ...prev,
           isSubmitting: false,
           currentStep: 4,
-          createdAppointment: response.data,
+          createdAppointment: created,
         }));
       } else {
         // Backend returned error
@@ -217,12 +218,12 @@ export default function BookingModal({
           error: response.message || 'Failed to book appointment. Please try again.',
         }));
       }
-    } catch (error: any) {
+    } catch (error) {
       // Network or unexpected error
       setState(prev => ({
         ...prev,
         isSubmitting: false,
-        error: error.message || 'An unexpected error occurred. Please try again.',
+        error: (error instanceof Error && error.message) || 'An unexpected error occurred. Please try again.',
       }));
     }
   };

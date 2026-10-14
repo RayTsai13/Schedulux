@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         <p className="text-on-surface-variant mb-6">An unexpected error occurred.</p>
                         <button
                             onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
-                            className="px-6 py-3 bg-primary text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                            className="px-6 py-3 bg-primary text-on-primary rounded-xl font-medium hover:opacity-90 transition-opacity"
                         >
                             Go home
                         </button>

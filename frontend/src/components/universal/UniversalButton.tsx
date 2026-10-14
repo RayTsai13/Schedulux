@@ -32,24 +32,24 @@ export default function UniversalButton({
 
   const variantStyles = {
     primary: cn(
-      'bg-primary text-white',
-      'hover:bg-zinc-800',
-      'active:bg-zinc-950'
+      'bg-primary text-on-primary',
+      'hover:bg-primary-container',
+      'active:opacity-90'
     ),
     secondary: cn(
       'bg-outline-variant text-on-surface',
-      'hover:bg-zinc-300',
-      'active:bg-zinc-400'
+      'hover:opacity-90',
+      'active:opacity-80'
     ),
     outline: cn(
       'bg-transparent border-2 border-outline-variant text-on-surface',
       'hover:bg-surface-container-low',
-      'active:bg-zinc-200'
+      'active:bg-surface-container'
     ),
     ghost: cn(
       'bg-transparent text-on-surface',
       'hover:bg-surface-container-low',
-      'active:bg-zinc-200'
+      'active:bg-surface-container'
     ),
   };
 

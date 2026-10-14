@@ -4,6 +4,7 @@ import { useMarketplaceSearch, useGeolocation, useDebounce } from '../hooks/useM
 import { useAuth } from '../hooks/useAuth';
 import { useStorefronts } from '../hooks/useStorefronts';
 import StorefrontCard from '../components/marketplace/StorefrontCard';
+import type { MarketplaceStorefront } from '../services/api';
 
 // ---------------------------------------------------------------------------
 // Icon helper
@@ -72,7 +73,7 @@ export default function ExplorePage() {
     setSearchParams(newParams);
   };
 
-  const formatLocation = (storefront: any) => {
+  const formatLocation = (storefront: MarketplaceStorefront) => {
     if (storefront.location_type === 'mobile') {
       return storefront.service_area_city ? `Serves ${storefront.service_area_city} area` : 'Mobile service';
     }

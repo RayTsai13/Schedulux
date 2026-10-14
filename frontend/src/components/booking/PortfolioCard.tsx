@@ -1,4 +1,3 @@
-import React from 'react';
 import UniversalCard from '../universal/UniversalCard';
 import UniversalButton from '../universal/UniversalButton';
 
@@ -28,7 +27,7 @@ export default function PortfolioCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-primary to-tertiary-container flex items-center justify-center">
             <div className="text-6xl opacity-20">✂️</div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { storefrontApi, type Storefront, type CreateStorefrontRequest, type UpdateStorefrontRequest } from '../services/api';
+import { storefrontApi, type CreateStorefrontRequest, type UpdateStorefrontRequest } from '../services/api';
 import { toast } from 'sonner';
 
 /**

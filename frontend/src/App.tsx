@@ -19,6 +19,9 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/legal/TermsOfServicePage';
+import CookiePolicyPage from './pages/legal/CookiePolicyPage';
 
 function App() {
   return (
@@ -36,6 +39,9 @@ function App() {
             <Route path="/book/:storefrontId" element={<VendorProfilePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
 
             {/* Protected Vendor Routes */}
             <Route

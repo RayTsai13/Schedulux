@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   darkMode: ["class"],
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -283,3 +283,26 @@ export default {
   },
   plugins: [],
 };
+
+/**
+ * Design tokens are hex values in CSS variables, which Tailwind 3 cannot add
+ * alpha to — classes like `bg-error/50` or `border-outline-variant/30` would be
+ * silently dropped. Wrap each `var(--color-*)` in color-mix() with Tailwind's
+ * <alpha-value> placeholder so opacity modifiers work (solid when none is given).
+ */
+function withAlphaSupport(colors) {
+  return Object.fromEntries(
+    Object.entries(colors).map(([key, value]) => {
+      if (typeof value === 'object') return [key, withAlphaSupport(value)];
+      const match = /^var\((--color-[\w-]+)\)$/.exec(value);
+      return [
+        key,
+        match ? `color-mix(in srgb, var(${match[1]}) calc(<alpha-value> * 100%), transparent)` : value,
+      ];
+    })
+  );
+}
+
+config.theme.extend.colors = withAlphaSupport(config.theme.extend.colors);
+
+export default config;

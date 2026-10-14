@@ -80,7 +80,7 @@ export default function DropsTab({
                 </div>
                 <div className="flex items-center gap-1 ml-2 shrink-0">
                   {drop.is_published ? (
-                    <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    <span className="flex items-center gap-1 text-xs font-medium text-secondary bg-secondary-container px-2 py-1 rounded-full">
                       <Eye className="w-3 h-3" />
                       Live
                     </span>
@@ -109,7 +109,7 @@ export default function DropsTab({
               <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-auto pt-3 border-t border-outline-variant">
                 <span>Max {drop.max_concurrent_appointments} concurrent</span>
                 {!drop.is_active && (
-                  <span className="text-red-500 font-medium">Inactive</span>
+                  <span className="text-error font-medium">Inactive</span>
                 )}
               </div>
 

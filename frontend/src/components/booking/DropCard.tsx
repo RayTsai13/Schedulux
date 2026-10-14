@@ -1,4 +1,3 @@
-import React from 'react';
 import { format } from 'date-fns';
 import UniversalCard from '../universal/UniversalCard';
 import UniversalButton from '../universal/UniversalButton';
@@ -24,14 +23,14 @@ export default function DropCard({
     availabilityPercent > 50
       ? 'text-on-surface-variant'
       : availabilityPercent > 20
-      ? 'text-amber-600'
-      : 'text-red-600';
+      ? 'text-on-tertiary-fixed-variant'
+      : 'text-error';
 
   return (
     <UniversalCard>
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Date Badge */}
-        <div className="flex-shrink-0 w-20 h-20 bg-primary rounded-2xl flex flex-col items-center justify-center text-white">
+        <div className="flex-shrink-0 w-20 h-20 bg-primary rounded-2xl flex flex-col items-center justify-center text-on-primary">
           <div className="text-xs font-bold uppercase">
             {format(date, 'EEE')}
           </div>

@@ -25,7 +25,7 @@ interface UIStore {
   activeModal: ModalType;
 
   // Data passed to the modal (e.g., appointment ID for edit modal)
-  modalData: any;
+  modalData: unknown;
 
   // Sidebar state
   isSidebarOpen: boolean;
@@ -35,7 +35,7 @@ interface UIStore {
   globalLoadingMessage: string;
 
   // Actions
-  openModal: (modal: ModalType, data?: any) => void;
+  openModal: (modal: ModalType, data?: unknown) => void;
   closeModal: () => void;
   toggleSidebar: () => void;
   setSidebarOpen: (isOpen: boolean) => void;

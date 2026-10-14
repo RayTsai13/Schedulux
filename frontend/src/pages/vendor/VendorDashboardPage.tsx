@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { useStorefronts } from '../../hooks/useStorefronts';
 import { useStorefrontAppointments } from '../../hooks/useAppointments';
-import { useAuth } from '../../hooks/useAuth';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import CreateStorefrontModal from '../../components/vendor/CreateStorefrontModal';
 import type { Appointment, Storefront } from '../../services/api';
@@ -58,7 +57,6 @@ const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 // ---------------------------------------------------------------------------
 export default function VendorDashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
   const { appointments, isLoading: appointmentsLoading } = useAllAppointments(storefronts);
   const [showCreateModal, setShowCreateModal] = useState(false);

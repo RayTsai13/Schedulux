@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, User, Mail, Phone, MapPin, MessageSquare, DollarSign } from 'lucide-react';
+import { Calendar, Clock, User, MapPin, MessageSquare, DollarSign } from 'lucide-react';
 import { useUpdateAppointmentStatus } from '../../hooks/useAppointments';
 import Modal from '../ui/Modal';
 import UniversalButton from '../universal/UniversalButton';
@@ -17,7 +17,6 @@ export default function AppointmentDetailModal({
   isOpen,
   onClose,
   appointment,
-  storefrontId,
 }: AppointmentDetailModalProps) {
   const updateStatus = useUpdateAppointmentStatus();
   const [vendorNotes, setVendorNotes] = useState(appointment.vendor_notes || '');
@@ -67,14 +66,14 @@ export default function AppointmentDetailModal({
           <span
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
               isPending
-                ? 'bg-amber-500/10 text-amber-600'
+                ? 'bg-tertiary-fixed text-on-tertiary-fixed'
                 : isConfirmed
-                ? 'bg-blue-500/10 text-blue-600'
+                ? 'bg-secondary-container text-on-secondary-container'
                 : isCompleted
-                ? 'bg-green-500/10 text-green-600'
+                ? 'bg-secondary-fixed text-on-secondary-fixed'
                 : isCancelled
-                ? 'bg-red-500/10 text-red-600'
-                : 'bg-gray-500/10 text-gray-600'
+                ? 'bg-error-container text-on-error-container'
+                : 'bg-surface-container-high text-on-surface-variant'
             }`}
           >
             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}

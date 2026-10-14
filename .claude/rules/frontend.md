@@ -15,8 +15,15 @@
 
 - React Query for server state — don't put API responses in Zustand
 - Form validation: define Zod schema, use `zodResolver` with React Hook Form
-- All pages are wrapped by `AppScaffold` (navbar + layout) via the route config in `App.tsx` — no need to add it manually inside pages
+- Each page wraps itself in its layout (`App.tsx` routes do not): `AppScaffold` for public/client/admin pages, `DashboardLayout` (sidebar) for vendor `/dashboard/*` pages, `AuthLayout` for auth pages. `LandingPage` renders its own nav/footer
 - TailwindCSS utility classes only (no CSS files). Use `clsx` or `cn()` (from `lib/utils.ts`) for conditionals
+- **Colors: use design tokens only** (`styles/tokens.css`, mapped in `tailwind.config.js`) — never Tailwind palette colors like `red-500` or `gray-100`. Conventions:
+  - errors → `text-error`, `bg-error-container`, `text-on-error-container`
+  - success/confirmed → `bg-secondary-container`, `text-on-secondary-container`
+  - pending/warning → `bg-tertiary-fixed`, `text-on-tertiary-fixed`
+  - neutrals → `surface-container-*`, `on-surface-variant`, `outline-variant`; text on primary → `text-on-primary`
+  - appointment status badges: follow `STATUS_CFG` in `pages/vendor/VendorAppointmentsPage.tsx`
+- `npm run build` (vite) does not type-check — run `npm run typecheck` too
 - Cache invalidation: mutations must invalidate related queries (`queryClient.invalidateQueries`). Drops + schedule rules also invalidate `['availability']`
 
 ## Project Structure
@@ -27,7 +34,7 @@ frontend/src/
 │   ├── ui/        # shadcn/ui components (button, input, label, select, textarea, Modal, Tabs)
 │   ├── universal/ # V3 design system (UniversalButton, UniversalCard)
 │   ├── booking/   # Client booking flow (BookingModal + wizard steps, PortfolioCard, ProfileHeader, DropCard, RescheduleModal)
-│   ├── layout/    # AppScaffold (navbar + layout wrapper — no separate Header component)
+│   ├── layout/    # AppScaffold (public navbar), DashboardLayout (vendor sidebar), AuthLayout
 │   ├── marketplace/ # StorefrontCard
 │   ├── vendor/    # Vendor management (CreateStorefrontModal, ServiceFormModal, ServicesTab,
 │   │              #   ScheduleRuleFormModal, AvailabilityTab, DropsTab, DropFormModal,
@@ -38,9 +45,11 @@ frontend/src/
 ├── lib/           # utils.ts (clsx/tailwind-merge helper)
 ├── pages/
 │   ├── auth/      # LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage
-│   ├── vendor/    # VendorDashboardPage, StorefrontDetailPage, AppointmentCalendarPage
+│   ├── vendor/    # VendorDashboardPage, VendorStorefrontsPage, VendorAppointmentsPage,
+│   │              #   VendorCustomersPage, StorefrontDetailPage, AppointmentCalendarPage
 │   ├── client/    # ClientAppointmentsPage
 │   ├── admin/     # AdminDashboardPage
+│   ├── legal/     # LegalPageLayout + PrivacyPolicyPage, TermsOfServicePage, CookiePolicyPage
 │   ├── NotFoundPage.tsx   # 404 catch-all (last route in App.tsx)
 │   └── ...        # LandingPage, HomePage (smart redirect), ExplorePage, VendorProfilePage
 ├── services/      # api.ts — Axios API client with JWT interceptor (base URL from VITE_API_URL env var)
@@ -119,8 +128,12 @@ Frontend reads `VITE_API_URL` at build time (Vite replaces `import.meta.env.VITE
 /login, /register    → Auth pages
 /forgot-password, /reset-password → Password reset flow
 /explore             → ExplorePage (marketplace search, no auth)
+/privacy, /terms, /cookies → Legal pages (no auth; placeholder text pending legal review)
 /book/:storefrontId  → VendorProfilePage (public profile + BookingModal)
 /dashboard           → VendorDashboardPage (protected: vendor)
+/dashboard/storefronts   → VendorStorefrontsPage (protected: vendor)
+/dashboard/appointments  → VendorAppointmentsPage (protected: vendor)
+/dashboard/customers     → VendorCustomersPage (protected: vendor)
 /dashboard/storefront/:id → StorefrontDetailPage (protected: vendor, 3 tabs: Drops/Services/Availability)
 /dashboard/storefront/:id/calendar → AppointmentCalendarPage (protected: vendor)
 /my-appointments     → ClientAppointmentsPage (protected: client)

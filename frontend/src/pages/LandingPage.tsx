@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ---------------------------------------------------------------------------
 // Material icon helper — renders a Material Symbols Outlined icon.
@@ -35,8 +35,22 @@ const testimonials = [
 ];
 
 const footerNav = [
-  { heading: 'Navigation', links: ['Local Directory', 'Sustainability Pact', 'Partner Onboarding'] },
-  { heading: 'Legal', links: ['Privacy Policy', 'Terms of Growth'] },
+  {
+    heading: 'Navigation',
+    links: [
+      { label: 'Local Directory', to: '#' },
+      { label: 'Sustainability Pact', to: '#' },
+      { label: 'Partner Onboarding', to: '#' },
+    ],
+  },
+  {
+    heading: 'Legal',
+    links: [
+      { label: 'Privacy Policy', to: '/privacy' },
+      { label: 'Terms of Service', to: '/terms' },
+      { label: 'Cookie Policy', to: '/cookies' },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -356,13 +370,13 @@ export default function LandingPage() {
               {col.heading}
             </h4>
             {col.links.map((link) => (
-              <a
-                key={link}
-                href="#"
+              <Link
+                key={link.label}
+                to={link.to}
                 className="text-on-surface-variant hover:text-tertiary transition-all text-sm"
               >
-                {link}
-              </a>
+                {link.label}
+              </Link>
             ))}
           </div>
         ))}
