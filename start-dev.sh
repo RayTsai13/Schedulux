@@ -6,6 +6,12 @@
 echo "🚀 Starting Schedulux Development Servers..."
 echo ""
 
+# Build the shared availability engine (backend and frontend import its dist/)
+if [ ! -d "packages/availability-engine/dist" ]; then
+  echo "📦 Building availability engine..."
+  (cd packages/availability-engine && npm install && npm run build)
+fi
+
 # Check if backend dependencies are installed
 if [ ! -d "backend/node_modules" ]; then
   echo "📦 Installing backend dependencies..."
