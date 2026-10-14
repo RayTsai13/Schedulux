@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, isAxiosError } from 'axios';
 
 // ================================================================
 // BASE API CONFIGURATION
@@ -188,10 +188,10 @@ export const authApi = {
       // Return the backend response to the calling component
       return response.data;
 
-    } catch (error: any) {
+    } catch (error) {
       // Handle network errors and HTTP error responses
 
-      if (error.response?.data) {
+      if (isAxiosError(error) && error.response?.data) {
         // Backend returned an error response (400, 422, 500, etc.)
         // Return the error message from backend
         return error.response.data;
@@ -249,10 +249,10 @@ export const authApi = {
 
       return response.data;
 
-    } catch (error: any) {
+    } catch (error) {
       // Handle authentication errors (wrong password, user not found, etc.)
 
-      if (error.response?.data) {
+      if (isAxiosError(error) && error.response?.data) {
         // Backend returned specific error (invalid credentials, account locked, etc.)
         return error.response.data;
       }
@@ -300,10 +300,10 @@ export const authApi = {
       const response = await apiClient.get('/auth/me');
       return response.data;
 
-    } catch (error: any) {
+    } catch (error) {
       // Handle token validation errors
 
-      if (error.response?.data) {
+      if (isAxiosError(error) && error.response?.data) {
         // Backend returned error (token expired, invalid, user not found, etc.)
         return error.response.data;
       }
@@ -414,8 +414,8 @@ export const authApi = {
     try {
       const response = await apiClient.post('/auth/forgot-password', { email });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -433,8 +433,8 @@ export const authApi = {
     try {
       const response = await apiClient.post('/auth/reset-password', { token, password });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -468,16 +468,12 @@ export const api = {
    * - Monitor application health in admin dashboards
    * - Debugging connection issues
    * 
-   * @returns Promise<any> - Server health information
+   * @returns Promise<unknown> - Server health information
+   * @throws on connection failure so calling code can handle it
    */
-  health: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get('/health');
-      return response.data;
-    } catch (error) {
-      // Re-throw error so calling code can handle connection failures
-      throw error;
-    }
+  health: async (): Promise<unknown> => {
+    const response = await apiClient.get('/health');
+    return response.data;
   },
 
   /**
@@ -494,16 +490,12 @@ export const api = {
    * - Feature detection (check what endpoints are available)
    * - Development and debugging
    * 
-   * @returns Promise<any> - API information and metadata
+   * @returns Promise<unknown> - API information and metadata
+   * @throws on connection failure so calling code can handle it
    */
-  info: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get('/');
-      return response.data;
-    } catch (error) {
-      // Re-throw error for calling code to handle
-      throw error;
-    }
+  info: async (): Promise<unknown> => {
+    const response = await apiClient.get('/');
+    return response.data;
   },
 };
 
@@ -599,8 +591,8 @@ export const storefrontApi = {
     try {
       const response = await apiClient.get('/storefronts');
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -618,8 +610,8 @@ export const storefrontApi = {
     try {
       const response = await apiClient.get(`/storefronts/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -637,8 +629,8 @@ export const storefrontApi = {
     try {
       const response = await apiClient.post('/storefronts', data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -659,8 +651,8 @@ export const storefrontApi = {
     try {
       const response = await apiClient.put(`/storefronts/${id}`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -678,8 +670,8 @@ export const storefrontApi = {
     try {
       const response = await apiClient.delete(`/storefronts/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -744,8 +736,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/services`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -763,8 +755,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/services/all`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -782,8 +774,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.get(`/services/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -801,8 +793,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.post(`/storefronts/${storefrontId}/services`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -820,8 +812,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.put(`/services/${id}`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -839,8 +831,8 @@ export const serviceApi = {
     try {
       const response = await apiClient.delete(`/services/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -922,8 +914,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/rules`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -941,8 +933,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/rules/all`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -960,8 +952,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.get(`/rules/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -979,8 +971,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.post(`/storefronts/${storefrontId}/rules`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -998,8 +990,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.put(`/rules/${id}`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1017,8 +1009,8 @@ export const scheduleRuleApi = {
     try {
       const response = await apiClient.delete(`/rules/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1079,8 +1071,8 @@ export const dropApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/drops`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to fetch drops.' };
     }
   },
@@ -1089,8 +1081,8 @@ export const dropApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/drops/public`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to fetch drops.' };
     }
   },
@@ -1099,8 +1091,8 @@ export const dropApi = {
     try {
       const response = await apiClient.get(`/drops/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to fetch drop.' };
     }
   },
@@ -1109,8 +1101,8 @@ export const dropApi = {
     try {
       const response = await apiClient.post(`/storefronts/${storefrontId}/drops`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to create drop.' };
     }
   },
@@ -1119,8 +1111,8 @@ export const dropApi = {
     try {
       const response = await apiClient.put(`/drops/${id}`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to update drop.' };
     }
   },
@@ -1129,8 +1121,8 @@ export const dropApi = {
     try {
       const response = await apiClient.delete(`/drops/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to delete drop.' };
     }
   },
@@ -1193,8 +1185,8 @@ export const appointmentApi = {
     try {
       const response = await apiClient.get(`/storefronts/${storefrontId}/appointments`, { params });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1214,8 +1206,8 @@ export const appointmentApi = {
     try {
       const response = await apiClient.get('/appointments', { params });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1233,8 +1225,8 @@ export const appointmentApi = {
     try {
       const response = await apiClient.get(`/appointments/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1255,8 +1247,8 @@ export const appointmentApi = {
     try {
       const response = await apiClient.patch(`/appointments/${id}/status`, data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1310,8 +1302,8 @@ export const appointmentApi = {
         start_datetime: startDatetime,
       });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1453,8 +1445,8 @@ export const marketplaceApi = {
     try {
       const response = await apiClient.get(`/marketplace/storefronts/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1469,8 +1461,8 @@ export const marketplaceApi = {
     try {
       const response = await apiClient.get('/marketplace/search', { params });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
@@ -1547,14 +1539,14 @@ export const uploadApi = {
         timeout: 30000,
       });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) {
         return error.response.data;
       }
       return {
         success: false,
         data: null,
-        message: error.message || 'Image upload failed',
+        message: error instanceof Error ? error.message : 'Image upload failed',
       };
     }
   },
@@ -1604,8 +1596,8 @@ export const adminApi = {
     try {
       const response = await apiClient.get('/admin/stats');
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to fetch stats.' };
     }
   },
@@ -1614,8 +1606,8 @@ export const adminApi = {
     try {
       const response = await apiClient.get('/admin/storefronts', { params: { limit, offset } });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to fetch storefronts.' };
     }
   },
@@ -1624,8 +1616,8 @@ export const adminApi = {
     try {
       const response = await apiClient.patch(`/admin/storefronts/${id}/verify`, { is_verified });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) return error.response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data) return error.response.data;
       return { success: false, error: 'Network error', message: 'Unable to update verification.' };
     }
   },
