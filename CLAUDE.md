@@ -2,10 +2,14 @@
 
 Guidance for Claude Code when working in this repository.
 
+**What this is:** a single-vendor booking page (`/@handle`) with limited-time **drops**, guest checkout (no client accounts), and a standalone availability engine (`packages/availability-engine`) with a browser playground. The old marketplace/admin/client-account features were removed in the drops pivot (migration 011).
+
 ## Quick Commands
 
 ```bash
-./start-dev.sh                          # Start both servers (backend :3000, frontend :5173)
+cd packages/availability-engine && npm install && npm run build  # Build engine first (backend/frontend import dist/)
+cd packages/availability-engine && npm test                      # Engine tests (run under TZ=Europe/Berlin)
+./start-dev.sh                          # Start both servers (backend :3000, frontend :5173); builds engine if missing
 cd backend && npm run dev               # Backend only
 cd frontend && npm run dev              # Frontend only
 cd backend && npm run build             # Compile TypeScript → dist/ (tsconfig.build.json, excludes tests)
@@ -13,7 +17,8 @@ cd backend && npm test                  # Vitest unit tests (no DB needed)
 cd backend && npm run typecheck         # tsc --noEmit, includes tests
 cd backend && npm run test:db           # Database schema + connectivity
 cd backend && npm run test:connection   # TypeScript + DB validation
-cd backend && npx ts-node scripts/create-admin.ts  # Create test admin user
+cd backend && npm run seed:heroes      # Demo pages: @midnightbarber, @fixit, @sundayflash
+cd backend && npm run demo:race -- <slug> <n>  # Fire n concurrent bookings at one spot (naive vs. locked)
 cd frontend && npm run lint
 cd frontend && npm run typecheck        # tsc -b (vite build does not type-check)
 docker compose build                    # Build all containers
@@ -24,12 +29,13 @@ docker compose up                       # Run containerized stack locally
 
 | Layer | Technology |
 |-------|-----------|
+| Engine | `@schedulux/availability-engine` (pure TS, tsup ESM+CJS), linked via `file:` into backend and frontend |
 | Frontend | React 18 + TypeScript, Vite, React Router 7.9 |
 | State | Zustand (UI state), React Query 5 (server state) |
 | Styling | TailwindCSS + shadcn/ui |
 | Forms | React Hook Form + Zod |
 | Backend | Express.js + TypeScript |
-| Auth | JWT + bcryptjs (token stored in localStorage) |
+| Auth | Vendors: JWT + bcryptjs (token in localStorage). Guests: per-booking `manage_token` (no accounts) |
 | Validation | express-validator + Zod |
 | Database | PostgreSQL 15+, connection pool (20 max), JSONB, exclusion constraints |
 | Date/Time | date-fns + date-fns-tz (timezone-aware) |
@@ -38,8 +44,8 @@ docker compose up                       # Run containerized stack locally
 | Rate Limiting | express-rate-limit |
 | Image Uploads | Cloudinary (multer + cloudinary SDK) |
 | Testing | Vitest (backend service unit tests, models mocked) |
-| Containers | Docker (multi-stage), nginx (frontend SPA serving), Caddy (reverse proxy + auto HTTPS) |
-| CI | GitHub Actions (`.github/workflows/ci.yml`): typecheck, lint, test, build |
+| Containers | Docker (multi-stage, **repo-root build context** so images include the engine), nginx, Caddy |
+| CI | GitHub Actions (`.github/workflows/ci.yml`): engine job + backend/frontend (each builds the engine first) |
 
 ## Environment Setup
 
@@ -85,19 +91,16 @@ VITE_API_URL=http://localhost:3000/api
 
 | Feature | Status |
 |---------|--------|
-| Core scheduling (rules, availability, booking) | ✅ Done |
-| Rate limiting | ✅ Done |
+| Availability engine package + tests | ✅ Done — `packages/availability-engine`, not yet published to npm |
+| Playground (`/playground`) | ✅ Done |
+| Public page `/@slug`, drop pages, live spot counts | ✅ Done |
+| Guest booking + manage link (`/manage/:token`) | ✅ Done |
+| Drop waitlist + "spot opened" emails | ✅ Done |
+| Vendor onboarding (claim handle) + dashboard | ✅ Done |
+| Concurrency: per-page advisory lock, race demo | ✅ Done |
 | Email notifications (SendGrid) | ✅ Done |
-| Password reset flow | ✅ Done |
-| Error boundary + 404 page | ✅ Done |
-| Marketplace + geolocation search | ✅ Done |
-| Drops feature | ✅ Done |
-| Admin dashboard | ✅ Done |
-| Image uploads (Cloudinary) | ✅ Done |
-| Docker + Caddy + nginx | ✅ Done |
-| CI checks (GitHub Actions) | ✅ Done |
+| Docker + Caddy + nginx, CI | ✅ Done |
 | Auto-deploy to EC2 | ⚠️ Documented in `CICD_GUIDE.md`, workflow not committed |
-| Reschedule flow | ✅ Done |
-| Legal pages (privacy, terms, cookies) | ✅ Done — placeholder text, needs legal review |
-| Backend unit tests (availability, booking) | ✅ Done |
-| Design-token rollout | ✅ Done — no hardcoded Tailwind palette colors in `src/` |
+| Legal pages | ✅ Done — placeholder text, needs legal review |
+| OG share images for drop links | ❌ Not started (needs a server-rendered share route) |
+| Payments / deposits | ❌ Not started |
