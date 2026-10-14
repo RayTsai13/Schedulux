@@ -31,11 +31,11 @@ export default function NotFoundPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/explore')}
+              onClick={() => navigate('/')}
               className="bg-primary text-on-primary px-8 py-3 rounded-md font-bold hover:bg-primary-container transition-all flex items-center justify-center gap-2"
             >
-              <Icon name="explore" className="text-lg" />
-              Browse Marketplace
+              <Icon name="home" className="text-lg" />
+              Go Home
             </button>
             <button
               onClick={() => navigate(-1)}

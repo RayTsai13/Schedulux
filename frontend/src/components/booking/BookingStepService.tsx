@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils';
 import UniversalCard from '../universal/UniversalCard';
 import PortfolioCard from './PortfolioCard';
-import type { PublicStorefrontDetail } from '../../services/api';
+import type { Service } from '../../services/api';
 
 interface BookingStepServiceProps {
-  services: PublicStorefrontDetail['services'];
+  services: Service[];
   selectedServiceId: number | null;
-  onSelectService: (service: PublicStorefrontDetail['services'][0]) => void;
+  onSelectService: (service: Service) => void;
 }
 
 export default function BookingStepService({
@@ -14,10 +14,7 @@ export default function BookingStepService({
   selectedServiceId,
   onSelectService,
 }: BookingStepServiceProps) {
-  // Filter to only active services (assuming all public services are active)
-  const availableServices = services.filter(s => s.id); // All services from public endpoint should be available
-
-  if (availableServices.length === 0) {
+  if (services.length === 0) {
     return (
       <UniversalCard className="text-center py-12">
         <p className="text-on-surface-variant">
@@ -34,7 +31,7 @@ export default function BookingStepService({
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {availableServices.map(service => (
+        {services.map(service => (
           <div
             key={service.id}
             className={cn(
@@ -45,8 +42,8 @@ export default function BookingStepService({
           >
             <PortfolioCard
               title={service.name}
-              price={service.price}
-              duration={service.duration}
+              price={service.price ?? 0}
+              duration={service.duration_minutes}
               imageUrl={service.image_url || undefined}
               onSelect={() => {}} // Click handled by parent div
             />

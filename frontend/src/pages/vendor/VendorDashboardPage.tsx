@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow, startOfWeek, addDays, isSameDay } from 'date-fns';
-import { useStorefronts } from '../../hooks/useStorefronts';
+import { useVendorPage } from '../../components/auth/VendorRoute';
 import { useStorefrontAppointments } from '../../hooks/useAppointments';
+import { useDrops } from '../../hooks/useDrops';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import CreateStorefrontModal from '../../components/vendor/CreateStorefrontModal';
-import type { Appointment, Storefront } from '../../services/api';
+import SpotsMeter from '../../components/public/SpotsMeter';
+import { copyLink, formatCalendarDate, formatClock, pageUrl } from '../../lib/booking';
 
 // ---------------------------------------------------------------------------
 // Icon helper
@@ -22,32 +23,6 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 }
 
 // ---------------------------------------------------------------------------
-// Aggregated appointments hook — fetches across all storefronts
-// ---------------------------------------------------------------------------
-function useAllAppointments(storefronts: Storefront[] | undefined) {
-  const ids = useMemo(() => (storefronts || []).slice(0, 10).map(s => s.id), [storefronts]);
-
-  const q0 = useStorefrontAppointments(ids[0] ?? null);
-  const q1 = useStorefrontAppointments(ids[1] ?? null);
-  const q2 = useStorefrontAppointments(ids[2] ?? null);
-  const q3 = useStorefrontAppointments(ids[3] ?? null);
-  const q4 = useStorefrontAppointments(ids[4] ?? null);
-
-  const queries = [q0, q1, q2, q3, q4].slice(0, ids.length);
-  const isLoading = queries.some(q => q.isLoading);
-
-  const appointments = useMemo(() => {
-    const all: Appointment[] = [];
-    queries.forEach((q) => {
-      if (q.data) all.push(...q.data);
-    });
-    return all;
-  }, [queries.map(q => q.data)]);
-
-  return { appointments, isLoading };
-}
-
-// ---------------------------------------------------------------------------
 // Day labels
 // ---------------------------------------------------------------------------
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -57,11 +32,21 @@ const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 // ---------------------------------------------------------------------------
 export default function VendorDashboardPage() {
   const navigate = useNavigate();
-  const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
-  const { appointments, isLoading: appointmentsLoading } = useAllAppointments(storefronts);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const page = useVendorPage();
+  const { data: appointmentData, isLoading: appointmentsLoading } = useStorefrontAppointments(page.id);
+  const { data: drops, isLoading: dropsLoading } = useDrops(page.id);
+  const appointments = useMemo(() => appointmentData ?? [], [appointmentData]);
+  const link = pageUrl(page.slug);
 
-  const isLoading = storefrontsLoading || appointmentsLoading;
+  const isLoading = appointmentsLoading || dropsLoading;
+
+  // Published drops that haven't passed, soonest first
+  const upcomingDrops = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return (drops ?? [])
+      .filter((d) => d.is_published && d.is_active && d.drop_date.slice(0, 10) >= today)
+      .sort((a, b) => a.drop_date.localeCompare(b.drop_date) || a.start_time.localeCompare(b.start_time));
+  }, [drops]);
 
   // --- Computed metrics from real data ---
   const metrics = useMemo(() => {
@@ -103,7 +88,9 @@ export default function VendorDashboardPage() {
     });
     const maxCount = Math.max(...weekCounts, 1);
 
-    return { totalRevenue, totalAppointments, upcoming, recentActivity, weekCounts, maxCount };
+    const pendingCount = appointments.filter(a => a.status === 'pending').length;
+
+    return { totalRevenue, totalAppointments, upcoming, recentActivity, weekCounts, maxCount, pendingCount };
   }, [appointments]);
 
   // Loading state
@@ -116,8 +103,6 @@ export default function VendorDashboardPage() {
       </DashboardLayout>
     );
   }
-
-  const storefrontCount = storefronts?.length ?? 0;
 
   return (
     <DashboardLayout title="Dashboard">
@@ -146,28 +131,21 @@ export default function VendorDashboardPage() {
             </div>
           </div>
 
-          {/* Active Storefronts */}
+          {/* Share link */}
           <div className="bg-surface-container-lowest p-8 rounded-xl flex flex-col justify-between min-h-[200px]" style={{ borderBottom: '2px solid rgba(191,201,195,0.15)' }}>
-            <div>
+            <div className="min-w-0">
               <span className="text-on-surface-variant text-xs font-label tracking-widest uppercase">
-                Active Storefronts
+                Your Link
               </span>
-              <h2 className="text-4xl font-bold font-headline mt-2 text-primary">
-                {storefrontCount}
-              </h2>
+              <p className="text-lg font-bold font-headline mt-2 text-primary truncate">@{page.slug}</p>
             </div>
-            {storefrontCount > 0 && storefronts && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {storefronts.slice(0, 3).map((sf) => (
-                  <span
-                    key={sf.id}
-                    className="px-2 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded uppercase tracking-wider truncate max-w-[120px]"
-                  >
-                    {sf.name}
-                  </span>
-                ))}
-              </div>
-            )}
+            <button
+              onClick={() => copyLink(link, 'Page link')}
+              className="mt-4 bg-secondary-container text-on-secondary-container px-4 py-2 rounded-md text-sm font-bold flex items-center justify-center gap-2 hover:bg-secondary-fixed transition-colors"
+            >
+              <Icon name="content_copy" className="text-sm" />
+              Copy link
+            </button>
           </div>
 
           {/* Appointments count */}
@@ -180,9 +158,18 @@ export default function VendorDashboardPage() {
                 {metrics.totalAppointments}
               </h2>
             </div>
-            <p className="text-on-surface-variant text-xs font-body leading-relaxed">
-              Total sessions across all storefronts.
-            </p>
+            {metrics.pendingCount > 0 ? (
+              <button
+                onClick={() => navigate('/dashboard/appointments')}
+                className="text-left text-xs font-bold text-on-tertiary-fixed bg-tertiary-fixed px-3 py-1.5 rounded-full self-start"
+              >
+                {metrics.pendingCount} awaiting your approval
+              </button>
+            ) : (
+              <p className="text-on-surface-variant text-xs font-body leading-relaxed">
+                All caught up on requests.
+              </p>
+            )}
           </div>
         </section>
 
@@ -250,7 +237,7 @@ export default function VendorDashboardPage() {
                   <Icon name="event" className="text-4xl text-outline mb-4" />
                   <p className="text-on-surface-variant">No upcoming appointments.</p>
                   <p className="text-on-surface-variant text-sm mt-1">
-                    Appointments will appear here when clients book your services.
+                    Appointments will appear here when people book from your link.
                   </p>
                 </div>
               ) : (
@@ -260,7 +247,7 @@ export default function VendorDashboardPage() {
                     return (
                       <div
                         key={apt.id}
-                        onClick={() => navigate(`/dashboard/storefront/${apt.storefront_id}/calendar`)}
+                        onClick={() => navigate('/dashboard/calendar')}
                         className="flex gap-6 p-6 bg-surface-container-low rounded-xl group hover:bg-surface-container-lowest transition-colors cursor-pointer"
                       >
                         <div className="shrink-0 text-center">
@@ -276,7 +263,7 @@ export default function VendorDashboardPage() {
                             {apt.service_name || `Service #${apt.service_id}`}
                           </h4>
                           <p className="text-sm text-on-surface-variant truncate">
-                            {apt.storefront_name || `Storefront #${apt.storefront_id}`}
+                            {apt.guest_name}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-primary font-bold pt-2">
                             <Icon name="schedule" className="text-sm" />
@@ -297,78 +284,68 @@ export default function VendorDashboardPage() {
               )}
             </div>
 
-            {/* Storefronts Quick Access */}
-            {storefronts && storefronts.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-2xl font-bold font-headline text-primary">My Storefronts</h3>
+            {/* Upcoming drops */}
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold font-headline text-primary">Live Drops</h3>
+                <button
+                  onClick={() => navigate('/dashboard/page?tab=drops')}
+                  className="flex items-center gap-1 text-sm font-bold text-primary hover:underline underline-offset-4"
+                >
+                  <Icon name="add" className="text-sm" />
+                  New Drop
+                </button>
+              </div>
+              {upcomingDrops.length === 0 ? (
+                <div className="p-12 bg-surface-container-lowest rounded-xl text-center" style={{ borderBottom: '2px solid rgba(191,201,195,0.15)' }}>
+                  <Icon name="new_releases" className="text-6xl text-outline mb-6" />
+                  <h3 className="text-2xl font-bold text-primary mb-2 font-headline">No live drops</h3>
+                  <p className="text-on-surface-variant mb-8 max-w-md mx-auto">
+                    Post a limited session and share its link. When it sells out, a waitlist fills in behind it.
+                  </p>
                   <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-1 text-sm font-bold text-primary hover:underline underline-offset-4"
+                    onClick={() => navigate('/dashboard/page?tab=drops')}
+                    className="bg-primary text-on-primary font-headline font-bold py-3 px-8 rounded-lg hover:bg-primary-container transition-all inline-flex items-center justify-center gap-2 active:scale-[0.98]"
                   >
-                    <Icon name="add" className="text-sm" />
-                    New Storefront
+                    <Icon name="add" className="text-lg" />
+                    Create a Drop
                   </button>
                 </div>
+              ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {storefronts.map((sf) => (
+                  {upcomingDrops.map((drop) => (
                     <div
-                      key={sf.id}
-                      onClick={() => navigate(`/dashboard/storefront/${sf.id}`)}
-                      className="p-6 bg-surface-container-lowest rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors group"
+                      key={drop.id}
+                      className="p-6 bg-surface-container-lowest rounded-xl space-y-4"
                       style={{ borderBottom: '2px solid rgba(191,201,195,0.15)' }}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="font-bold text-primary text-lg group-hover:text-tertiary transition-colors font-headline">
-                          {sf.name}
-                        </h4>
-                        <span className="px-2 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded uppercase tracking-wider">
-                          {sf.location_type}
-                        </span>
-                      </div>
-                      {sf.description && (
-                        <p className="text-sm text-on-surface-variant line-clamp-2 mb-3">
-                          {sf.description}
+                      <div>
+                        <h4 className="font-bold text-primary text-lg font-headline">{drop.title}</h4>
+                        <p className="text-sm text-on-surface-variant">
+                          {formatCalendarDate(drop.drop_date)} · {formatClock(drop.start_time)}–{formatClock(drop.end_time)}
                         </p>
-                      )}
+                      </div>
+                      <SpotsMeter remaining={drop.remaining_spots} total={drop.total_spots} />
                       <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(191,201,195,0.15)' }}>
-                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
-                          <Icon name="location_on" fill className="text-xs" />
-                          {sf.city || 'Location not set'}{sf.state ? `, ${sf.state}` : ''}
+                        <span className="text-xs text-on-surface-variant">
+                          {drop.waitlist_count > 0 ? `${drop.waitlist_count} on waitlist` : 'No waitlist'}
                         </span>
-                        <span className="text-primary text-sm font-bold flex items-center gap-1">
-                          Manage
-                          <Icon name="arrow_forward" className="text-sm group-hover:translate-x-1 transition-transform" />
-                        </span>
+                        <button
+                          onClick={() => copyLink(pageUrl(page.slug, drop.id), 'Drop link')}
+                          className="text-primary text-sm font-bold flex items-center gap-1 hover:underline underline-offset-4"
+                        >
+                          <Icon name="link" className="text-sm" />
+                          Copy link
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Empty state for no storefronts */}
-            {(!storefronts || storefronts.length === 0) && (
-              <div className="p-12 bg-surface-container-lowest rounded-xl text-center" style={{ borderBottom: '2px solid rgba(191,201,195,0.15)' }}>
-                <Icon name="storefront" className="text-6xl text-outline mb-6" />
-                <h3 className="text-2xl font-bold text-primary mb-2 font-headline">
-                  No storefronts yet
-                </h3>
-                <p className="text-on-surface-variant mb-8">
-                  Create your first storefront to start accepting bookings
-                </p>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-primary text-on-primary font-headline font-bold py-3 px-8 rounded-lg hover:bg-primary-container transition-all flex items-center justify-center gap-2 group mx-auto active:scale-[0.98]"
-                >
-                  <Icon name="add" className="text-lg" />
-                  Create Storefront
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* ---- Right 4-col: Activity + Support ---- */}
+          {/* ---- Right 4-col: Activity ---- */}
           <div className="lg:col-span-4 space-y-12">
 
             {/* Recent Activity — from real data */}
@@ -425,28 +402,10 @@ export default function VendorDashboardPage() {
               </button>
             </div>
 
-            {/* Support CTA */}
-            <div className="bg-tertiary p-8 rounded-xl text-on-tertiary relative overflow-hidden">
-              <h3 className="text-xl font-bold font-headline mb-2">Need Help?</h3>
-              <p className="text-sm font-body opacity-80 mb-6 leading-relaxed">
-                Need help with your listings or appointment setup? Our support team is available.
-              </p>
-              <button className="bg-tertiary-fixed text-on-tertiary-fixed px-6 py-2 rounded-md font-bold text-sm hover:bg-tertiary-fixed-dim transition-colors">
-                Contact Support
-              </button>
-              <div className="absolute -right-4 -bottom-4 opacity-10">
-                <Icon name="support_agent" className="text-[100px]" />
-              </div>
-            </div>
           </div>
         </section>
       </div>
 
-      {/* Create Storefront Modal */}
-      <CreateStorefrontModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-      />
     </DashboardLayout>
   );
 }

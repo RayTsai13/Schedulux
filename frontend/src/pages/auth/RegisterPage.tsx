@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,7 +15,6 @@ const registerSchema = z.object({
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['client', 'vendor']),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -39,7 +38,6 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 // ---------------------------------------------------------------------------
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { register: registerUser, isAuthenticated, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -47,19 +45,14 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: 'client' },
   });
-
-  const selectedRole = watch('role');
 
   // Redirect already-authenticated users
   if (isAuthenticated && user) {
-    const returnTo = searchParams.get('returnTo');
-    navigate(returnTo || (user.role === 'vendor' ? '/dashboard' : '/explore'), { replace: true });
+    navigate('/dashboard', { replace: true });
     return null;
   }
 
@@ -69,9 +62,8 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(data);
       if (result.success) {
-        toast.success('Account created! Welcome to Schedulux.');
-        const returnTo = searchParams.get('returnTo');
-        navigate(returnTo || (data.role === 'vendor' ? '/dashboard' : '/explore'));
+        toast.success('Account created! Now claim your link.');
+        navigate('/onboarding');
       } else {
         setServerError(result.error || 'Registration failed');
       }
@@ -82,11 +74,10 @@ export default function RegisterPage() {
     }
   };
 
-  const returnToParam = searchParams.get('returnTo');
-  const loginHref = returnToParam ? `/login?returnTo=${returnToParam}` : '/login';
+  const loginHref = '/login';
 
   return (
-    <AuthLayout title="Schedulux" subtitle="Plant your roots in our community." icon="eco">
+    <AuthLayout title="Schedulux" subtitle="Your booking page, with drops built in." icon="eco">
       {/* Register Card */}
       <div className="bg-surface-container-lowest rounded-xl p-8 shadow-editorial" style={{ border: '1px solid rgba(191,201,195,0.10)' }}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -155,42 +146,6 @@ export default function RegisterPage() {
             />
             {errors.password && (
               <p className="mt-1 text-sm text-error">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Role selection — editorial chips */}
-          <div>
-            <p className="block text-sm font-semibold font-label text-on-surface-variant mb-3">
-              I am joining as…
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {(['client', 'vendor'] as const).map((r) => {
-                const isActive = selectedRole === r;
-                return (
-                  <label
-                    key={r}
-                    className={`
-                      flex items-center gap-3 px-4 py-3.5 rounded-lg cursor-pointer transition-all
-                      ${isActive
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'bg-surface text-on-surface-variant hover:bg-surface-container-low'
-                      }
-                    `}
-                    style={!isActive ? { border: '1px solid rgba(191,201,195,0.20)' } : undefined}
-                  >
-                    <input type="radio" value={r} {...register('role')} className="sr-only" />
-                    <Icon
-                      name={r === 'client' ? 'person' : 'storefront'}
-                      fill={isActive}
-                      className="text-xl"
-                    />
-                    <span className="text-sm font-semibold capitalize">{r}</span>
-                  </label>
-                );
-              })}
-            </div>
-            {errors.role && (
-              <p className="mt-1 text-sm text-error">{errors.role.message}</p>
             )}
           </div>
 
