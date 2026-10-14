@@ -7,7 +7,6 @@
 .git
 .github
 .playwright-mcp
-design-reference
 docs
 lessons
 **/*.md

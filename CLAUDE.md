@@ -15,14 +15,12 @@ cd frontend && npm run dev              # Frontend only
 cd backend && npm run build             # Compile TypeScript → dist/ (tsconfig.build.json, excludes tests)
 cd backend && npm test                  # Vitest unit tests (no DB needed)
 cd backend && npm run typecheck         # tsc --noEmit, includes tests
-cd backend && npm run test:db           # Database schema + connectivity
-cd backend && npm run test:connection   # TypeScript + DB validation
+cd backend && npm run test:connection   # DB connectivity check (uses backend/.env)
 cd backend && npm run seed:heroes      # Demo pages: @midnightbarber, @fixit, @sundayflash
 cd backend && npm run demo:race -- <slug> <n>  # Fire n concurrent bookings at one spot (naive vs. locked)
 cd frontend && npm run lint
 cd frontend && npm run typecheck        # tsc -b (vite build does not type-check)
-docker compose build                    # Build all containers
-docker compose up                       # Run containerized stack locally
+docker compose -f docker-compose.local.yml up --build   # Full stack in Docker (Postgres, API, SPA on :8080)
 ```
 
 ## Tech Stack
@@ -37,13 +35,13 @@ docker compose up                       # Run containerized stack locally
 | Backend | Express.js + TypeScript |
 | Auth | Vendors: JWT + bcryptjs (token in localStorage). Guests: per-booking `manage_token` (no accounts) |
 | Validation | express-validator + Zod |
-| Database | PostgreSQL 15+, connection pool (20 max), JSONB, exclusion constraints |
+| Database | PostgreSQL 15+, connection pool (20 max), JSONB |
 | Date/Time | date-fns + date-fns-tz (timezone-aware) |
 | Concurrency | PostgreSQL advisory locks (race condition prevention) |
 | Email | SendGrid (@sendgrid/mail) |
 | Rate Limiting | express-rate-limit |
 | Image Uploads | Cloudinary (multer + cloudinary SDK) |
-| Testing | Vitest (backend service unit tests, models mocked) |
+| Testing | Vitest: engine (pure), backend services (models mocked); `demo:race` against a real DB |
 | Containers | Docker (multi-stage, **repo-root build context** so images include the engine), nginx, Caddy |
 | CI | GitHub Actions (`.github/workflows/ci.yml`): engine job + backend/frontend (each builds the engine first) |
 
@@ -63,7 +61,7 @@ ALLOWED_ORIGINS=http://localhost:5173
 SENDGRID_API_KEY=           # optional in dev — emails log to console if unset
 SENDGRID_FROM_EMAIL=noreply@schedulux.com
 SENDGRID_FROM_NAME=Schedulux
-FRONTEND_URL=http://localhost:5173  # REQUIRED in prod — used in password reset emails
+FRONTEND_URL=http://localhost:5173  # REQUIRED in prod — manage/drop/password-reset links in emails
 CLOUDINARY_CLOUD_NAME=      # optional — image uploads return 503 if unset
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
@@ -78,12 +76,15 @@ VITE_API_URL=http://localhost:3000/api
 
 - Backend patterns, DB schema, API endpoints: @.claude/rules/backend.md
 - Frontend patterns, hooks, components: @.claude/rules/frontend.md
+- Visual design (tokens, typography, component patterns): `docs/design-system.md`
+- Engine model, API, DST guarantees: `packages/availability-engine/README.md`
+- Product positioning and scope: `BUSINESS_CONTEXT.md`
 
 ## Deployment
 
-- Full AWS EC2 + RDS setup: `DEPLOYMENT_GUIDE.md`
+- Full AWS EC2 + RDS setup, updating, optional auto-deploy workflow: `docs/deployment.md`
 - CI checks: `.github/workflows/ci.yml` runs on PRs and pushes to `main`
-- EC2 deploy pipeline: described in `CICD_GUIDE.md` — the deploy workflow is **not** committed to the repo
+- The auto-deploy workflow is **not** committed; `docs/deployment.md` has a ready-to-add `deploy.yml`
 - Local Docker stack: `docker compose -f docker-compose.local.yml up`
 - Production Docker stack: `docker compose up` (requires `.env` with RDS credentials)
 
@@ -100,7 +101,7 @@ VITE_API_URL=http://localhost:3000/api
 | Concurrency: per-page advisory lock, race demo | ✅ Done |
 | Email notifications (SendGrid) | ✅ Done |
 | Docker + Caddy + nginx, CI | ✅ Done |
-| Auto-deploy to EC2 | ⚠️ Documented in `CICD_GUIDE.md`, workflow not committed |
+| Auto-deploy to EC2 | ⚠️ Documented in `docs/deployment.md`, workflow not committed |
 | Legal pages | ✅ Done — placeholder text, needs legal review |
 | OG share images for drop links | ❌ Not started (needs a server-rendered share route) |
 | Payments / deposits | ❌ Not started |

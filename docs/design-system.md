@@ -1,6 +1,6 @@
-# Schedulux 1.0 Design Language: "The Editorial Earth"
+# Schedulux Design System: "The Editorial Earth"
 
-**Stitch Project:** `projects/17382833909498924302` ("Schedulux 1.0 UI")
+**Source of truth:** `frontend/src/styles/tokens.css` (CSS variables), mapped to Tailwind in `frontend/tailwind.config.js`. Use token classes only — never Tailwind palette colors (see `.claude/rules/frontend.md`).
 **Creative North Star:** "The Modern Naturalist"
 
 The design rejects clinical SaaS aesthetics in favor of a grounded, editorial experience — a high-end local publication feel. Prioritizes intentional asymmetry, tonal layering, and quiet authority.
@@ -140,49 +140,40 @@ Used on navigation bars and floating actions.
 ### Buttons
 | Variant | Style |
 |---------|-------|
-| Primary | `primary` (#003527) bg, white text, `rounded-md`. Hover → `primary-container` |
-| Secondary | `secondary-container` (#d0e7c0) bg, `on-secondary-container` text. No border |
-| Tertiary | Text-only `tertiary` (#472510). Underline on hover via 2px `tertiary-fixed` offset |
+| Primary | `bg-primary text-on-primary`, `rounded-md`. Hover → `bg-primary-container` |
+| Secondary | `bg-secondary-container text-on-secondary-container`. No border |
+| Tertiary | Text-only `text-primary`, underline on hover |
+| `UniversalButton` | Shared pill button (`components/universal/`) used in modals and forms |
 
 ### Cards
-- Background: `surface-container-lowest` (#fff)
-- No divider lines — `spacing-8` separates sections
-- Generous padding (`spacing-6` / 2rem)
-- Contains: hero image, badges, title (Epilogue), location icon, rating, description, category tag, action link
+- Background `surface-container-lowest`, no divider lines; separate sections with spacing
+- Soft ambient shadow only on floating cards (`0 20px 40px rgba(27,28,26,0.05)`)
 
 ### Inputs
-- Background: `surface-container-low` (#f5f3ef)
-- No border — 2px bottom-border `outline-variant`, animates to `primary` on focus
-- Label: `label-md` (Manrope) in `on-surface-variant`
+- `surface-container-lowest` or `surface` background, `outline-variant` border, `ring-primary` on focus
+- Labels in `on-surface` (required marked with `text-error *`); errors below in `text-error text-xs`
 
-### Status Badges
-- Pending, Confirmed, Completed — semantic coloring with surface tints
-- Simple text labels, no heavy borders
+### Status badges
+Follow `STATUS_CFG` in `pages/vendor/VendorAppointmentsPage.tsx`:
+pending → `tertiary-fixed`, confirmed → `secondary-container`, completed → `secondary-fixed`, cancelled → `error-container`, declined → `surface-container-high`.
+
+### Drops
+- Drop cards and the drop hero use `bg-tertiary-fixed text-on-tertiary-fixed`
+- `SpotsMeter` (`components/public/SpotsMeter.tsx`): "N of M left" + bar. `primary` normally, `tertiary` at ≤25% left ("Almost gone"), `error` when sold out
+
+### Public page (`/@slug`)
+- Centered single column (max-w-3xl): avatar/initial, name, @handle, bio, location, Instagram, primary "Book" CTA
+- Then Drops (with spot meters), then Services (rows with duration and price)
+- Minimal chrome: `PublicPageShell` with a small "Booking by Schedulux" footer; it's the vendor's link-in-bio
 
 ### Navigation
-- **Top nav:** Logo + text links + "Join us" CTA
-- **Vendor sidebar:** Icon + label pairs (Dashboard, Analytics, etc.)
-- **Mobile bottom bar:** 5-icon footer (Home, Metrics, Schedule, Account)
-- Frosted glass on floating navs
+- **Landing / playground:** frosted-glass top nav (`backdrop-blur-glass`, `--glass-bg`)
+- **Vendor sidebar:** icon + label (Overview, Drops, Services, Hours, Appointments, Calendar, Customers, Page Settings) and a "New Drop" CTA
+- **Mobile bottom bar:** Home, Drops, Bookings, Clients
 
-### Calendar Grid
-- 7-column day structure (Mon-Sun)
-- Time slot cards in cells (time + service + client)
-- Chevron month nav with "Today" center button
-- Confirmed/Pending count badges
-
-### Appointment Cards
-- Avatar, title, credential subtitle
-- Status badge
-- Icon-labeled metadata rows (date, time, location)
-- Action buttons: Reschedule, View Details
-
-### Storefront Profile
-- Verification badge
-- Hero image + tagline
-- Metrics row: Score, Response Time, Est. year
-- Tabs: Drops | Services | Regular Hours | Journal
-- Methodology sections with Material icon prefixes
+### Playground timeline
+- One bar per rule/drop layer, a bookings bar, then the resolved bar labeled by the winning layer
+- Open → `secondary-container`, closure/booked → `error-container`, drop → `tertiary-fixed`
 
 ---
 
@@ -196,27 +187,7 @@ Outlined, 24px optical size, no fill.
 
 ---
 
-## 8. Screen Reference Files
-
-| File | Screen |
-|------|--------|
-| `screens/landing-page.html` | Landing Page — hero, features, testimonials, footer |
-| `screens/login.html` | Login — auth form, editorial layout |
-| `screens/business-onboarding.html` | Business Onboarding — multi-step vendor setup |
-| `screens/vendor-dashboard-1.html` | Vendor Dashboard (variant 1) — metrics, revenue, events |
-| `screens/vendor-dashboard-2.html` | Vendor Dashboard (variant 2) — alternate layout |
-| `screens/vendor-storefront-detail-1.html` | Storefront Detail (variant 1) — profile, tabs, methodology |
-| `screens/vendor-storefront-detail-2.html` | Storefront Detail (variant 2) — alternate layout |
-| `screens/vendor-calendar-1.html` | Vendor Calendar (variant 1) — monthly grid, slots |
-| `screens/vendor-calendar-2.html` | Vendor Calendar (variant 2) — alternate layout |
-| `screens/my-appointments-1.html` | My Appointments (variant 1) — cards, stats, actions |
-| `screens/my-appointments-2.html` | My Appointments (variant 2) — alternate layout |
-| `screens/local-marketplace.html` | Local Marketplace — search, filters, card grid |
-| `screens/community-resources.html` | Community Resources — content hub |
-
----
-
-## 9. Do's and Don'ts
+## 8. Do's and Don'ts
 
 ### Do
 - Embrace generous white space (`spacing-16`+ between major sections)

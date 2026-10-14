@@ -102,6 +102,13 @@ cd backend && npm run demo:race -- <slug> 200  # real DB: concurrent bookings vs
 
 Full details live in [`.claude/rules/backend.md`](.claude/rules/backend.md).
 
+## Docs
+
+- [Deployment (AWS EC2 + RDS, Docker, auto-deploy)](docs/deployment.md)
+- [Design system](docs/design-system.md)
+- [Availability engine](packages/availability-engine/README.md)
+- [Positioning and scope](BUSINESS_CONTEXT.md)
+
 ## License
 
 MIT
