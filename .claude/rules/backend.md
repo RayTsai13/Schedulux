@@ -80,7 +80,7 @@ New migrations go in `backend/migrations/` with the next number prefix (e.g. `01
 - `GET / POST /api/storefronts/:id/drops` (GET includes spot counts and `waitlist_count`), `GET / PUT / DELETE /api/drops/:id`
 - `GET /api/storefronts/:storefrontId/appointments` - includes `service_name`
 - `GET /api/appointments/:id`, `PATCH /api/appointments/:id/status`, `POST /api/appointments/:id/approve`, `POST /api/appointments/:id/decline`
-- `POST /api/upload/service-image` - Cloudinary upload (503 if unconfigured)
+- `POST /api/upload/image` - Cloudinary upload (503 if unconfigured)
 
 ## Auth Endpoints
 
