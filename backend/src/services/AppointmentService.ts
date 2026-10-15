@@ -2,62 +2,67 @@
  * AppointmentService - Handle appointment booking with race condition prevention
  *
  * This service manages appointment lifecycle:
- * - Creating bookings with atomic availability checking
- * - Status transitions (confirm, cancel, complete)
- * - Ownership validation for vendor operations
+ * - Guest bookings with atomic availability checking
+ * - Token-based self-service (view, cancel, reschedule) for guests
+ * - Status transitions and approval workflow for vendors
  */
 
+import { randomBytes } from 'crypto';
 import { addMinutes, parseISO, isBefore } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { PoolClient } from 'pg';
 
-import { pool, getClient, withTransaction } from '../config/database';
-import { AppointmentModel, CreateAppointmentData } from '../models/Appointment';
+import { getClient } from '../config/database';
+import { localToUtc, parseClock } from '@schedulux/availability-engine';
+import { AppointmentModel } from '../models/Appointment';
+import { DropModel } from '../models/Drop';
 import { StorefrontModel } from '../models/Storefront';
 import { ServiceModel } from '../models/Service';
 import { UserModel } from '../models/User';
 import { AvailabilityService } from './AvailabilityService';
+import { DropService } from './DropService';
 import { EmailService } from './EmailService';
-import { Appointment, Service, Storefront, CreateAppointmentRequest } from '../types';
+import { Appointment, Service, Storefront, GuestDetails, ManagedAppointment } from '../types';
 import { AppointmentQueryOptions } from '../types/availability';
+import { toDateStr } from '../utils/dates';
+
+/** Namespace for this service's advisory locks (first key of the two-int form) */
+const BOOKING_LOCK_NAMESPACE = 41_001;
 
 export class AppointmentService {
   /**
-   * Create a new appointment with atomic availability checking
+   * Create a guest booking with atomic availability checking
    *
-   * Uses PostgreSQL advisory locks to prevent race conditions when
-   * multiple users attempt to book the same slot simultaneously.
+   * Uses a PostgreSQL advisory lock per storefront so concurrent requests
+   * for overlapping times are serialized: the availability re-check and the
+   * insert happen as one step, and only as many bookings as capacity allows
+   * can succeed.
    *
-   * @param clientId - The user making the booking
+   * @param guest - Name, email, and optional phone of the person booking
    * @param storefrontId - Storefront to book at
    * @param serviceId - Service being booked
    * @param startDatetimeStr - ISO 8601 datetime string for requested start
-   * @param clientNotes - Optional notes from the client
-   * @param serviceLocationType - Where the service happens ('at_vendor' or 'at_client')
-   * @param clientAddress - Client's address (required if serviceLocationType is 'at_client')
-   * @returns Created appointment
+   * @param clientNotes - Optional notes from the guest
+   * @param dropId - Optional drop this booking belongs to
+   * @returns Created appointment (including its manage_token)
    * @throws Error if slot is unavailable or validation fails
    */
   static async createAppointment(
-    clientId: number,
+    guest: GuestDetails,
     storefrontId: number,
     serviceId: number,
     startDatetimeStr: string,
     clientNotes?: string,
-    serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
-    clientAddress?: string,
     dropId?: number | null
   ): Promise<Appointment> {
-    // Parse the start datetime
     const startDatetime = parseISO(startDatetimeStr);
 
-    // Validate datetime is in the future
     if (isBefore(startDatetime, new Date())) {
       throw new Error('Cannot book appointments in the past');
     }
 
-    // Fetch storefront and service for validation
     const storefront = await StorefrontModel.findById(storefrontId);
-    if (!storefront) {
+    if (!storefront || !storefront.is_active) {
       throw new Error('Storefront not found');
     }
 
@@ -74,65 +79,42 @@ export class AppointmentService {
       throw new Error('Service is not active');
     }
 
-    // Determine effective service location type based on storefront capabilities
-    let effectiveLocationType = serviceLocationType;
-
-    // If storefront is fixed-location only, force service_location_type to 'at_vendor'
-    if (storefront.location_type === 'fixed') {
-      if (serviceLocationType === 'at_client') {
-        // Silently correct to 'at_vendor' for fixed-location storefronts
-        // This handles cases where client accidentally selects wrong option
-        effectiveLocationType = 'at_vendor';
-      }
-    }
-
-    // Validate client address if service is at client location
-    if (effectiveLocationType === 'at_client') {
-      if (!clientAddress || clientAddress.trim().length === 0) {
-        throw new Error('Client address is required for at-client appointments');
-      }
-    }
-
-    // Calculate end datetime
     const totalDuration = service.duration_minutes + service.buffer_time_minutes;
     const endDatetime = addMinutes(startDatetime, totalDuration);
 
-    // Execute booking within a transaction with advisory lock
-    // Note: Always starts with status 'pending' for approval workflow
+    // Always starts 'pending' for the approval workflow
     const appointment = await this.createWithLock(
-      clientId,
+      guest,
       storefront,
       service,
       startDatetime,
       endDatetime,
       clientNotes,
-      effectiveLocationType,
-      effectiveLocationType === 'at_client' ? clientAddress : undefined,
       dropId
     );
 
     // Fire-and-forget booking emails (post-transaction)
-    const clientUser = await UserModel.findById(clientId);
-    const vendorUser = await UserModel.findById(storefront.vendor_id);
-    const dateTimeStr = startDatetime.toLocaleString();
+    const dateTimeStr = this.formatForStorefront(startDatetime, storefront);
+    EmailService.sendAppointmentConfirmation(guest.email, {
+      serviceName: service.name,
+      storefrontName: storefront.name,
+      dateTime: dateTimeStr,
+      price: service.price ?? undefined,
+      manageToken: appointment.manage_token,
+    });
 
-    if (clientUser) {
-      EmailService.sendAppointmentConfirmation(clientUser.email, {
-        serviceName: service.name,
-        storefrontName: storefront.name,
-        dateTime: dateTimeStr,
-        price: service.price ?? undefined,
-      });
-    }
-
-    if (vendorUser && clientUser) {
-      EmailService.sendNewBookingNotification(vendorUser.email, {
-        clientName: `${clientUser.first_name} ${clientUser.last_name}`,
-        serviceName: service.name,
-        storefrontName: storefront.name,
-        dateTime: dateTimeStr,
-      });
-    }
+    UserModel.findById(storefront.vendor_id)
+      .then((vendor) => {
+        if (vendor) {
+          EmailService.sendNewBookingNotification(vendor.email, {
+            clientName: guest.name,
+            serviceName: service.name,
+            storefrontName: storefront.name,
+            dateTime: dateTimeStr,
+          });
+        }
+      })
+      .catch((error) => console.error('[AppointmentService] Vendor lookup for email failed:', error));
 
     return appointment;
   }
@@ -141,37 +123,35 @@ export class AppointmentService {
    * Create appointment with advisory lock for race condition prevention
    */
   private static async createWithLock(
-    clientId: number,
+    guest: GuestDetails,
     storefront: Storefront,
     service: Service,
     startDatetime: Date,
     endDatetime: Date,
     clientNotes?: string,
-    serviceLocationType: 'at_vendor' | 'at_client' = 'at_vendor',
-    clientAddress?: string,
     dropId?: number | null
   ): Promise<Appointment> {
+    // Load rules/drops before taking a connection, so the locked section needs only this client
+    const context = await AvailabilityService.loadSlotContext(storefront.id, service.id, startDatetime);
+    if ('available' in context) {
+      throw new Error(context.reason || 'Slot is no longer available');
+    }
+
     const client = await getClient();
 
     try {
       await client.query('BEGIN');
+      await this.lockStorefront(client, storefront.id);
 
-      // Acquire advisory lock based on storefront, service, and time bucket (15-min)
-      // This prevents concurrent bookings from racing
-      const lockKey = this.generateLockKey(
+      // Re-check capacity within the lock, counting on this transaction's connection
+      const overlapping = await AppointmentModel.countOverlappingAppointmentsWithClient(
+        client,
         storefront.id,
-        service.id,
-        startDatetime
-      );
-      await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
-
-      // Re-check availability within the lock
-      const availabilityResult = await AvailabilityService.isSlotAvailable(
-        storefront.id,
-        service.id,
         startDatetime,
-        endDatetime
+        endDatetime,
+        null
       );
+      const availabilityResult = AvailabilityService.evaluateSlot(context, startDatetime, endDatetime, overlapping);
 
       if (!availabilityResult.available) {
         throw new Error(
@@ -179,26 +159,20 @@ export class AppointmentService {
         );
       }
 
-      // Create the appointment
-      const appointmentData: CreateAppointmentData = {
-        client_id: clientId,
+      const appointment = await AppointmentModel.createWithClient(client, {
         storefront_id: storefront.id,
         service_id: service.id,
+        guest_name: guest.name,
+        guest_email: guest.email,
+        guest_phone: guest.phone,
+        manage_token: this.generateManageToken(),
         requested_start_datetime: startDatetime,
         requested_end_datetime: endDatetime,
         status: 'pending',
         client_notes: clientNotes,
         price_quoted: service.price ?? undefined,
-        // Marketplace location fields
-        service_location_type: serviceLocationType,
-        client_address: clientAddress,
         drop_id: dropId,
-      };
-
-      const appointment = await AppointmentModel.createWithClient(
-        client,
-        appointmentData
-      );
+      });
 
       await client.query('COMMIT');
       return appointment;
@@ -211,57 +185,106 @@ export class AppointmentService {
   }
 
   /**
-   * Generate a lock key for advisory locking
+   * Take a transaction-scoped advisory lock on a storefront's bookings.
    *
-   * Creates a unique integer key from storefront, service, and 15-minute time bucket
-   * to allow concurrent bookings for different time slots while preventing
-   * race conditions for the same slot.
+   * Capacity is shared across all of a storefront's services and overlapping
+   * bookings can start at different times, so the lock covers the whole
+   * storefront rather than one service or time bucket. The lock is released
+   * automatically at COMMIT or ROLLBACK.
    */
-  private static generateLockKey(
-    storefrontId: number,
-    serviceId: number,
-    datetime: Date
-  ): number {
-    // Create 15-minute time buckets
-    const timeBucket = Math.floor(datetime.getTime() / (15 * 60 * 1000));
+  private static async lockStorefront(client: PoolClient, storefrontId: number): Promise<void> {
+    await client.query('SELECT pg_advisory_xact_lock($1, $2)', [BOOKING_LOCK_NAMESPACE, storefrontId]);
+  }
 
-    // Combine into a hash (using simple string hash)
-    const combined = `${storefrontId}-${serviceId}-${timeBucket}`;
-    let hash = 0;
-    for (let i = 0; i < combined.length; i++) {
-      const char = combined.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
+  /** dropId if [start, end) lies within that drop's window, otherwise null */
+  private static async dropContaining(
+    dropId: number,
+    storefront: Storefront,
+    start: Date,
+    end: Date
+  ): Promise<number | null> {
+    const drop = await DropModel.findById(dropId);
+    if (!drop) return null;
+    const tz = storefront.timezone || 'UTC';
+    const date = toDateStr(drop.drop_date);
+    const windowStart = localToUtc(date, parseClock(drop.start_time), tz);
+    const windowEnd = localToUtc(date, parseClock(drop.end_time), tz);
+    return start >= windowStart && end <= windowEnd ? dropId : null;
+  }
+
+  /** 256-bit random token, hex-encoded; possession grants access to one booking */
+  private static generateManageToken(): string {
+    return randomBytes(32).toString('hex');
+  }
+
+  /** Human-readable start time in the storefront's timezone, for emails */
+  private static formatForStorefront(date: Date, storefront: Storefront): string {
+    const tz = storefront.timezone || 'UTC';
+    return formatInTimeZone(date, tz, "EEE, MMM d, yyyy 'at' h:mm a zzz");
+  }
+
+  /** Strip internal fields before returning a booking to a token holder */
+  private static toManaged(appointment: Appointment): ManagedAppointment {
+    return {
+      id: appointment.id,
+      storefront_id: appointment.storefront_id,
+      service_id: appointment.service_id,
+      status: appointment.status,
+      requested_start_datetime: appointment.requested_start_datetime,
+      requested_end_datetime: appointment.requested_end_datetime,
+      guest_name: appointment.guest_name,
+      guest_email: appointment.guest_email,
+      guest_phone: appointment.guest_phone,
+      client_notes: appointment.client_notes,
+      vendor_notes: appointment.vendor_notes,
+      price_quoted: appointment.price_quoted,
+      drop_id: appointment.drop_id,
+      manage_token: appointment.manage_token,
+      service_name: appointment.service_name,
+      storefront_name: appointment.storefront_name,
+      storefront_slug: appointment.storefront_slug,
+      storefront_timezone: appointment.storefront_timezone,
+    };
+  }
+
+  // ============================================
+  // GUEST SELF-SERVICE (manage token)
+  // ============================================
+
+  /**
+   * Look up a booking by its manage token
+   */
+  static async getByManageToken(token: string): Promise<ManagedAppointment> {
+    const appointment = await AppointmentModel.findByManageToken(token);
+    if (!appointment) {
+      throw new Error('Appointment not found');
     }
-    return Math.abs(hash);
+    return this.toManaged(appointment);
   }
 
   /**
-   * Get appointments for a client
+   * Guest cancels their own pending or confirmed booking
    */
-  static async getClientAppointments(
-    clientId: number,
-    options?: AppointmentQueryOptions
-  ): Promise<Appointment[]> {
-    const queryOptions: any = {};
-
-    if (options?.status) {
-      queryOptions.status = options.status;
+  static async cancelByManageToken(token: string): Promise<ManagedAppointment> {
+    const appointment = await AppointmentModel.findByManageToken(token);
+    if (!appointment) {
+      throw new Error('Appointment not found');
     }
 
-    if (options?.upcoming) {
-      queryOptions.startDate = new Date();
+    this.validateStatusTransition(appointment.status, 'cancelled', true, false);
+
+    const updated = await AppointmentModel.updateStatus(appointment.id, 'cancelled', {
+      internal_notes: 'Cancelled by guest',
+    });
+    if (!updated) {
+      throw new Error('Failed to update appointment status');
     }
 
-    if (options?.startDate) {
-      queryOptions.startDate = options.startDate;
+    if (appointment.drop_id) {
+      DropService.notifyWaitlist(appointment.drop_id);
     }
 
-    if (options?.endDate) {
-      queryOptions.endDate = options.endDate;
-    }
-
-    return await AppointmentModel.findByClientId(clientId, queryOptions);
+    return this.toManaged({ ...appointment, ...updated });
   }
 
   /**
@@ -302,8 +325,8 @@ export class AppointmentService {
   /**
    * Get a single appointment by ID
    *
-   * Validates that the requester has permission to view the appointment
-   * (either the client who booked it or the vendor who owns the storefront)
+   * Only the vendor who owns the storefront may view it this way;
+   * guests use their manage token instead.
    */
   static async getAppointmentById(
     appointmentId: number,
@@ -315,12 +338,6 @@ export class AppointmentService {
       return null;
     }
 
-    // Check if user is the client
-    if (appointment.client_id === userId) {
-      return appointment;
-    }
-
-    // Check if user is the vendor
     const storefront = await StorefrontModel.findById(appointment.storefront_id);
     if (storefront && storefront.vendor_id === userId) {
       return appointment;
@@ -333,9 +350,8 @@ export class AppointmentService {
   /**
    * Update appointment status
    *
-   * Permissions:
-   * - Client can: cancel their own pending/confirmed appointments
-   * - Vendor can: confirm, decline, cancel, complete, mark no-show
+   * Vendor only: confirm, decline, cancel, complete, mark no-show.
+   * Guests cancel through cancelByManageToken.
    */
   static async updateStatus(
     appointmentId: number,
@@ -349,22 +365,12 @@ export class AppointmentService {
       throw new Error('Appointment not found');
     }
 
-    // Determine user role
-    const isClient = appointment.client_id === userId;
     const storefront = await StorefrontModel.findById(appointment.storefront_id);
-    const isVendor = storefront?.vendor_id === userId;
-
-    if (!isClient && !isVendor) {
+    if (!storefront || storefront.vendor_id !== userId) {
       throw new Error('Forbidden: You do not have permission to modify this appointment');
     }
 
-    // Validate status transition
-    this.validateStatusTransition(
-      appointment.status,
-      newStatus,
-      isClient,
-      isVendor
-    );
+    this.validateStatusTransition(appointment.status, newStatus, false, true);
 
     const updated = await AppointmentModel.updateStatus(
       appointmentId,
@@ -376,7 +382,38 @@ export class AppointmentService {
       throw new Error('Failed to update appointment status');
     }
 
+    if (newStatus === 'cancelled') {
+      this.notifyGuestOfStatus(updated, storefront, 'cancelled', notes?.vendor_notes);
+      if (updated.drop_id) {
+        DropService.notifyWaitlist(updated.drop_id);
+      }
+    }
+
     return updated;
+  }
+
+  /**
+   * Fire-and-forget status email to the guest
+   */
+  private static notifyGuestOfStatus(
+    appointment: Appointment,
+    storefront: Storefront,
+    newStatus: 'confirmed' | 'cancelled' | 'declined',
+    vendorNotes?: string
+  ): void {
+    ServiceModel.findById(appointment.service_id)
+      .then((service) => {
+        if (!service) return;
+        EmailService.sendAppointmentStatusChange(appointment.guest_email, {
+          serviceName: service.name,
+          storefrontName: storefront.name,
+          dateTime: this.formatForStorefront(new Date(appointment.requested_start_datetime), storefront),
+          newStatus,
+          vendorNotes,
+          manageToken: appointment.manage_token,
+        });
+      })
+      .catch((error) => console.error('[AppointmentService] Status email failed:', error));
   }
 
   /**
@@ -412,10 +449,10 @@ export class AppointmentService {
       );
     }
 
-    // Client restrictions - clients can only cancel their appointments
+    // Guest restrictions - guests can only cancel their appointments
     if (isClient && !isVendor) {
       if (newStatus !== 'cancelled') {
-        throw new Error('Clients can only cancel appointments');
+        throw new Error('Guests can only cancel appointments');
       }
     }
 
@@ -465,24 +502,19 @@ export class AppointmentService {
   }
 
   /**
-   * Reschedule an appointment atomically (cancel old + create new in one transaction)
+   * Reschedule a booking atomically (cancel old + create new in one transaction)
    *
-   * If the new slot is unavailable, the transaction rolls back and the
-   * original appointment remains untouched.
+   * Authorized by the guest's manage token. If the new slot is unavailable,
+   * the transaction rolls back and the original booking is untouched. The new
+   * booking gets a fresh manage token, returned to the caller and emailed.
    */
-  static async rescheduleAppointment(
-    appointmentId: number,
-    clientId: number,
+  static async rescheduleByManageToken(
+    token: string,
     newStartDatetimeStr: string
-  ): Promise<{ cancelled: Appointment; new: Appointment }> {
-    // Fetch original appointment
-    const original = await AppointmentModel.findById(appointmentId);
+  ): Promise<{ cancelled: ManagedAppointment; new: ManagedAppointment }> {
+    const original = await AppointmentModel.findByManageToken(token);
     if (!original) {
       throw new Error('Appointment not found');
-    }
-
-    if (original.client_id !== clientId) {
-      throw new Error('Forbidden: You do not own this appointment');
     }
 
     if (original.status !== 'pending' && original.status !== 'confirmed') {
@@ -494,7 +526,6 @@ export class AppointmentService {
       throw new Error('Cannot reschedule to a time in the past');
     }
 
-    // Fetch service for duration calculation
     const service = await ServiceModel.findById(original.service_id);
     if (!service) {
       throw new Error('Service not found');
@@ -508,78 +539,101 @@ export class AppointmentService {
     const totalDuration = service.duration_minutes + service.buffer_time_minutes;
     const newEnd = addMinutes(newStart, totalDuration);
 
-    // Execute in a transaction with advisory lock on the new time slot
+    // The new booking stays linked to the drop only if it still falls inside the drop's window
+    const newDropId = original.drop_id
+      ? await this.dropContaining(original.drop_id, storefront, newStart, newEnd)
+      : null;
+
+    const context = await AvailabilityService.loadSlotContext(storefront.id, service.id, newStart);
+    if ('available' in context) {
+      throw new Error(context.reason || 'New time slot is not available');
+    }
+
     const client = await getClient();
+    let cancelled: Appointment;
+    let created: Appointment;
     try {
       await client.query('BEGIN');
+      await this.lockStorefront(client, storefront.id);
 
-      // Advisory lock on the new slot
-      const lockKey = this.generateLockKey(storefront.id, service.id, newStart);
-      await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
-
-      // Check availability for the new slot
-      const availabilityResult = await AvailabilityService.isSlotAvailable(
-        storefront.id,
-        service.id,
-        newStart,
-        newEnd
-      );
-
-      if (!availabilityResult.available) {
-        throw new Error(availabilityResult.reason || 'New time slot is not available');
-      }
-
-      // Cancel old appointment
-      const cancelled = await AppointmentModel.updateStatusWithClient(
+      // Cancel the old booking first; the count below runs in this transaction, so it no
+      // longer includes the original and moving within its own time works at full capacity
+      const cancelledRow = await AppointmentModel.updateStatusWithClient(
         client,
-        appointmentId,
+        original.id,
         'cancelled',
-        { internal_notes: `Rescheduled to new appointment` }
+        { internal_notes: 'Rescheduled by guest' }
       );
-
-      if (!cancelled) {
+      if (!cancelledRow) {
         throw new Error('Failed to cancel original appointment');
       }
 
-      // Create new appointment
-      const newAppointment = await AppointmentModel.createWithClient(client, {
-        client_id: clientId,
+      const overlapping = await AppointmentModel.countOverlappingAppointmentsWithClient(
+        client,
+        storefront.id,
+        newStart,
+        newEnd,
+        null
+      );
+      const availability = AvailabilityService.evaluateSlot(context, newStart, newEnd, overlapping);
+      if (!availability.available) {
+        throw new Error(availability.reason || 'New time slot is not available');
+      }
+
+      const newRow = await AppointmentModel.createWithClient(client, {
         storefront_id: original.storefront_id,
         service_id: original.service_id,
+        guest_name: original.guest_name,
+        guest_email: original.guest_email,
+        guest_phone: original.guest_phone,
+        manage_token: this.generateManageToken(),
         requested_start_datetime: newStart,
         requested_end_datetime: newEnd,
         status: 'pending',
-        client_notes: original.client_notes || undefined,
+        client_notes: original.client_notes,
         price_quoted: service.price ?? undefined,
-        service_location_type: original.service_location_type,
-        client_address: original.client_address || undefined,
-        drop_id: original.drop_id ?? undefined,
+        drop_id: newDropId,
       });
 
-      // Update internal notes with cross-references
-      await AppointmentModel.updateStatusWithClient(
-        client,
-        cancelled.id,
-        'cancelled',
-        { internal_notes: `Rescheduled to #${newAppointment.id}` }
-      );
-
-      await AppointmentModel.updateStatusWithClient(
-        client,
-        newAppointment.id,
-        'pending',
-        { internal_notes: `Rescheduled from #${cancelled.id}` }
-      );
+      // Cross-reference the pair for the vendor
+      cancelled = (await AppointmentModel.updateStatusWithClient(client, cancelledRow.id, 'cancelled', {
+        internal_notes: `Rescheduled to #${newRow.id}`,
+      }))!;
+      created = (await AppointmentModel.updateStatusWithClient(client, newRow.id, 'pending', {
+        internal_notes: `Rescheduled from #${cancelledRow.id}`,
+      }))!;
 
       await client.query('COMMIT');
-
-      return { cancelled, new: newAppointment };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
     } finally {
       client.release();
     }
+
+    EmailService.sendAppointmentConfirmation(created.guest_email, {
+      serviceName: service.name,
+      storefrontName: storefront.name,
+      dateTime: this.formatForStorefront(newStart, storefront),
+      price: service.price ?? undefined,
+      manageToken: created.manage_token,
+    });
+
+    // Moving out of a drop window frees a spot there
+    if (original.drop_id && created.drop_id !== original.drop_id) {
+      DropService.notifyWaitlist(original.drop_id);
+    }
+
+    const joined = {
+      service_name: original.service_name,
+      storefront_name: original.storefront_name,
+      storefront_slug: original.storefront_slug,
+      storefront_timezone: original.storefront_timezone,
+    };
+    return {
+      cancelled: this.toManaged({ ...cancelled, ...joined }),
+      new: this.toManaged({ ...created, ...joined }),
+    };
   }
 
   // ============================================
@@ -633,18 +687,7 @@ export class AppointmentService {
       throw new Error('Failed to approve appointment');
     }
 
-    // Fire-and-forget notification to client about approval
-    const clientUser = await UserModel.findById(appointment.client_id);
-    const service = await ServiceModel.findById(appointment.service_id);
-    if (clientUser && service) {
-      EmailService.sendAppointmentStatusChange(clientUser.email, {
-        serviceName: service.name,
-        storefrontName: storefront.name,
-        dateTime: new Date(appointment.requested_start_datetime).toLocaleString(),
-        newStatus: 'confirmed',
-        vendorNotes,
-      });
-    }
+    this.notifyGuestOfStatus(updated, storefront, 'confirmed', vendorNotes);
 
     return updated;
   }
@@ -696,17 +739,10 @@ export class AppointmentService {
       throw new Error('Failed to decline appointment');
     }
 
-    // Fire-and-forget notification to client about decline
-    const clientUser = await UserModel.findById(appointment.client_id);
-    const service = await ServiceModel.findById(appointment.service_id);
-    if (clientUser && service) {
-      EmailService.sendAppointmentStatusChange(clientUser.email, {
-        serviceName: service.name,
-        storefrontName: storefront.name,
-        dateTime: new Date(appointment.requested_start_datetime).toLocaleString(),
-        newStatus: 'declined',
-        vendorNotes: reason,
-      });
+    this.notifyGuestOfStatus(updated, storefront, 'declined', reason);
+
+    if (updated.drop_id) {
+      DropService.notifyWaitlist(updated.drop_id);
     }
 
     return updated;

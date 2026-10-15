@@ -1,55 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { storefrontApi, type CreateStorefrontRequest, type UpdateStorefrontRequest } from '../services/api';
 import { toast } from 'sonner';
+import { pageKeys } from './usePage';
 
 /**
- * TanStack Query Hooks for Storefront Management
- *
- * These hooks provide a clean interface for managing storefront data
- * with automatic caching, loading states, and error handling.
+ * TanStack Query Hooks for the vendor's booking page (one storefront per vendor)
  */
 
 // Query Keys - Centralized for consistency
 export const storefrontKeys = {
-  all: ['storefronts'] as const,
-  detail: (id: number) => ['storefronts', id] as const,
+  mine: ['storefronts', 'mine'] as const,
+  slug: (slug: string) => ['storefronts', 'slug', slug] as const,
 };
 
 /**
- * Fetch all storefronts for the current vendor
+ * The signed-in vendor's page; resolves to null until they create one
  */
-export function useStorefronts() {
+export function useMyStorefront() {
   return useQuery({
-    queryKey: storefrontKeys.all,
+    queryKey: storefrontKeys.mine,
     queryFn: async () => {
-      const response = await storefrontApi.getAll();
+      const response = await storefrontApi.getMine();
       if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch storefronts');
+        throw new Error(response.message || 'Failed to fetch your page');
       }
-      return response.data || [];
+      return response.data ?? null;
     },
   });
 }
 
 /**
- * Fetch a single storefront by ID
+ * Whether a handle can be claimed. Pass '' to skip.
  */
-export function useStorefront(id: number | null) {
+export function useSlugAvailability(slug: string) {
   return useQuery({
-    queryKey: storefrontKeys.detail(id!),
+    queryKey: storefrontKeys.slug(slug),
     queryFn: async () => {
-      const response = await storefrontApi.getById(id!);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch storefront');
-      }
-      return response.data!;
+      const response = await storefrontApi.checkSlug(slug);
+      return response.data?.available ?? false;
     },
-    enabled: !!id, // Only run query if id is provided
+    enabled: slug.length >= 3,
+    staleTime: 10_000,
   });
 }
 
 /**
- * Create a new storefront
+ * Create the vendor's page (onboarding)
  */
 export function useCreateStorefront() {
   const queryClient = useQueryClient();
@@ -59,22 +55,21 @@ export function useCreateStorefront() {
 
     onSuccess: (response) => {
       if (response.success) {
-        // Invalidate and refetch storefronts list
-        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
-        toast.success('Storefront created successfully!');
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.mine });
+        toast.success('Your page is live!');
       } else {
-        toast.error(response.message || 'Failed to create storefront');
+        toast.error(response.message || 'Failed to create your page');
       }
     },
 
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create storefront');
+      toast.error(error.message || 'Failed to create your page');
     },
   });
 }
 
 /**
- * Update an existing storefront
+ * Update the vendor's page
  */
 export function useUpdateStorefront() {
   const queryClient = useQueryClient();
@@ -83,44 +78,18 @@ export function useUpdateStorefront() {
     mutationFn: ({ id, data }: { id: number; data: UpdateStorefrontRequest }) =>
       storefrontApi.update(id, data),
 
-    onSuccess: (response, variables) => {
-      if (response.success) {
-        // Invalidate both the list and the specific storefront
-        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
-        queryClient.invalidateQueries({ queryKey: storefrontKeys.detail(variables.id) });
-        toast.success('Storefront updated successfully!');
-      } else {
-        toast.error(response.message || 'Failed to update storefront');
-      }
-    },
-
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update storefront');
-    },
-  });
-}
-
-/**
- * Delete a storefront
- */
-export function useDeleteStorefront() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => storefrontApi.delete(id),
-
     onSuccess: (response) => {
       if (response.success) {
-        // Invalidate storefronts list
-        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
-        toast.success('Storefront deleted successfully!');
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.mine });
+        queryClient.invalidateQueries({ queryKey: pageKeys.all });
+        toast.success('Page updated');
       } else {
-        toast.error(response.message || 'Failed to delete storefront');
+        toast.error(response.message || 'Failed to update your page');
       }
     },
 
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete storefront');
+      toast.error(error.message || 'Failed to update your page');
     },
   });
 }

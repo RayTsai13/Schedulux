@@ -1,0 +1,12 @@
+# Build context is the repo root so images can include packages/availability-engine
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.playwright-mcp
+docs
+lessons
+**/*.md

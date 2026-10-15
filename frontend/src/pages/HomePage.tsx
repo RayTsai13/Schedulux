@@ -1,35 +1,15 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { FullPageSpinner } from '../components/auth/ProtectedRoute';
 import LandingPage from './LandingPage';
 
 export default function HomePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  // Show loading state while checking authentication
   if (isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-surface flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 text-on-surface-variant">Loading...</p>
-        </div>
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
-  // Unauthenticated users see the landing page
-  if (!isAuthenticated) {
-    return <LandingPage />;
-  }
-
-  // Redirect authenticated users to their role-specific pages
-  if (user?.role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  }
-
-  if (user?.role === 'vendor') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <Navigate to="/explore" replace />;
+  // Signed-in vendors go straight to their dashboard; everyone else sees the landing page
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }

@@ -16,8 +16,8 @@ const sections: LegalSection[] = [
     heading: 'The Service',
     body: (
       <p className={legalText}>
-        Schedulux is a marketplace that connects independent vendors with clients. Vendors publish storefronts,
-        services, availability, and limited-time drops; clients discover vendors and book, reschedule, or cancel
+        Schedulux gives independent vendors a public booking page. Vendors publish pages,
+        services, availability, and limited-time drops; clients book, reschedule, or cancel
         appointments. Schedulux provides the booking platform only and is not a party to the services vendors
         provide.
       </p>
@@ -128,7 +128,7 @@ export default function TermsOfServicePage() {
     <LegalPageLayout
       title="Terms of Service"
       lastUpdated="October 13, 2026"
-      intro={<p>These Terms govern your use of the Schedulux marketplace and booking platform.</p>}
+      intro={<p>These Terms govern your use of the Schedulux booking platform.</p>}
       sections={sections}
     />
   );

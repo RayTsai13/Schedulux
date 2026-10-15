@@ -1,6 +1,21 @@
+import { computeSlots, localToUtc, parseClock } from '@schedulux/availability-engine';
 import { DropModel } from '../models/Drop';
+import { DropWaitlistModel } from '../models/DropWaitlist';
 import { StorefrontModel } from '../models/Storefront';
-import { Drop, CreateDropRequest, UpdateDropRequest } from '../types';
+import { ServiceModel } from '../models/Service';
+import { AppointmentModel } from '../models/Appointment';
+import { AvailabilityService } from './AvailabilityService';
+import { EmailService, pageUrl } from './EmailService';
+import {
+  Drop,
+  CreateDropRequest,
+  UpdateDropRequest,
+  DropSpots,
+  PublicDrop,
+  VendorDrop,
+  Storefront,
+} from '../types';
+import { toDateStr } from '../utils/dates';
 
 export class DropService {
 
@@ -33,25 +48,140 @@ export class DropService {
     }
   }
 
-  static async getDropsByStorefront(storefrontId: number, userId: number): Promise<Drop[]> {
-    await this.verifyStorefrontOwnership(storefrontId, userId);
-    return await DropModel.findByStorefrontId(storefrontId);
+  /**
+   * Count total and remaining spots for each drop.
+   *
+   * A drop's spots are the back-to-back slots in its window times its capacity,
+   * sized by the drop's service (or the shortest active service when the drop
+   * applies to all). Remaining spots subtract every overlapping booking, since
+   * capacity is shared across services. One bookings query covers all drops.
+   */
+  static async countSpots(storefront: Storefront, drops: Drop[]): Promise<Map<number, DropSpots>> {
+    const spots = new Map<number, DropSpots>();
+    if (drops.length === 0) return spots;
+
+    const services = await ServiceModel.findActiveByStorefrontId(storefront.id);
+    const tz = storefront.timezone || 'UTC';
+    const windowOf = (d: Drop) => {
+      const date = toDateStr(d.drop_date);
+      return {
+        date,
+        start: localToUtc(date, parseClock(d.start_time), tz),
+        end: localToUtc(date, parseClock(d.end_time), tz),
+      };
+    };
+
+    const windows = drops.map(windowOf);
+    const rangeStart = new Date(Math.min(...windows.map((w) => w.start.getTime())));
+    const rangeEnd = new Date(Math.max(...windows.map((w) => w.end.getTime())));
+    const bookings = (await AppointmentModel.findActiveInRange(storefront.id, rangeStart, rangeEnd, null)).map(
+      (apt) => ({ start: apt.requested_start_datetime, end: apt.requested_end_datetime })
+    );
+
+    drops.forEach((drop, i) => {
+      const candidates = drop.service_id === null ? services : services.filter((s) => s.id === drop.service_id);
+      if (candidates.length === 0) {
+        spots.set(drop.id, { total_spots: 0, remaining_spots: 0 });
+        return;
+      }
+      const slotMinutes = Math.min(...candidates.map((s) => s.duration_minutes + s.buffer_time_minutes));
+      const base = {
+        timezone: tz,
+        startDate: windows[i].date,
+        endDate: windows[i].date,
+        rules: [],
+        windows: AvailabilityService.toEngineWindows([drop]),
+        slotMinutes,
+      };
+      const sum = (slots: { remaining: number }[]) => slots.reduce((n, s) => n + s.remaining, 0);
+
+      spots.set(drop.id, {
+        total_spots: sum(computeSlots({ ...base, now: new Date(0) })),
+        remaining_spots: sum(computeSlots({ ...base, bookings })),
+      });
+    });
+
+    return spots;
   }
 
-  static async getPublicDrops(storefrontId: number): Promise<Drop[]> {
-    const storefront = await StorefrontModel.findById(storefrontId);
-    if (!storefront) {
-      throw new Error('Storefront not found');
+  static async getDropsByStorefront(storefrontId: number, userId: number): Promise<VendorDrop[]> {
+    await this.verifyStorefrontOwnership(storefrontId, userId);
+    const storefront = (await StorefrontModel.findById(storefrontId))!;
+    const drops = await DropModel.findByStorefrontId(storefrontId);
+    const [spots, waitlists] = await Promise.all([
+      this.countSpots(storefront, drops),
+      DropWaitlistModel.countByDropIds(drops.map((d) => d.id)),
+    ]);
+    return drops.map((d) => ({
+      ...d,
+      total_spots: spots.get(d.id)?.total_spots ?? 0,
+      remaining_spots: spots.get(d.id)?.remaining_spots ?? 0,
+      waitlist_count: waitlists.get(d.id) ?? 0,
+    }));
+  }
+
+  /**
+   * Published drops that haven't ended yet, with spot counts
+   */
+  static async getPublicDrops(storefront: Storefront): Promise<PublicDrop[]> {
+    const now = Date.now();
+    const tz = storefront.timezone || 'UTC';
+    const drops = (await DropModel.findActiveByStorefrontId(storefront.id)).filter(
+      (d) => localToUtc(toDateStr(d.drop_date), parseClock(d.end_time), tz).getTime() > now
+    );
+    const spots = await this.countSpots(storefront, drops);
+    return drops.map((d) => ({
+      ...d,
+      total_spots: spots.get(d.id)?.total_spots ?? 0,
+      remaining_spots: spots.get(d.id)?.remaining_spots ?? 0,
+    }));
+  }
+
+  /**
+   * Join the waitlist for a sold-out drop
+   */
+  static async joinWaitlist(dropId: number, name: string, email: string): Promise<void> {
+    const drop = await DropModel.findById(dropId);
+    if (!drop || !drop.is_published || !drop.is_active) {
+      throw new Error('Drop not found');
     }
-    // Return only future published drops
-    const drops = await DropModel.findActiveByStorefrontId(storefrontId);
-    const today = new Date().toISOString().substring(0, 10);
-    return drops.filter(d => {
-      const dropDate = typeof d.drop_date === 'string'
-        ? d.drop_date.substring(0, 10)
-        : new Date(d.drop_date).toISOString().substring(0, 10);
-      return dropDate >= today;
-    });
+    const storefront = await StorefrontModel.findById(drop.storefront_id);
+    if (!storefront) {
+      throw new Error('Drop not found');
+    }
+
+    const publicDrop = (await this.getPublicDrops(storefront)).find((d) => d.id === dropId);
+    if (!publicDrop) {
+      throw new Error('Drop has already ended');
+    }
+    if (publicDrop.remaining_spots > 0) {
+      throw new Error('Drop still has open spots');
+    }
+
+    await DropWaitlistModel.add(dropId, name.trim(), email.trim().toLowerCase());
+  }
+
+  /**
+   * Email everyone waiting on a drop that a spot has opened.
+   * Fire-and-forget: never throws, never awaited by callers.
+   */
+  static notifyWaitlist(dropId: number): void {
+    (async () => {
+      const drop = await DropModel.findById(dropId);
+      if (!drop || !drop.is_published || !drop.is_active) return;
+      const storefront = await StorefrontModel.findById(drop.storefront_id);
+      if (!storefront) return;
+
+      const entries = await DropWaitlistModel.claimUnnotified(dropId);
+      for (const entry of entries) {
+        EmailService.sendWaitlistSpotOpened(entry.email, {
+          name: entry.name,
+          dropTitle: drop.title,
+          storefrontName: storefront.name,
+          dropUrl: pageUrl(storefront.slug, drop.id),
+        });
+      }
+    })().catch((error) => console.error('[DropService] Waitlist notification failed:', error));
   }
 
   static async getDropById(id: number, userId: number): Promise<Drop> {

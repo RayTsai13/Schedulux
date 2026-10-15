@@ -1,0 +1,44 @@
+{
+  "name": "@schedulux/availability-engine",
+  "version": "0.1.0",
+  "description": "Timezone-safe, priority-based availability engine: layered schedule rules in, bookable slots out",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "scheduling",
+    "availability",
+    "booking",
+    "timezone",
+    "calendar",
+    "slots"
+  ],
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.7"
+  }
+}

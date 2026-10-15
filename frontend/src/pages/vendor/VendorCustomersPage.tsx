@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStorefronts } from '../../hooks/useStorefronts';
+import { useVendorPage } from '../../components/auth/VendorRoute';
 import { useStorefrontAppointments } from '../../hooks/useAppointments';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import type { Appointment, Storefront } from '../../services/api';
 
 // ---------------------------------------------------------------------------
 // Icon helper
@@ -23,39 +22,15 @@ function Icon({ name, className = '', fill = false }: { name: string; className?
 // Customer data derived from appointments
 // ---------------------------------------------------------------------------
 interface CustomerSummary {
-  clientId: number;
+  /** Lowercased email; guests are identified by the email they book with */
+  key: string;
+  name: string;
+  email: string;
   appointmentCount: number;
   completedCount: number;
   totalSpent: number;
   lastVisit: string;
   services: string[];
-  storefronts: string[];
-}
-
-// ---------------------------------------------------------------------------
-// Aggregated appointments hook — same pattern as VendorAppointmentsPage
-// ---------------------------------------------------------------------------
-function useAllAppointments(storefronts: Storefront[] | undefined) {
-  const ids = useMemo(() => (storefronts || []).slice(0, 10).map(s => s.id), [storefronts]);
-
-  const q0 = useStorefrontAppointments(ids[0] ?? null);
-  const q1 = useStorefrontAppointments(ids[1] ?? null);
-  const q2 = useStorefrontAppointments(ids[2] ?? null);
-  const q3 = useStorefrontAppointments(ids[3] ?? null);
-  const q4 = useStorefrontAppointments(ids[4] ?? null);
-
-  const queries = [q0, q1, q2, q3, q4].slice(0, ids.length);
-  const isLoading = queries.some(q => q.isLoading);
-
-  const appointments = useMemo(() => {
-    const all: Appointment[] = [];
-    queries.forEach((q) => {
-      if (q.data) all.push(...q.data);
-    });
-    return all;
-  }, [queries.map(q => q.data)]);
-
-  return { appointments, isLoading };
 }
 
 // ---------------------------------------------------------------------------
@@ -63,17 +38,16 @@ function useAllAppointments(storefronts: Storefront[] | undefined) {
 // ---------------------------------------------------------------------------
 export default function VendorCustomersPage() {
   const navigate = useNavigate();
-  const { data: storefronts, isLoading: storefrontsLoading } = useStorefronts();
-  const { appointments, isLoading: apptLoading } = useAllAppointments(storefronts);
-
-  const isLoading = storefrontsLoading || apptLoading;
+  const page = useVendorPage();
+  const { data: appointments = [], isLoading } = useStorefrontAppointments(page.id);
 
   // Derive customer list from appointments
   const customers = useMemo<CustomerSummary[]>(() => {
-    const map = new Map<number, CustomerSummary>();
+    const map = new Map<string, CustomerSummary>();
 
     for (const apt of appointments) {
-      const existing = map.get(apt.client_id);
+      const key = apt.guest_email.toLowerCase();
+      const existing = map.get(key);
       if (existing) {
         existing.appointmentCount++;
         if (apt.status === 'completed') {
@@ -82,22 +56,21 @@ export default function VendorCustomersPage() {
         }
         if (new Date(apt.requested_start_datetime) > new Date(existing.lastVisit)) {
           existing.lastVisit = apt.requested_start_datetime;
+          existing.name = apt.guest_name; // most recent name they used
         }
         if (apt.service_name && !existing.services.includes(apt.service_name)) {
           existing.services.push(apt.service_name);
         }
-        if (apt.storefront_name && !existing.storefronts.includes(apt.storefront_name)) {
-          existing.storefronts.push(apt.storefront_name);
-        }
       } else {
-        map.set(apt.client_id, {
-          clientId: apt.client_id,
+        map.set(key, {
+          key,
+          name: apt.guest_name,
+          email: apt.guest_email,
           appointmentCount: 1,
           completedCount: apt.status === 'completed' ? 1 : 0,
           totalSpent: apt.status === 'completed' ? (apt.price_final ?? apt.price_quoted ?? 0) : 0,
           lastVisit: apt.requested_start_datetime,
           services: apt.service_name ? [apt.service_name] : [],
-          storefronts: apt.storefront_name ? [apt.storefront_name] : [],
         });
       }
     }
@@ -177,14 +150,14 @@ export default function VendorCustomersPage() {
               No customers yet
             </h3>
             <p className="text-on-surface-variant mb-8 max-w-md mx-auto leading-relaxed">
-              When clients book appointments through your storefronts, they'll appear here.
-              Make sure your storefronts are set up and published.
+              When people book through your page, they'll appear here.
+              Share your link to get your first booking.
             </p>
             <button
-              onClick={() => navigate('/dashboard/storefronts')}
+              onClick={() => navigate('/dashboard/page')}
               className="bg-primary text-on-primary px-8 py-3 rounded-md font-bold hover:bg-primary-container transition-all"
             >
-              Manage Storefronts
+              Set Up Your Page
             </button>
           </div>
         ) : (
@@ -200,10 +173,10 @@ export default function VendorCustomersPage() {
             </div>
 
             {customers.map((customer) => {
-              const initials = `C${customer.clientId}`;
+              const initials = customer.name.charAt(0).toUpperCase();
               return (
                 <div
-                  key={customer.clientId}
+                  key={customer.key}
                   className="bg-surface-container-lowest rounded-xl p-6 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-surface-container-low transition-colors group"
                   style={{ boxShadow: '0 8px 24px rgba(27,28,26,0.03)' }}
                 >
@@ -212,11 +185,11 @@ export default function VendorCustomersPage() {
                     <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
                       <span className="text-sm font-bold text-on-secondary-container">{initials}</span>
                     </div>
-                    <div>
-                      <p className="font-bold text-primary text-sm font-headline">Client #{customer.clientId}</p>
-                      <p className="text-[10px] text-on-surface-variant">
-                        {customer.storefronts.length > 0 ? customer.storefronts[0] : '—'}
-                      </p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-primary text-sm font-headline truncate">{customer.name}</p>
+                      <a href={`mailto:${customer.email}`} className="text-[10px] text-on-surface-variant hover:text-primary truncate block">
+                        {customer.email}
+                      </a>
                     </div>
                   </div>
 

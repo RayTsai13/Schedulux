@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   format,
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   addDays, addMonths, subMonths, isSameMonth, isSameDay, isToday,
 } from 'date-fns';
-import { useStorefront } from '../../hooks/useStorefronts';
+import { useVendorPage } from '../../components/auth/VendorRoute';
 import { useStorefrontAppointments } from '../../hooks/useAppointments';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import AppointmentDetailModal from '../../components/vendor/AppointmentDetailModal';
@@ -48,10 +48,9 @@ const DOT_BORDER_COLORS: Record<string, string> = {
 // AppointmentCalendarPage
 // ---------------------------------------------------------------------------
 export default function AppointmentCalendarPage() {
-  const { id } = useParams<{ id: string }>();
-  const storefrontId = id ? parseInt(id) : null;
+  const storefront = useVendorPage();
+  const storefrontId = storefront.id;
 
-  const { data: storefront } = useStorefront(storefrontId);
   const { data: appointments, isLoading } = useStorefrontAppointments(storefrontId);
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -120,11 +119,11 @@ export default function AppointmentCalendarPage() {
 
         {/* Breadcrumb */}
         <Link
-          to={`/dashboard/storefront/${storefrontId}`}
+          to="/dashboard/page"
           className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-label"
         >
           <Icon name="arrow_back" className="text-sm" />
-          Back to Storefront
+          Back to My Page
         </Link>
 
         {/* ============================================================
@@ -228,7 +227,7 @@ export default function AppointmentCalendarPage() {
                         {apt.service_name || `Service #${apt.service_id}`}
                       </p>
                       <p className="text-xs text-on-surface-variant">
-                        Client #{apt.client_id}
+                        {apt.guest_name}
                       </p>
                       <div className="mt-2 flex gap-2">
                         <span className={`text-[10px] px-2 py-0.5 ${DOT_COLORS[apt.status] || 'bg-surface-container'} rounded-full font-bold capitalize`}>
@@ -246,10 +245,10 @@ export default function AppointmentCalendarPage() {
               <Icon name="psychology" className="mb-2 text-primary-fixed" />
               <h4 className="font-headline font-bold mb-2">Quick Actions</h4>
               <p className="text-sm text-on-primary-container mb-4">
-                {storefront?.name ? `Manage ${storefront.name}'s appointments and availability from here.` : 'View and manage your storefront appointments.'}
+                {`Manage ${storefront.name}'s appointments and availability from here.`}
               </p>
               <Link
-                to={`/dashboard/storefront/${storefrontId}`}
+                to="/dashboard/page"
                 className="text-xs font-bold underline underline-offset-4 decoration-primary-fixed"
               >
                 Manage Storefront →
@@ -330,7 +329,7 @@ export default function AppointmentCalendarPage() {
           </div>
           <div className="flex gap-3">
             <Link
-              to={`/dashboard/storefront/${storefrontId}`}
+              to="/dashboard/page"
               className="px-6 py-2 border border-outline-variant text-primary font-bold rounded-md hover:bg-surface-container transition-colors"
             >
               Manage Storefront
@@ -345,7 +344,7 @@ export default function AppointmentCalendarPage() {
           isOpen={!!selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           appointment={selectedAppointment}
-          storefrontId={storefrontId!}
+          storefrontId={storefrontId}
         />
       )}
     </DashboardLayout>

@@ -57,10 +57,11 @@ const validateRegistration = [
     .matches(/^\+?[1-9]\d{1,14}$/)  // International phone format
     .withMessage('Phone number must be in valid international format'),
 
-  // Role validation (must be one of allowed values)
+  // Only vendors have accounts; guests book without one
   body('role')
-    .isIn(['vendor', 'client'])   // Only these roles allowed for registration
-    .withMessage('Role must be either vendor or client'),
+    .optional()
+    .equals('vendor')
+    .withMessage('Only vendor accounts can be registered'),
 
   // Timezone validation (optional, but if provided must be valid)
   body('timezone')
@@ -200,7 +201,7 @@ router.post('/register',
   async (req: Request, res: Response, next: NextFunction) => {  // Step 3: Route handler
     try {
       // Extract validated data from request body
-      const userData: CreateUserRequest = req.body;
+      const userData: CreateUserRequest = { ...req.body, role: 'vendor' };
 
       // Call business logic layer to create user
       // UserService handles password hashing, duplicate checking, etc.
@@ -284,6 +285,16 @@ router.post('/login',
         };
         // 401 Unauthorized = Authentication required/failed
         return res.status(401).json(response);
+      }
+
+      // Client accounts predate guest booking and have nothing to manage
+      if (user.role !== 'vendor') {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: 'Authentication failed',
+          message: 'Client accounts are no longer used. Manage bookings from the link in your confirmation email.'
+        };
+        return res.status(403).json(response);
       }
 
       // Authentication successful

@@ -1,8 +1,10 @@
 import { format, parseISO } from 'date-fns';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Link2, Users } from 'lucide-react';
 import UniversalButton from '../universal/UniversalButton';
 import UniversalCard from '../universal/UniversalCard';
-import type { Drop } from '../../services/api';
+import SpotsMeter from '../public/SpotsMeter';
+import { copyLink, pageUrl } from '../../lib/booking';
+import type { Drop, VendorDrop } from '../../services/api';
 
 function fmt12(time: string): string {
   const [hStr, mStr] = time.split(':');
@@ -13,13 +15,15 @@ function fmt12(time: string): string {
 }
 
 interface DropsTabProps {
-  drops: Drop[] | undefined;
+  slug: string;
+  drops: VendorDrop[] | undefined;
   onAddDrop: () => void;
   onEditDrop: (drop: Drop) => void;
   onDeleteDrop: (dropId: number) => void;
 }
 
 export default function DropsTab({
+  slug,
   drops,
   onAddDrop,
   onEditDrop,
@@ -33,8 +37,8 @@ export default function DropsTab({
         </div>
         <h3 className="text-lg font-semibold text-on-surface mb-2">No drops yet</h3>
         <p className="text-on-surface-variant mb-6 max-w-sm mx-auto">
-          Create curated time windows for your clients to book. Drops are perfect for special sessions,
-          flash availability, or limited-time offerings.
+          A drop is a limited session — a flash day, a pop-up, a few late-night slots. Post one,
+          share the link, and watch the spots fill. When it sells out, people can join a waitlist.
         </p>
         <UniversalButton variant="primary" onClick={onAddDrop}>
           <Plus className="w-4 h-4 mr-2" />
@@ -105,16 +109,31 @@ export default function DropsTab({
                 </p>
               )}
 
-              {/* Meta */}
-              <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-auto pt-3 border-t border-outline-variant">
-                <span>Max {drop.max_concurrent_appointments} concurrent</span>
-                {!drop.is_active && (
-                  <span className="text-error font-medium">Inactive</span>
-                )}
+              {/* Spots + waitlist */}
+              <div className="mt-auto pt-3 border-t border-outline-variant space-y-3">
+                {!isPast && <SpotsMeter remaining={drop.remaining_spots} total={drop.total_spots} />}
+                <div className="flex items-center gap-3 text-xs text-on-surface-variant">
+                  <span>{drop.max_concurrent_appointments} per slot</span>
+                  {drop.waitlist_count > 0 && (
+                    <span className="flex items-center gap-1 font-bold text-on-tertiary-fixed bg-tertiary-fixed px-2 py-0.5 rounded-full">
+                      <Users className="w-3 h-3" />
+                      {drop.waitlist_count} waiting
+                    </span>
+                  )}
+                  {!drop.is_active && (
+                    <span className="text-error font-medium">Inactive</span>
+                  )}
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {drop.is_published && !isPast && (
+                  <UniversalButton variant="ghost" size="sm" onClick={() => copyLink(pageUrl(slug, drop.id), 'Drop link')}>
+                    <Link2 className="w-4 h-4 mr-1" />
+                    Copy link
+                  </UniversalButton>
+                )}
                 <UniversalButton variant="ghost" size="sm" onClick={() => onEditDrop(drop)}>
                   <Edit className="w-4 h-4 mr-1" />
                   Edit

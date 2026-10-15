@@ -4,146 +4,113 @@
 
 **Pattern:** Zustand (UI state) → Custom Hooks (wrap React Query) → Components
 
+Two audiences:
+- **Guests** (no account): public page `/@slug`, drop page `/@slug/drops/:id`, booking modal, `/manage/:token`
+- **Vendors** (JWT): `/onboarding` then `/dashboard/*`, all scoped to their single page
+
 ## State Management
 
 - Server state (API data) → React Query `useQuery`/`useMutation`
 - UI state (modals, filters) → Zustand stores
-- Form state → React Hook Form + Zod
-- Multi-step wizard state → component-local `useState` (e.g., BookingModal)
+- Form state → React Hook Form + Zod (the booking modal's guest form validates with a Zod schema via `safeParse`)
+- Multi-step wizard state → component-local `useState` (BookingModal resets its state each time it opens)
 
 ## Guidelines
 
 - React Query for server state — don't put API responses in Zustand
-- Form validation: define Zod schema, use `zodResolver` with React Hook Form
-- Each page wraps itself in its layout (`App.tsx` routes do not): `AppScaffold` for public/client/admin pages, `DashboardLayout` (sidebar) for vendor `/dashboard/*` pages, `AuthLayout` for auth pages. `LandingPage` renders its own nav/footer
+- Each page wraps itself in its layout (`App.tsx` routes do not): `PublicPageShell` for guest-facing vendor pages, `AppScaffold` for `/playground`, `DashboardLayout` for `/dashboard/*`, `AuthLayout` for auth pages. `LandingPage` renders its own nav/footer
+- Vendor dashboard pages get the page via `useVendorPage()` (context from `<VendorRoute>`); never fetch a storefront by URL id
+- Show booking times in the **vendor's** timezone with `formatInZone` / `formatCalendarDate` / `formatClock` from `lib/booking.ts`, not the viewer's
 - TailwindCSS utility classes only (no CSS files). Use `clsx` or `cn()` (from `lib/utils.ts`) for conditionals
-- **Colors: use design tokens only** (`styles/tokens.css`, mapped in `tailwind.config.js`) — never Tailwind palette colors like `red-500` or `gray-100`. Conventions:
+- **Colors: use design tokens only** (`styles/tokens.css`, mapped in `tailwind.config.js`; overview in `docs/design-system.md`) — never Tailwind palette colors like `red-500` or `gray-100`. Conventions:
   - errors → `text-error`, `bg-error-container`, `text-on-error-container`
   - success/confirmed → `bg-secondary-container`, `text-on-secondary-container`
-  - pending/warning → `bg-tertiary-fixed`, `text-on-tertiary-fixed`
+  - pending/warning, drops → `bg-tertiary-fixed`, `text-on-tertiary-fixed`
   - neutrals → `surface-container-*`, `on-surface-variant`, `outline-variant`; text on primary → `text-on-primary`
   - appointment status badges: follow `STATUS_CFG` in `pages/vendor/VendorAppointmentsPage.tsx`
 - `npm run build` (vite) does not type-check — run `npm run typecheck` too
-- Cache invalidation: mutations must invalidate related queries (`queryClient.invalidateQueries`). Drops + schedule rules also invalidate `['availability']`
+- Cache invalidation: mutations must invalidate related queries. Bookings/cancels/reschedules also invalidate `['availability']` and `['page']` (spot counts); drops + schedule rules invalidate `['availability']`
 
 ## Project Structure
 
 ```
 frontend/src/
 ├── components/
-│   ├── ui/        # shadcn/ui components (button, input, label, select, textarea, Modal, Tabs)
-│   ├── universal/ # V3 design system (UniversalButton, UniversalCard)
-│   ├── booking/   # Client booking flow (BookingModal + wizard steps, PortfolioCard, ProfileHeader, DropCard, RescheduleModal)
-│   ├── layout/    # AppScaffold (public navbar), DashboardLayout (vendor sidebar), AuthLayout
-│   ├── marketplace/ # StorefrontCard
-│   ├── vendor/    # Vendor management (CreateStorefrontModal, ServiceFormModal, ServicesTab,
-│   │              #   ScheduleRuleFormModal, AvailabilityTab, DropsTab, DropFormModal,
-│   │              #   AppointmentDetailModal)
-│   └── ErrorBoundary.tsx  # Class component — wraps entire app in App.tsx
-├── config/        # queryClient.ts (React Query config)
-├── hooks/         # Custom hooks (see below)
-├── lib/           # utils.ts (clsx/tailwind-merge helper)
+│   ├── auth/      # ProtectedRoute (vendor-only, exports FullPageSpinner), VendorRoute (+ useVendorPage)
+│   ├── booking/   # BookingModal + steps (Service, DateTime w/ optional drop window, Confirm = guest details,
+│   │              #   Success = manage link), PortfolioCard, RescheduleModal (token-based)
+│   ├── public/    # PublicPageShell, SpotsMeter ("3 of 8 left"), WaitlistForm
+│   ├── layout/    # AppScaffold, DashboardLayout (sidebar), AuthLayout
+│   ├── vendor/    # PageSettingsForm (onboarding + settings), ServiceFormModal, ServicesTab,
+│   │              #   ScheduleRuleFormModal, AvailabilityTab, DropsTab, DropFormModal, AppointmentDetailModal
+│   └── ui/, universal/, ErrorBoundary.tsx
+├── hooks/         # see below
+├── lib/           # utils.ts (cn), booking.ts (pageUrl, manageUrl, copyLink, timezone formatters),
+│                  #   playgroundPresets.ts
 ├── pages/
-│   ├── auth/      # LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage
-│   ├── vendor/    # VendorDashboardPage, VendorStorefrontsPage, VendorAppointmentsPage,
-│   │              #   VendorCustomersPage, StorefrontDetailPage, AppointmentCalendarPage
-│   ├── client/    # ClientAppointmentsPage
-│   ├── admin/     # AdminDashboardPage
-│   ├── legal/     # LegalPageLayout + PrivacyPolicyPage, TermsOfServicePage, CookiePolicyPage
-│   ├── NotFoundPage.tsx   # 404 catch-all (last route in App.tsx)
-│   └── ...        # LandingPage, HomePage (smart redirect), ExplorePage, VendorProfilePage
-├── services/      # api.ts — Axios API client with JWT interceptor (base URL from VITE_API_URL env var)
-├── stores/        # Zustand: useUIStore, useCalendarStore (persisted), useStorefrontStore (persisted)
-└── App.tsx        # React Router v7 with protected routes
+│   ├── public/    # PublicPage (/@slug), DropPage, ManageBookingPage
+│   ├── vendor/    # OnboardingPage, VendorDashboardPage, PageManagerPage (?tab=drops|services|availability),
+│   │              #   PageSettingsPage, VendorAppointmentsPage, AppointmentCalendarPage, VendorCustomersPage
+│   ├── auth/, legal/
+│   └── LandingPage, HomePage, PlaygroundPage (lazy-loaded), NotFoundPage
+├── services/api.ts  # Axios client + typed APIs: authApi, storefrontApi, serviceApi, scheduleRuleApi,
+│                    #   dropApi, appointmentApi, availabilityApi, bookingApi, pageApi, manageApi, uploadApi
+└── App.tsx
 ```
 
 ## Available Custom Hooks
 
-- `useAuth()` - login, logout, token, user info (React Context, not Zustand)
-- `useStorefronts()` / `useStorefront(id)` / `useCreateStorefront()` / `useUpdateStorefront()` / `useDeleteStorefront()` - storefront CRUD
-- `useServices(storefrontId)` / `useCreateService()` / `useUpdateService()` / `useDeleteService()` - per-storefront service CRUD
-- `useScheduleRules(storefrontId)` / `useCreateScheduleRule()` / `useUpdateScheduleRule()` / `useDeleteScheduleRule()` - availability patterns
-- `useDrops(storefrontId)` / `usePublicDrops(storefrontId)` - vendor drops CRUD + public listing (no auth)
-- `useAvailability({ storefrontId, serviceId, startDate, endDate })` - available slots (staleTime: 30s, no auth)
-- `useClientAppointments()` / `useStorefrontAppointments(id)` - client and vendor appointment views
-- `useCreateAppointment()` - race-condition-safe booking (invalidates appointments + availability on success)
-- `useUpdateAppointmentStatus()` / `useCancelAppointment()` / `useConfirmAppointment()` / `useCompleteAppointment()`
-- `useRescheduleAppointment()` - atomic cancel+rebook mutation, invalidates all appointment queries on success
-- `usePublicStorefront(id)` / `useMarketplaceSearch(params)` - public marketplace (no auth required)
-- `useAdminStats()` / `useAdminStorefronts(limit, offset)` / `useVerifyStorefront()` - admin dashboard
+- `useAuth()` - vendor login/logout/register (React Context)
+- `useMyStorefront()` / `useSlugAvailability(slug)` / `useCreateStorefront()` / `useUpdateStorefront()`
+- `usePublicPage(slug, { live })` - public page; `live` polls every 30s (drop pages)
+- `useManagedBooking(token)` / `useCancelManagedBooking(token)` / `useRescheduleManagedBooking(token)`
+- `useServices(storefrontId)` + CRUD mutations
+- `useScheduleRules(storefrontId)` + CRUD mutations
+- `useDrops(storefrontId)` (vendor; includes spot counts + `waitlist_count`) + CRUD, `useJoinWaitlist()`
+- `useAvailability({ storefrontId, serviceId, startDate, endDate })`
+- `useStorefrontAppointments(id)`, `useCreateAppointment()` (guest), status mutations
+- `useHandle()` - slug from a `/@slug` route segment (null if the segment has no `@`)
 
-## Booking Modal (4-step wizard)
+## Routing
 
-**Steps:** Service → Date/Time → Confirm → Success
+React Router can't match `/@:slug`, so `/:handle` and `/:handle/drops/:dropId` are registered **after** all static routes; pages call `useHandle()` and render `NotFoundPage` when the segment doesn't start with `@`. Add new top-level static routes above them and add the word to the backend's `RESERVED_SLUGS`.
 
-- Local state over Zustand (self-contained flow)
-- Pre-selection support (skip step 1 if service already chosen)
-- Drop pre-selection: `preSelectedDropId` prop passes `drop_id` to appointment API
-- Drop service filtering: `dropServiceId` prop filters step 1 to only the drop's linked service
-- Auth check deferred until final confirmation step
-- Address input only shown for mobile/hybrid vendors
-- **SessionStorage restoration:** On open when authenticated, checks `sessionStorage.pendingBooking` for a matching storefrontId and restores service/location/notes, skipping to step 2
+```
+/                         → HomePage (LandingPage, or /dashboard if signed in)
+/login, /register, /forgot-password, /reset-password, /privacy, /terms, /cookies
+/playground               → PlaygroundPage (engine in the browser; state in URL hash)
+/manage/:token            → ManageBookingPage
+/onboarding               → OnboardingPage (signed in, no page yet)
+/dashboard                → VendorDashboardPage          ┐
+/dashboard/page?tab=…     → PageManagerPage               │ <VendorRoute>: signed-in vendor
+/dashboard/settings       → PageSettingsPage              │ with a page (else → /onboarding)
+/dashboard/appointments   → VendorAppointmentsPage        │
+/dashboard/calendar       → AppointmentCalendarPage       │
+/dashboard/customers      → VendorCustomersPage           ┘
+/:handle                  → PublicPage (/@slug)
+/:handle/drops/:dropId    → DropPage
+*                         → NotFoundPage
+```
 
-## Reschedule Modal
+## Booking Modal
 
-**File:** `components/booking/RescheduleModal.tsx`
+**Steps:** Service → Date/Time → Your Details (name, email, phone?, notes) → Success (manage link)
 
-**Props:** `{ isOpen, onClose, appointment }`
-
-**Flow:** 2 steps — Pick new date/time (reuses `BookingStepDateTime`) → Confirm (old vs. new time side-by-side). Calls `useRescheduleAppointment()` on confirm.
-
-## Post-Login Booking Restoration
-
-When an unauthenticated user hits "Book Appointment":
-1. `BookingModal` saves `pendingBooking` to sessionStorage and redirects to `/login?returnTo=/book/:id`
-2. `LoginPage` reads `returnTo` param and navigates there after successful login
-3. `VendorProfilePage` checks sessionStorage on mount; if storefrontId matches, restores pre-selection and opens modal
-4. `BookingModal` checks sessionStorage on open when authenticated; restores state and skips to step 2
-
-## Password Reset Pages
-
-**`ForgotPasswordPage`** (`pages/auth/ForgotPasswordPage.tsx`):
-- Zod schema: `{ email: z.string().email() }`
-- Calls `authApi.forgotPassword(email)` — always shows success message (backend prevents enumeration)
-
-**`ResetPasswordPage`** (`pages/auth/ResetPasswordPage.tsx`):
-- Reads `token` from `useSearchParams`
-- Zod schema with `.refine()` to validate password === confirmPassword
-- Calls `authApi.resetPassword(token, password)`
+- Props: `storefront: PublicStorefront`, `services`, `preSelectedServiceId?`, `drop?: PublicDrop`
+- With `drop`, services are limited to the drop's service and times to the drop window (calendar pinned to that date)
+- A single bookable service skips step 1
 
 ## Environment Variables
 
-Frontend reads `VITE_API_URL` at build time (Vite replaces `import.meta.env.VITE_API_URL`). Default fallback: `http://localhost:3000/api`. Set in `frontend/.env` for local dev or as a Docker build arg for production.
+`VITE_API_URL` at build time (default `http://localhost:3000/api`).
 
 ## Zustand Stores
 
-- `useUIStore` — `activeModal`, `isSidebarOpen`, `isGlobalLoading` (not persisted)
-- `useCalendarStore` — `calendarView`, `selectedDate`, `filters` (persisted to localStorage as `schedulux-calendar`, `selectedDate` excluded from persistence)
-- `useStorefrontStore` — `selectedStorefrontId` (persisted to localStorage as `schedulux-storefront`)
-
-## Route Map
-
-```
-/                    → HomePage (smart redirect by role: admin→/admin, vendor→/dashboard, client→/explore, unauth→LandingPage)
-/login, /register    → Auth pages
-/forgot-password, /reset-password → Password reset flow
-/explore             → ExplorePage (marketplace search, no auth)
-/privacy, /terms, /cookies → Legal pages (no auth; placeholder text pending legal review)
-/book/:storefrontId  → VendorProfilePage (public profile + BookingModal)
-/dashboard           → VendorDashboardPage (protected: vendor)
-/dashboard/storefronts   → VendorStorefrontsPage (protected: vendor)
-/dashboard/appointments  → VendorAppointmentsPage (protected: vendor)
-/dashboard/customers     → VendorCustomersPage (protected: vendor)
-/dashboard/storefront/:id → StorefrontDetailPage (protected: vendor, 3 tabs: Drops/Services/Availability)
-/dashboard/storefront/:id/calendar → AppointmentCalendarPage (protected: vendor)
-/my-appointments     → ClientAppointmentsPage (protected: client)
-/admin               → AdminDashboardPage (protected: admin)
-*                    → NotFoundPage (404 catch-all)
-```
+- `useUIStore` — `activeModal`, `isSidebarOpen`, `isGlobalLoading`
+- `useCalendarStore` — `calendarView`, `selectedDate`, `filters` (persisted as `schedulux-calendar`, minus `selectedDate`)
 
 ## Debugging
 
-- React Query DevTools: floating button, bottom-right corner in dev
-- Auth: `localStorage.getItem('auth_token')` in browser console
-- API base URL: `import.meta.env.VITE_API_URL` (check in browser console)
-- Pending booking restoration: `sessionStorage.getItem('pendingBooking')` in browser console
+- React Query DevTools: floating button, bottom-right in dev
+- Vendor auth: `localStorage.getItem('auth_token')`
+- Playground state: decode the URL hash with `decodeState` from `lib/playgroundPresets.ts`

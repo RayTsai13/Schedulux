@@ -10,7 +10,6 @@ import { availabilityKeys } from './useAvailability';
 // Query Keys
 export const dropKeys = {
   all: (storefrontId: number) => ['drops', storefrontId] as const,
-  public: (storefrontId: number) => ['drops', 'public', storefrontId] as const,
   detail: (id: number) => ['drops', 'detail', id] as const,
 };
 
@@ -22,23 +21,6 @@ export function useDrops(storefrontId: number | null) {
     queryKey: dropKeys.all(storefrontId!),
     queryFn: async () => {
       const response = await dropApi.getByStorefront(storefrontId!);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch drops');
-      }
-      return response.data || [];
-    },
-    enabled: !!storefrontId,
-  });
-}
-
-/**
- * Fetch published drops for a storefront (public, no auth)
- */
-export function usePublicDrops(storefrontId: number | null) {
-  return useQuery({
-    queryKey: dropKeys.public(storefrontId!),
-    queryFn: async () => {
-      const response = await dropApi.getPublic(storefrontId!);
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch drops');
       }
@@ -127,5 +109,15 @@ export function useDeleteDrop(storefrontId: number | null) {
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete drop');
     },
+  });
+}
+
+/**
+ * Join the waitlist for a sold-out drop (public, no auth)
+ */
+export function useJoinWaitlist() {
+  return useMutation({
+    mutationFn: ({ dropId, name, email }: { dropId: number; name: string; email: string }) =>
+      dropApi.joinWaitlist(dropId, { name, email }),
   });
 }

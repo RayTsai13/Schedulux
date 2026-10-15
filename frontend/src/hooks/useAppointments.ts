@@ -6,6 +6,8 @@ import {
   type CreateAppointmentRequest,
 } from '../services/api';
 import { toast } from 'sonner';
+import { availabilityKeys } from './useAvailability';
+import { pageKeys } from './usePage';
 
 /**
  * TanStack Query Hooks for Appointment Management
@@ -15,7 +17,6 @@ import { toast } from 'sonner';
 export const appointmentKeys = {
   all: ['appointments'] as const,
   storefront: (storefrontId: number) => ['appointments', 'storefront', storefrontId] as const,
-  client: () => ['appointments', 'client'] as const,
   detail: (id: number) => ['appointments', 'detail', id] as const,
 };
 
@@ -37,22 +38,6 @@ export function useStorefrontAppointments(
       return response.data || [];
     },
     enabled: !!storefrontId,
-  });
-}
-
-/**
- * Fetch appointments for the current client
- */
-export function useClientAppointments(params?: { status?: string; upcoming?: boolean }) {
-  return useQuery({
-    queryKey: [...appointmentKeys.client(), params],
-    queryFn: async () => {
-      const response = await appointmentApi.getClientAppointments(params);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch appointments');
-      }
-      return response.data || [];
-    },
   });
 }
 
@@ -181,33 +166,7 @@ export function useCompleteAppointment() {
 }
 
 /**
- * Reschedule an appointment (client only)
- * Atomically cancels old appointment and creates a new one
- */
-export function useRescheduleAppointment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, startDatetime }: { id: number; startDatetime: string }) =>
-      appointmentApi.reschedule(id, startDatetime),
-
-    onSuccess: (response) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
-        toast.success('Appointment rescheduled successfully!');
-      } else {
-        toast.error(response.message || 'Failed to reschedule appointment');
-      }
-    },
-
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to reschedule appointment');
-    },
-  });
-}
-
-/**
- * Create/book a new appointment (client booking)
+ * Book as a guest. Errors are surfaced by the caller (the booking modal shows them inline).
  */
 export function useCreateAppointment() {
   const queryClient = useQueryClient();
@@ -217,16 +176,11 @@ export function useCreateAppointment() {
 
     onSuccess: (response) => {
       if (response.success) {
-        // Invalidate all appointment queries to refresh lists
+        // Refresh lists, open slots, and drop spot counts
         queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
-        toast.success('Appointment booked successfully!');
-      } else {
-        toast.error(response.message || 'Failed to book appointment');
+        queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+        queryClient.invalidateQueries({ queryKey: pageKeys.all });
       }
-    },
-
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to book appointment');
     },
   });
 }

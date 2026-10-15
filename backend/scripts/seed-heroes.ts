@@ -1,495 +1,324 @@
 /**
  * Hero Vendors Seed Script
  *
- * Creates 3 hero vendors to showcase Schedulux 2.0 features:
- * 1. The Midnight Barber - Grid layout, Instagram integration, scarcity drops
- * 2. Weekend Warrior Fix-It - Mobile services, service radius, list layout
- * 3. Sunday Tattoo Flash - Individual artist, rose theme, limited drops
+ * Creates 3 demo vendors, each with a public page, services, regular hours, and a drop:
+ * 1. The Midnight Barber (@midnightbarber) - Tue–Sat hours, a Friday late-night drop, a few bookings
+ * 2. Weekend Warrior Fix-It (@fixit)        - weekend hours, a weeknight pop-up drop
+ * 3. Sunday Tattoo Flash (@sundayflash)     - no regular hours, a Sunday flash drop that's
+ *                                             SOLD OUT with people on the waitlist
  *
  * Run with: npm run seed:heroes
  *
- * Idempotent: Safe to run multiple times, skips existing users.
- * Transaction-based: Each vendor creation is atomic.
+ * Idempotent: skips vendors whose user already exists.
+ * Transaction-based: each vendor is created atomically.
  */
 
-import { withTransaction, query } from '../src/config/database';
+import { randomBytes } from 'crypto';
+import { addDays, format, getDay, startOfDay } from 'date-fns';
+import { localToUtc, parseClock } from '@schedulux/availability-engine';
+import { withTransaction, pool } from '../src/config/database';
 import { hashPassword } from '../src/utils/auth';
-import { addDays, getDay, startOfDay, format } from 'date-fns';
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================================================
 
-/**
- * Calculate the next occurrence of a day of week (0=Sunday, 6=Saturday)
- */
-function getNextDayOfWeek(targetDay: number): Date {
+/** Next occurrence of a weekday (0 = Sunday) as YYYY-MM-DD, never today */
+function nextDayOfWeek(targetDay: number): string {
   const today = startOfDay(new Date());
-  const currentDay = getDay(today);
-  let daysUntilTarget = targetDay - currentDay;
-
-  // If target day already passed this week, go to next week
-  if (daysUntilTarget <= 0) {
-    daysUntilTarget += 7;
-  }
-
-  return addDays(today, daysUntilTarget);
+  let days = targetDay - getDay(today);
+  if (days <= 0) days += 7;
+  return format(addDays(today, days), 'yyyy-MM-dd');
 }
 
-/**
- * Format Date object as 'YYYY-MM-DD' for PostgreSQL
- */
-function formatDateForDB(date: Date): string {
-  return format(date, 'yyyy-MM-dd');
-}
+const token = () => randomBytes(32).toString('hex');
 
 // ============================================================================
-// TYPE DEFINITIONS
+// CONFIG
 // ============================================================================
+
+interface ServiceConfig {
+  key: string;
+  name: string;
+  description: string;
+  duration_minutes: number;
+  price: number;
+  image_url?: string;
+}
+
+interface DropConfig {
+  title: string;
+  description: string;
+  date: string;
+  start: string;
+  end: string;
+  capacity: number;
+  /** service key, or null for all services */
+  service: string | null;
+  /** guest bookings inside the drop, as local start times */
+  bookings?: { name: string; email: string; start: string; status: 'pending' | 'confirmed' }[];
+  waitlist?: { name: string; email: string }[];
+}
 
 interface VendorConfig {
-  user: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: 'vendor';
-    phone: string;
-    timezone: string;
-  };
-  storefront: {
+  user: { email: string; firstName: string; lastName: string; phone: string };
+  page: {
     name: string;
+    slug: string;
     description: string;
-    address?: string;
     timezone: string;
-    profile_type: 'individual' | 'business';
-    location_type: 'fixed' | 'mobile' | 'hybrid';
-    service_radius?: number;
-    service_area_city?: string;
-    layout_mode?: string;
-    theme_color?: string;
-    instagram_handle?: string;
-    latitude?: number;
-    longitude?: number;
     city?: string;
     state?: string;
+    address?: string;
+    instagram_handle?: string;
+    theme_color?: string;
   };
-  services: Array<{
-    name: string;
-    description?: string;
-    duration_minutes: number;
-    price: number;
-    image_url?: string;
-    is_featured?: boolean;
-  }>;
-  scheduleRules: Array<{
-    name?: string;
-    rule_type: 'daily' | 'weekly' | 'monthly';
-    day_of_week?: number;
-    specific_date?: Date;
-    start_time: string;
-    end_time: string;
-    priority: number;
-  }>;
+  services: ServiceConfig[];
+  /** weekly hours: [day_of_week, start, end] */
+  hours: [number, string, string][];
+  drops: DropConfig[];
+  /** regular (non-drop) guest bookings: [date, local start, service key, status] */
+  bookings?: { name: string; email: string; date: string; start: string; service: string; status: 'pending' | 'confirmed' }[];
 }
 
-interface CreateVendorResult {
-  success: boolean;
-  skipped?: boolean;
-  userId?: number;
-  storefrontId?: number;
-  email: string;
-  password?: string;
-  storefrontName?: string;
-  error?: string;
-}
-
-// ============================================================================
-// VENDOR CONFIGURATIONS
-// ============================================================================
+const PASSWORD = 'Hero123!';
 
 const VENDORS: VendorConfig[] = [
-  // Vendor 1: The Midnight Barber (Grid layout, Instagram, Friday drop)
   {
-    user: {
-      email: 'midnight@schedulux.dev',
-      password: 'Hero123!',
-      firstName: 'Marcus',
-      lastName: 'Night',
-      role: 'vendor',
-      phone: '+1-415-555-0101',
-      timezone: 'America/Los_Angeles',
-    },
-    storefront: {
+    user: { email: 'midnight@schedulux.dev', firstName: 'Marcus', lastName: 'Night', phone: '+14155550101' },
+    page: {
       name: 'The Midnight Barber',
+      slug: 'midnightbarber',
       description: 'Premium late-night barbershop for the modern professional',
-      address: '415 Castro St, San Francisco, CA 94114',
       timezone: 'America/Los_Angeles',
-      profile_type: 'business',
-      location_type: 'fixed',
-      layout_mode: 'grid',
-      theme_color: 'zinc',
-      instagram_handle: 'midnight_cuts',
-      latitude: 37.7619,
-      longitude: -122.4353,
       city: 'San Francisco',
       state: 'CA',
+      address: '415 Castro St, San Francisco, CA 94114',
+      instagram_handle: 'midnight_cuts',
+      theme_color: 'zinc',
     },
     services: [
       {
+        key: 'fade',
         name: 'The Signature Fade',
         description: 'Our signature precision fade with hot towel finish',
         duration_minutes: 60,
         price: 60,
-        category: 'Haircut',
-        is_featured: true,
-        image_url:
-          'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=800&q=80',
+        image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=800&q=80',
       },
       {
+        key: 'beard',
         name: 'Beard Sculpt',
         description: 'Precision beard trimming and shaping with line work',
         duration_minutes: 30,
         price: 35,
-        category: 'Beard',
-        image_url:
-          'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
+        image_url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
       },
     ],
-    scheduleRules: [
+    hours: [2, 3, 4, 5, 6].map((d) => [d, '11:00', '19:00'] as [number, string, string]),
+    drops: [
       {
-        name: 'The Friday Night Drop',
-        rule_type: 'daily',
-        specific_date: getNextDayOfWeek(5), // Next Friday
-        start_time: '20:00',
-        end_time: '23:59',
-        priority: 10,
+        title: 'Friday Late Night',
+        description: 'After-hours fades, 8–11pm. Three chairs-worth of spots, first come first served.',
+        date: nextDayOfWeek(5),
+        start: '20:00',
+        end: '23:00',
+        capacity: 1,
+        service: 'fade',
+        bookings: [{ name: 'Devon Park', email: 'devon@example.com', start: '20:00', status: 'confirmed' }],
       },
+    ],
+    bookings: [
+      { name: 'Alex Rivera', email: 'alex@example.com', date: nextDayOfWeek(2), start: '11:00', service: 'fade', status: 'confirmed' },
+      { name: 'Sam Lee', email: 'sam@example.com', date: nextDayOfWeek(3), start: '14:00', service: 'beard', status: 'pending' },
+      { name: 'Alex Rivera', email: 'alex@example.com', date: nextDayOfWeek(4), start: '16:00', service: 'beard', status: 'pending' },
     ],
   },
-
-  // Vendor 2: Weekend Warrior Fix-It (Mobile, service radius, list layout)
   {
-    user: {
-      email: 'fixit@schedulux.dev',
-      password: 'Hero123!',
-      firstName: 'Jake',
-      lastName: 'Handy',
-      role: 'vendor',
-      phone: '+1-512-555-0202',
-      timezone: 'America/Chicago',
-    },
-    storefront: {
+    user: { email: 'fixit@schedulux.dev', firstName: 'Jake', lastName: 'Handy', phone: '+15125550202' },
+    page: {
       name: 'Weekend Warrior Fix-It',
+      slug: 'fixit',
       description: 'Handyman services for your weekend projects',
       timezone: 'America/Chicago',
-      profile_type: 'individual',
-      location_type: 'mobile',
-      service_area_city: 'Austin, TX',
-      service_radius: 15,
-      layout_mode: 'list',
+      city: 'Austin',
+      state: 'TX',
     },
     services: [
-      {
-        name: 'TV Mounting',
-        description: 'Professional TV mounting with cable management',
-        duration_minutes: 45,
-        price: 75,
-        category: 'Installation',
-      },
-      {
-        name: 'Furniture Assembly',
-        description: 'Expert furniture assembly for all brands',
-        duration_minutes: 60,
-        price: 60,
-        category: 'Assembly',
-      },
+      { key: 'tv', name: 'TV Mounting', description: 'Professional TV mounting with cable management', duration_minutes: 45, price: 75 },
+      { key: 'furniture', name: 'Furniture Assembly', description: 'Expert furniture assembly for all brands', duration_minutes: 60, price: 60 },
     ],
-    scheduleRules: [
+    hours: [
+      [6, '09:00', '17:00'],
+      [0, '09:00', '17:00'],
+    ],
+    drops: [
       {
-        name: 'Saturday Hours',
-        rule_type: 'weekly',
-        day_of_week: 6, // Saturday
-        start_time: '09:00',
-        end_time: '17:00',
-        priority: 2,
-      },
-      {
-        name: 'Sunday Hours',
-        rule_type: 'weekly',
-        day_of_week: 0, // Sunday
-        start_time: '09:00',
-        end_time: '17:00',
-        priority: 2,
+        title: 'Weeknight Pop-up',
+        description: 'Two of us, one evening. Quick installs and assembly.',
+        date: nextDayOfWeek(3),
+        start: '18:00',
+        end: '21:00',
+        capacity: 2,
+        service: null,
       },
     ],
   },
-
-  // Vendor 3: Sunday Tattoo Flash (Individual, rose theme, limited drop)
   {
-    user: {
-      email: 'flash@schedulux.dev',
-      password: 'Hero123!',
-      firstName: 'Luna',
-      lastName: 'Ink',
-      role: 'vendor',
-      phone: '+1-415-555-0303',
-      timezone: 'America/Los_Angeles',
-    },
-    storefront: {
+    user: { email: 'flash@schedulux.dev', firstName: 'Luna', lastName: 'Ink', phone: '+14155550303' },
+    page: {
       name: 'Sunday Tattoo Flash',
+      slug: 'sundayflash',
       description: 'Limited flash designs every Sunday afternoon',
-      address: '789 Valencia St, San Francisco, CA 94110',
       timezone: 'America/Los_Angeles',
-      profile_type: 'individual',
-      location_type: 'fixed',
-      layout_mode: 'grid',
-      theme_color: 'rose',
-      latitude: 37.7599,
-      longitude: -122.4214,
       city: 'San Francisco',
       state: 'CA',
+      address: '789 Valencia St, San Francisco, CA 94110',
+      instagram_handle: 'sundayflash',
+      theme_color: 'rose',
     },
     services: [
       {
+        key: 'flash',
         name: 'Flash Sheet A',
         description: "Pre-designed flash tattoos from this week's sheet",
         duration_minutes: 90,
         price: 150,
-        category: 'Tattoo',
-        image_url:
-          'https://images.unsplash.com/photo-1598371839696-5c5bb62d4982?auto=format&fit=crop&w=800&q=80',
+        image_url: 'https://images.unsplash.com/photo-1598371839696-5c5bb62d4982?auto=format&fit=crop&w=800&q=80',
       },
     ],
-    scheduleRules: [
+    hours: [],
+    drops: [
       {
-        name: 'Sunday Session',
-        rule_type: 'daily',
-        specific_date: getNextDayOfWeek(0), // Next Sunday
-        start_time: '12:00',
-        end_time: '18:00',
-        priority: 10,
+        title: 'Sunday Flash Day',
+        description: 'Four slots, one sheet. Walk out with something small and permanent.',
+        date: nextDayOfWeek(0),
+        start: '12:00',
+        end: '18:00',
+        capacity: 1,
+        service: 'flash',
+        bookings: [
+          { name: 'Rory Blake', email: 'rory@example.com', start: '12:00', status: 'confirmed' },
+          { name: 'Mina Cho', email: 'mina@example.com', start: '13:30', status: 'confirmed' },
+          { name: 'Theo Grant', email: 'theo@example.com', start: '15:00', status: 'pending' },
+          { name: 'Ana Silva', email: 'ana@example.com', start: '16:30', status: 'confirmed' },
+        ],
+        waitlist: [
+          { name: 'Priya Patel', email: 'priya@example.com' },
+          { name: 'Jordan Fox', email: 'jordan@example.com' },
+        ],
       },
     ],
   },
 ];
 
 // ============================================================================
-// MAIN VENDOR CREATION LOGIC
+// CREATION
 // ============================================================================
 
-/**
- * Create a vendor with all associated data (user, storefront, services, rules)
- * Uses transactions for atomic creation and idempotency
- */
-async function createVendor(config: VendorConfig): Promise<CreateVendorResult> {
-  return await withTransaction(async (client) => {
-    // 1. Check if user already exists (idempotent behavior)
-    const existingUser = await client.query(
-      'SELECT id, email FROM users WHERE email = $1 AND deleted_at IS NULL',
-      [config.user.email]
-    );
+type Db = { query: (text: string, params?: unknown[]) => Promise<{ rows: any[] }> };
 
-    if (existingUser.rows.length > 0) {
-      console.log(`  ⚠️  User already exists, skipping...`);
-      return {
-        success: false,
-        skipped: true,
-        email: config.user.email,
-      };
-    }
+async function insertBooking(
+  db: Db,
+  storefrontId: number,
+  tz: string,
+  service: { id: number; duration_minutes: number; price: number },
+  b: { name: string; email: string; date: string; start: string; status: string },
+  dropId: number | null
+) {
+  const start = localToUtc(b.date, parseClock(b.start), tz);
+  const end = new Date(start.getTime() + service.duration_minutes * 60_000);
+  await db.query(
+    `INSERT INTO appointments (
+       storefront_id, service_id, guest_name, guest_email, manage_token,
+       requested_start_datetime, requested_end_datetime, status, price_quoted, drop_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [storefrontId, service.id, b.name, b.email, token(), start, end, b.status, service.price, dropId]
+  );
+}
 
-    // 2. Create user
-    const hashedPassword = await hashPassword(config.user.password);
+async function createVendor(config: VendorConfig): Promise<'created' | 'skipped'> {
+  return withTransaction(async (client) => {
+    const existing = await client.query('SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [config.user.email]);
+    if (existing.rows.length > 0) return 'skipped';
+
     const userResult = await client.query(
       `INSERT INTO users (email, password_hash, first_name, last_name, role, phone, timezone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
-      [
-        config.user.email,
-        hashedPassword,
-        config.user.firstName,
-        config.user.lastName,
-        config.user.role,
-        config.user.phone,
-        config.user.timezone,
-      ]
+       VALUES ($1, $2, $3, $4, 'vendor', $5, $6) RETURNING id`,
+      [config.user.email, await hashPassword(PASSWORD), config.user.firstName, config.user.lastName, config.user.phone, config.page.timezone]
     );
     const userId = userResult.rows[0].id;
-    console.log(`  ✓ User created (ID: ${userId}, Email: ${config.user.email})`);
 
-    // 3. Create storefront (direct SQL to include all marketplace fields)
-    const storefrontResult = await client.query(
-      `INSERT INTO storefronts (
-        vendor_id, name, description, address, timezone,
-        profile_type, location_type, service_radius, service_area_city,
-        latitude, longitude, city, state,
-        layout_mode, theme_color, instagram_handle, is_verified
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, true)
-      RETURNING id`,
-      [
-        userId,
-        config.storefront.name,
-        config.storefront.description,
-        config.storefront.address || null,
-        config.storefront.timezone,
-        config.storefront.profile_type || 'business',
-        config.storefront.location_type || 'fixed',
-        config.storefront.service_radius || null,
-        config.storefront.service_area_city || null,
-        config.storefront.latitude || null,
-        config.storefront.longitude || null,
-        config.storefront.city || null,
-        config.storefront.state || null,
-        config.storefront.layout_mode || 'list',
-        config.storefront.theme_color || 'zinc',
-        config.storefront.instagram_handle || null,
-      ]
+    const p = config.page;
+    const pageResult = await client.query(
+      `INSERT INTO storefronts (vendor_id, name, slug, description, address, city, state, timezone, instagram_handle, theme_color)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [userId, p.name, p.slug, p.description, p.address ?? null, p.city ?? null, p.state ?? null, p.timezone, p.instagram_handle ?? null, p.theme_color ?? 'purple']
     );
-    const storefrontId = storefrontResult.rows[0].id;
-    console.log(
-      `  ✓ Storefront created (ID: ${storefrontId}, Name: ${config.storefront.name})`
-    );
+    const storefrontId = pageResult.rows[0].id;
 
-    // 4. Create services
-    for (const serviceConfig of config.services) {
-      const serviceResult = await client.query(
-        `INSERT INTO services (
-          storefront_id, name, description, duration_minutes, price,
-          image_url, is_featured, buffer_time_minutes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
-        RETURNING id, name, price, duration_minutes`,
-        [
-          storefrontId,
-          serviceConfig.name,
-          serviceConfig.description || null,
-          serviceConfig.duration_minutes,
-          serviceConfig.price,
-          serviceConfig.image_url || null,
-          serviceConfig.is_featured || false,
-        ]
+    const services = new Map<string, { id: number; duration_minutes: number; price: number }>();
+    for (const s of config.services) {
+      const r = await client.query(
+        `INSERT INTO services (storefront_id, name, description, duration_minutes, price, image_url, buffer_time_minutes)
+         VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING id`,
+        [storefrontId, s.name, s.description, s.duration_minutes, s.price, s.image_url ?? null]
       );
-      const service = serviceResult.rows[0];
-      console.log(
-        `  ✓ Service created: ${service.name} ($${service.price}, ${service.duration_minutes}min)`
-      );
+      services.set(s.key, { id: r.rows[0].id, duration_minutes: s.duration_minutes, price: s.price });
     }
 
-    // 5. Create schedule rules
-    for (const ruleConfig of config.scheduleRules) {
-      const specificDate = ruleConfig.specific_date
-        ? formatDateForDB(ruleConfig.specific_date)
-        : null;
-
+    for (const [day, start, end] of config.hours) {
       await client.query(
-        `INSERT INTO schedule_rules (
-          storefront_id, service_id, rule_type, priority,
-          day_of_week, specific_date, start_time, end_time,
-          is_available, max_concurrent_appointments, name
-        ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, true, 10, $8)`,
-        [
-          storefrontId,
-          ruleConfig.rule_type,
-          ruleConfig.priority,
-          ruleConfig.day_of_week !== undefined ? ruleConfig.day_of_week : null,
-          specificDate,
-          ruleConfig.start_time,
-          ruleConfig.end_time,
-          ruleConfig.name || null,
-        ]
-      );
-
-      const dateDisplay = specificDate
-        ? `${specificDate} ${ruleConfig.start_time}-${ruleConfig.end_time}`
-        : `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][ruleConfig.day_of_week || 0]} ${ruleConfig.start_time}-${ruleConfig.end_time}`;
-
-      console.log(
-        `  ✓ Schedule rule created: ${ruleConfig.name || 'Rule'} (${dateDisplay})`
+        `INSERT INTO schedule_rules (storefront_id, rule_type, priority, day_of_week, start_time, end_time,
+                                     is_available, max_concurrent_appointments, name)
+         VALUES ($1, 'weekly', 1, $2, $3, $4, TRUE, 1, 'Regular hours')`,
+        [storefrontId, day, start, end]
       );
     }
 
-    return {
-      success: true,
-      userId,
-      storefrontId,
-      email: config.user.email,
-      password: config.user.password,
-      storefrontName: config.storefront.name,
-    };
+    for (const d of config.drops) {
+      const dropService = d.service ? services.get(d.service)! : null;
+      const dropResult = await client.query(
+        `INSERT INTO drops (storefront_id, service_id, title, description, drop_date, start_time, end_time,
+                            max_concurrent_appointments, is_published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE) RETURNING id`,
+        [storefrontId, dropService?.id ?? null, d.title, d.description, d.date, d.start, d.end, d.capacity]
+      );
+      const dropId = dropResult.rows[0].id;
+      const bookingService = dropService ?? [...services.values()][0];
+      for (const b of d.bookings ?? []) {
+        await insertBooking(client, storefrontId, p.timezone, bookingService, { ...b, date: d.date }, dropId);
+      }
+      for (const w of d.waitlist ?? []) {
+        await client.query('INSERT INTO drop_waitlist (drop_id, name, email) VALUES ($1, $2, $3)', [dropId, w.name, w.email]);
+      }
+    }
+
+    for (const b of config.bookings ?? []) {
+      await insertBooking(client, storefrontId, p.timezone, services.get(b.service)!, b, null);
+    }
+
+    return 'created';
   });
 }
 
-// ============================================================================
-// MAIN EXECUTION
-// ============================================================================
+async function main() {
+  const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+  // database.ts logs every query in development; keep the summary readable
+  const out = console.log;
+  console.log = () => {};
 
-/**
- * Main entry point: Create all hero vendors
- */
-async function seedHeroes() {
-  console.log('🎯 Creating Hero Vendors...\n');
-
-  const results: CreateVendorResult[] = [];
-
-  for (let i = 0; i < VENDORS.length; i++) {
-    const vendorConfig = VENDORS[i];
-    console.log(`Vendor ${i + 1}/${VENDORS.length}: ${vendorConfig.storefront.name}`);
-
+  out('🌱 Seeding hero vendors...\n');
+  for (const vendor of VENDORS) {
     try {
-      const result = await createVendor(vendorConfig);
-      results.push(result);
-      console.log(`  ✅ Successfully created\n`);
-    } catch (error: any) {
-      console.error(`  ❌ Failed: ${error.message}\n`);
-      results.push({
-        success: false,
-        email: vendorConfig.user.email,
-        error: error.message,
-      });
+      const result = await createVendor(vendor);
+      out(`${result === 'created' ? '✅' : '⏭️ '} ${vendor.page.name.padEnd(24)} ${frontend}/@${vendor.page.slug}  (${vendor.user.email})`);
+    } catch (error) {
+      out(`❌ ${vendor.page.name}: ${error instanceof Error ? error.message : error}`);
+      process.exitCode = 1;
     }
   }
-
-  // Print summary with login credentials
-  console.log('\n=====================================');
-  console.log('Hero Login Credentials:');
-  console.log('=====================================');
-
-  results.forEach((result, index) => {
-    if (result.success) {
-      console.log(
-        `${index + 1}. ${result.email} / ${result.password} (Storefront ID: ${result.storefrontId})`
-      );
-    } else if (result.skipped) {
-      console.log(`${index + 1}. ${result.email} (SKIPPED - already exists)`);
-    } else {
-      console.log(`${index + 1}. ${result.email} (FAILED - ${result.error})`);
-    }
-  });
-
-  console.log('=====================================\n');
-
-  const successCount = results.filter((r) => r.success).length;
-  const skippedCount = results.filter((r) => r.skipped).length;
-
-  if (successCount > 0) {
-    console.log(`✅ ${successCount}/${VENDORS.length} vendors created successfully!`);
-  }
-  if (skippedCount > 0) {
-    console.log(`⏭️  ${skippedCount}/${VENDORS.length} vendors already exist`);
-  }
-
-  const failedCount = results.filter((r) => !r.success && !r.skipped).length;
-  if (failedCount > 0) {
-    console.log(`❌ ${failedCount}/${VENDORS.length} vendors failed`);
-  }
-
-  console.log('\n🎯 You can now login at: http://localhost:5173/login\n');
-
-  process.exit(0);
+  out(`\nVendor password for all accounts: ${PASSWORD}`);
 }
 
-// Run the script
-seedHeroes().catch((error) => {
-  console.error('❌ Fatal error:', error);
-  process.exit(1);
-});
+main().finally(() => pool.end());

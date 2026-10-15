@@ -11,8 +11,11 @@ export function makeStorefront(overrides: Partial<Storefront> = {}): Storefront 
     id: 1,
     vendor_id: 100,
     name: 'Test Storefront',
+    slug: 'test-storefront',
     timezone: 'UTC',
-    location_type: 'fixed',
+    is_active: true,
+    theme_color: 'purple',
+    instagram_handle: null,
     ...overrides,
   } as Storefront;
 }
@@ -88,8 +91,12 @@ export function makeBooking(startIso: string, endIso: string) {
 export function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
   return {
     id: 500,
-    client_id: 200,
+    client_id: null,
     storefront_id: 1,
+    guest_name: 'Sam Lee',
+    guest_email: 'sam@example.com',
+    guest_phone: null,
+    manage_token: 'a'.repeat(64),
     service_id: 7,
     status: 'pending',
     requested_start_datetime: new Date('2026-06-08T09:00:00Z'),

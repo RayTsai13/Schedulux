@@ -1,5 +1,16 @@
 import sgMail from '@sendgrid/mail';
 
+const frontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
+const manageUrl = (token: string) => `${frontendUrl()}/manage/${encodeURIComponent(token)}`;
+
+/** Escape user-supplied text before interpolating it into email HTML */
+const esc = (value: string) =>
+    value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+/** Public URL of a booking page or one of its drops */
+export const pageUrl = (slug: string, dropId?: number) =>
+    `${frontendUrl()}/@${slug}${dropId ? `/drops/${dropId}` : ''}`;
+
 /**
  * EmailService — Fire-and-forget transactional email
  *
@@ -68,43 +79,45 @@ export class EmailService {
     // PUBLIC METHODS — called fire-and-forget (no await)
     // ================================================================
 
-    /** Welcome email after registration */
+    /** Welcome email after vendor registration */
     static sendWelcome(email: string, firstName: string): void {
         this.send(email, 'Welcome to Schedulux! 🎉', `
-      <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">Welcome, ${firstName}!</h1>
+      <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">Welcome, ${esc(firstName)}!</h1>
       <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-        Your Schedulux account is ready. You can now browse and book appointments
-        with talented professionals in your area.
+        Your account is ready. Claim your booking link, add your services, and post your first drop.
       </p>
-      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/explore"
+      <a href="${frontendUrl()}/dashboard"
          style="display: inline-block; background: #111827; color: #ffffff; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
-        Browse Marketplace
+        Set Up Your Page
       </a>
     `);
     }
 
-    /** Booking confirmation to client */
+    /** Booking request receipt to the guest, with their private manage link */
     static sendAppointmentConfirmation(
         email: string,
-        details: { serviceName: string; storefrontName: string; dateTime: string; price?: number }
+        details: { serviceName: string; storefrontName: string; dateTime: string; price?: number; manageToken: string }
     ): void {
         const priceLine = details.price ? `<p style="color: #4b5563; margin: 4px 0;">💰 Price: $${details.price}</p>` : '';
-        this.send(email, `Booking Confirmed — ${details.serviceName}`, `
+        this.send(email, `Booking Requested — ${details.serviceName}`, `
       <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">Booking Request Sent!</h1>
       <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
-        Your appointment request has been submitted. The vendor will review and confirm it shortly.
+        Your appointment request has been submitted. ${esc(details.storefrontName)} will review and confirm it shortly.
       </p>
       <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
         <p style="color: #111827; font-weight: 600; margin: 0 0 8px;">📋 Details</p>
-        <p style="color: #4b5563; margin: 4px 0;">🏪 ${details.storefrontName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">✂️ ${details.serviceName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">📅 ${details.dateTime}</p>
+        <p style="color: #4b5563; margin: 4px 0;">🏪 ${esc(details.storefrontName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">✂️ ${esc(details.serviceName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">📅 ${esc(details.dateTime)}</p>
         ${priceLine}
       </div>
-      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-appointments"
+      <a href="${manageUrl(details.manageToken)}"
          style="display: inline-block; background: #111827; color: #ffffff; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
-        View My Appointments
+        Manage Booking
       </a>
+      <p style="color: #9ca3af; font-size: 14px; margin: 24px 0 0;">
+        Keep this email: the link above lets you reschedule or cancel. Anyone with the link can manage this booking.
+      </p>
     `);
     }
 
@@ -116,31 +129,38 @@ export class EmailService {
         this.send(email, `New Booking Request — ${details.serviceName}`, `
       <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">New Booking Request!</h1>
       <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
-        ${details.clientName} has requested an appointment at ${details.storefrontName}.
+        ${esc(details.clientName)} has requested an appointment at ${esc(details.storefrontName)}.
       </p>
       <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
         <p style="color: #111827; font-weight: 600; margin: 0 0 8px;">📋 Details</p>
-        <p style="color: #4b5563; margin: 4px 0;">👤 ${details.clientName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">✂️ ${details.serviceName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">📅 ${details.dateTime}</p>
+        <p style="color: #4b5563; margin: 4px 0;">👤 ${esc(details.clientName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">✂️ ${esc(details.serviceName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">📅 ${esc(details.dateTime)}</p>
       </div>
-      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard"
+      <a href="${frontendUrl()}/dashboard/appointments"
          style="display: inline-block; background: #111827; color: #ffffff; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
         Review Request
       </a>
     `);
     }
 
-    /** Status change email to client (confirmed, cancelled, declined) */
+    /** Status change email to the guest (confirmed, cancelled, declined) */
     static sendAppointmentStatusChange(
         email: string,
-        details: { serviceName: string; storefrontName: string; dateTime: string; newStatus: string; vendorNotes?: string }
+        details: {
+            serviceName: string;
+            storefrontName: string;
+            dateTime: string;
+            newStatus: string;
+            vendorNotes?: string;
+            manageToken: string;
+        }
     ): void {
         const statusLabels: Record<string, { emoji: string; title: string; message: string }> = {
             confirmed: {
                 emoji: '✅',
                 title: 'Appointment Confirmed',
-                message: 'Great news! Your appointment has been confirmed by the vendor.',
+                message: 'Great news! Your appointment has been confirmed.',
             },
             cancelled: {
                 emoji: '❌',
@@ -150,7 +170,7 @@ export class EmailService {
             declined: {
                 emoji: '⛔',
                 title: 'Appointment Declined',
-                message: 'Unfortunately, the vendor was unable to accommodate your booking request.',
+                message: 'Unfortunately, your booking request could not be accommodated.',
             },
         };
 
@@ -161,7 +181,7 @@ export class EmailService {
         };
 
         const notesLine = details.vendorNotes
-            ? `<p style="color: #4b5563; margin: 16px 0 0; font-style: italic;">Note from vendor: "${details.vendorNotes}"</p>`
+            ? `<p style="color: #4b5563; margin: 16px 0 0; font-style: italic;">Note from ${esc(details.storefrontName)}: "${esc(details.vendorNotes)}"</p>`
             : '';
 
         this.send(email, `${status.emoji} ${status.title} — ${details.serviceName}`, `
@@ -170,21 +190,39 @@ export class EmailService {
         ${status.message}
       </p>
       <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
-        <p style="color: #4b5563; margin: 4px 0;">🏪 ${details.storefrontName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">✂️ ${details.serviceName}</p>
-        <p style="color: #4b5563; margin: 4px 0;">📅 ${details.dateTime}</p>
+        <p style="color: #4b5563; margin: 4px 0;">🏪 ${esc(details.storefrontName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">✂️ ${esc(details.serviceName)}</p>
+        <p style="color: #4b5563; margin: 4px 0;">📅 ${esc(details.dateTime)}</p>
         ${notesLine}
       </div>
-      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-appointments"
+      <a href="${manageUrl(details.manageToken)}"
          style="display: inline-block; background: #111827; color: #ffffff; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
-        View My Appointments
+        View Booking
+      </a>
+    `);
+    }
+
+    /** A spot opened up in a drop the recipient waitlisted for */
+    static sendWaitlistSpotOpened(
+        email: string,
+        details: { name: string; dropTitle: string; storefrontName: string; dropUrl: string }
+    ): void {
+        this.send(email, `A spot opened up — ${details.dropTitle}`, `
+      <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">A spot just opened up</h1>
+      <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+        Hi ${esc(details.name)}, someone cancelled their booking for <strong>${esc(details.dropTitle)}</strong>
+        at ${esc(details.storefrontName)}. Everyone on the waitlist got this email at the same time, so book quickly.
+      </p>
+      <a href="${details.dropUrl}"
+         style="display: inline-block; background: #111827; color: #ffffff; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
+        Grab the Spot
       </a>
     `);
     }
 
     /** Password reset email with token link */
     static sendPasswordReset(email: string, token: string): void {
-        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+        const resetUrl = `${frontendUrl()}/reset-password?token=${token}`;
         this.send(email, 'Reset Your Password — Schedulux', `
       <h1 style="color: #111827; font-size: 24px; margin: 0 0 16px;">Reset Your Password</h1>
       <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">

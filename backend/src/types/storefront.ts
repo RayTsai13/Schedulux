@@ -1,15 +1,12 @@
 // Storefront-related types
-
-// Profile type: individual vendors (tutors, freelancers) vs businesses (salons, clinics)
-export type ProfileType = 'individual' | 'business';
-
-// Location type: where services are provided
-export type LocationType = 'fixed' | 'mobile' | 'hybrid';
+// A storefront is a vendor's single public booking page, reachable at /@slug
 
 export interface Storefront {
   id: number;
   vendor_id: number;
   name: string;
+  /** Public handle: lowercase letters, digits, and dashes, 3–30 chars */
+  slug: string;
   description?: string;
   address?: string;
   phone?: string;
@@ -17,20 +14,10 @@ export interface Storefront {
   timezone: string;
   business_hours?: any; // JSONB
   is_active: boolean;
-  // Marketplace fields
-  profile_type: ProfileType;
-  location_type: LocationType;
-  service_radius?: number; // Miles, only for mobile/hybrid
-  service_area_city?: string; // For "Serves within X miles of [City]"
   avatar_url?: string;
-  is_verified: boolean; // Admin-only, read-only for vendors
-  // Geolocation fields (for marketplace discovery)
-  latitude?: number; // Geographic latitude for distance-based search
-  longitude?: number; // Geographic longitude for distance-based search
-  city?: string; // City name for text-based fallback search
-  state?: string; // State/province for text-based fallback search
-  // Visual portfolio fields
-  layout_mode: string; // 'list' | 'grid'
+  city?: string;
+  state?: string;
+  // Page styling
   theme_color: string;
   instagram_handle: string | null;
   // Timestamps
@@ -41,49 +28,63 @@ export interface Storefront {
 
 export interface CreateStorefrontRequest {
   name: string;
-  description?: string;
-  address?: string; // Optional for mobile vendors
-  phone?: string;
-  email?: string;
-  timezone?: string;
-  business_hours?: any;
-  // Marketplace fields (defaults applied by backend)
-  profile_type?: ProfileType;
-  location_type?: LocationType;
-  service_radius?: number;
-  service_area_city?: string;
-  avatar_url?: string;
-  // Geolocation fields (for marketplace discovery)
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-  state?: string;
-  // NOTE: is_verified is NOT included - admin-only
-}
-
-export interface UpdateStorefrontRequest {
-  name?: string;
+  slug: string;
   description?: string;
   address?: string;
   phone?: string;
   email?: string;
   timezone?: string;
   business_hours?: any;
-  is_active?: boolean;
-  // Marketplace fields
-  profile_type?: ProfileType;
-  location_type?: LocationType;
-  service_radius?: number;
-  service_area_city?: string;
   avatar_url?: string;
-  // Geolocation fields (for marketplace discovery)
-  latitude?: number;
-  longitude?: number;
   city?: string;
   state?: string;
-  // Visual portfolio fields
-  layout_mode?: string;
   theme_color?: string;
   instagram_handle?: string | null;
-  // NOTE: is_verified is NOT included - admin-only
 }
+
+export type UpdateStorefrontRequest = Partial<CreateStorefrontRequest> & {
+  is_active?: boolean;
+};
+
+/** Fields a vendor may change through the API */
+export const UPDATABLE_STOREFRONT_FIELDS = [
+  'name',
+  'slug',
+  'description',
+  'address',
+  'phone',
+  'email',
+  'timezone',
+  'business_hours',
+  'is_active',
+  'avatar_url',
+  'city',
+  'state',
+  'theme_color',
+  'instagram_handle',
+] as const;
+
+export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+
+/** Slugs that would collide with app routes */
+export const RESERVED_SLUGS = new Set([
+  'admin', 'api', 'app', 'book', 'dashboard', 'explore', 'forgot-password', 'help',
+  'login', 'logout', 'manage', 'onboarding', 'playground', 'privacy', 'register',
+  'reset-password', 'settings', 'signup', 'support', 'terms', 'cookies', 'www',
+]);
+
+/** Storefront fields safe to show on the public booking page */
+export type PublicStorefront = Pick<
+  Storefront,
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'description'
+  | 'address'
+  | 'city'
+  | 'state'
+  | 'timezone'
+  | 'avatar_url'
+  | 'theme_color'
+  | 'instagram_handle'
+>;

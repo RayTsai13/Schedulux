@@ -34,8 +34,8 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
 
             {/* Nav Actions - Right */}
             <div className="flex items-center gap-6">
-              <a href="/explore" className="text-on-surface-variant hover:text-on-surface font-medium transition-colors">
-                Explore
+              <a href="/playground" className="text-on-surface-variant hover:text-on-surface font-medium transition-colors">
+                Playground
               </a>
 
               {!isAuthenticated ? (
@@ -53,34 +53,18 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                     size="sm"
                     onClick={() => navigate('/register')}
                   >
-                    Sign Up
+                    Claim your link
                   </UniversalButton>
                 </div>
               ) : (
-                // Logged in - Show role-specific links + user menu
+                // Logged in - Show dashboard link + user menu
                 <div className="flex items-center gap-6">
-                  {user?.role === 'admin' ? (
-                    <a
-                      href="/admin"
-                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
-                    >
-                      Admin
-                    </a>
-                  ) : user?.role === 'vendor' ? (
-                    <a
-                      href="/dashboard"
-                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
-                    >
-                      Dashboard
-                    </a>
-                  ) : (
-                    <a
-                      href="/my-appointments"
-                      className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
-                    >
-                      My Appointments
-                    </a>
-                  )}
+                  <a
+                    href="/dashboard"
+                    className="text-on-surface-variant hover:text-on-surface font-medium transition-colors"
+                  >
+                    Dashboard
+                  </a>
 
                   {/* User Menu Dropdown */}
                   <div className="relative">
@@ -114,9 +98,6 @@ export default function AppScaffold({ children, showNav = true, noPadding = fals
                             <p className="text-xs text-on-surface-variant mt-0.5">
                               {user?.email}
                             </p>
-                            <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                              {user?.role === 'admin' ? 'Admin' : user?.role === 'vendor' ? 'Vendor' : 'Client'}
-                            </span>
                           </div>
 
                           {/* Logout Button */}

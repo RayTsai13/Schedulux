@@ -1,51 +1,24 @@
-# Schedulux: Business Context & Brainstorming Framework
+# Schedulux: Positioning
 
-## 🚀 Project Identity
-**Name:** Schedulux
-**Current State:** Advanced Beta (Feature complete for Scheduling, Foundation ready for Marketplace)
-**Core Mission:** To transition from a utility-based "Scheduling Tool" into a growth-focused "Exposure Engine" for small service-based businesses.
+## One sentence
+A booking page for your bio with **drops** built in: limited sessions, one shareable link, a live spots-left counter, and a waitlist when it sells out.
 
-## 💎 The Value Proposition
-Unlike generic schedulers (Calendly, Square Appointments) that focus solely on *logistics* (managing existing demand), Schedulux aims to solve the harder problem: **Discovery** (generating new demand).
+## Who it's for
+Independents who already have an audience (Instagram, TikTok, a regular clientele) and sell their time in bursts: barbers doing late-night chairs, tattoo artists running flash days, trainers opening a few extra sessions, handymen doing a weeknight pop-up.
 
-### 1. The Utility Layer (The "Hook")
-*A professional-grade operations platform that runs the business.*
-- **Multi-Storefront Management:** One owner can manage multiple physical locations seamlessly.
-- **Complex Availability Engine:** Handles priority-based overrides (e.g., "Open 9-5, but closed for lunch, except on Fridays, and closed for Xmas").
-- **Reliability:** Dual-booking modes (Instant vs. Request) with enterprise-grade race condition protection (PostgreSQL Advisory Locks).
-- **Compliance:** Full audit trails and history tracking for every change.
+## Why it works standalone
+Schedulux used to aim at a two-sided marketplace, which only has value once both sides show up in large numbers. The current product needs **one vendor**. They bring their own audience; Schedulux turns attention into booked slots. There's no discovery feed to fill and no client accounts to grow.
 
-### 2. The Exposure Layer (The "Differentiator")
-*Turning operational data into marketing assets.*
-- **Marketplace Network:** Aggregating supply (open slots) across all tenants to create a searchable destination for consumers.
-- **Yield Management:** converting "dead inventory" (empty slots in the next 24h) into "Flash Deals" to attract budget-conscious discovery.
-- **Visual Discovery:** "Book the Look" — Search by portfolio/result (e.g., "Balayage") rather than just business name.
-- **Hyper-Local SEO:** Every storefront page is engineered to be a micro-site that outranks the business's own generic website.
+## What makes it different from Calendly / Square
+- **Drops are first-class.** A drop is a dated window with per-slot capacity that overrides regular hours (even closures). It has its own link, a live counter, and a waitlist. In general-purpose schedulers this takes workarounds.
+- **No client accounts.** Guests book with name + email and manage the booking from a private link.
+- **It never double-books.** Writes are serialized per page with a PostgreSQL advisory lock; `npm run demo:race` shows it.
 
-## 🧠 Brainstorming Vectors
-*Use these prompts to generate ideas for features, pivots, and marketing strategies.*
+## Deliberately out of scope
+Marketplace/discovery, geosearch, admin verification, multiple locations per vendor, client logins, payments (for now).
 
-### Vector A: The "OpenTable" Effect (Aggregated Supply)
-*How do we leverage the fact that we hold the master calendar for hundreds of businesses?*
-- **Question:** How can we design a "Search Engine" that prioritizes *availability* over *lists*? (e.g., "Find me a barber open *right now*")
-- **Technical Asset:** We have a high-performance `AvailabilityService` that can query slots in milliseconds.
-
-### Vector B: "Yield Management" for Services (Dynamic Pricing)
-*Airlines change prices based on demand. Why can't Salons?*
-- **Question:** How can we automate "Flash Sales" so vendors don't have to manually manage them?
-- **Idea:** "Happy Hour" pricing rules automatically applied to low-traffic times.
-
-### Vector C: Community Cross-Pollination
-*Small businesses rely on word-of-mouth. How do we digitize that?*
-- **Question:** How can a coffee shop on Schedulux automatically drive traffic to the barber shop next door (also on Schedulux) after a purchase?
-- **Concept:** "The Neighborhood Network" — Post-booking/payment referral loops.
-
-### Vector D: The "Zero-Effort" Website
-*Most small businesses have terrible websites.*
-- **Question:** Can Schedulux be the *only* web presence a business needs?
-- **Requirement:** Needs rich media (portfolio galleries), robust SEO (Schema.org injection), and social proof (reviews) built directly into the booking flow.
-
-## 🎯 Target Audience
-- **Primary:** High-touch service providers (Salons, Barbers, Tattoo Artists, Personal Trainers).
-- **Secondary:** Professional services (Accountants, Consultants) who need complex rule management.
-- **Pain Point:** "I'm good at my craft, but I'm bad at marketing and tech. I want a tool that brings me customers, not just organizes them."
+## Possible next steps
+- Server-rendered share previews (OG images) for drop links
+- Payments/deposits for drops (Stripe), to cut no-shows
+- "Notify me about the next drop" follower list per page
+- Publish `@schedulux/availability-engine` to npm

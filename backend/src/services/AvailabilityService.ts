@@ -1,43 +1,36 @@
 /**
  * AvailabilityService - Calculate available appointment slots
  *
- * This service implements the core availability calculation engine:
- * 1. Fetches schedule rules and applies priority resolution
- * 2. Builds working hours from rules for each day
- * 3. Subtracts existing appointments
- * 4. Generates bookable time slots
+ * Database adapter for @schedulux/availability-engine: loads the storefront's
+ * rules, drops, and bookings, maps them to engine inputs, and maps results back
+ * to API shapes. Priority resolution and slot generation live in the engine.
  */
 
+import { addDays, isAfter, isBefore } from 'date-fns';
 import {
-  parseISO,
-  format,
-  addMinutes,
-  addDays,
-  startOfDay,
-  isBefore,
-  isAfter,
-  isEqual,
-  getDay,
-  getMonth,
-  getYear,
-  differenceInMinutes,
-  max as dateMax,
-  min as dateMin,
-} from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+  computeSlots,
+  checkSlot,
+  addDaysToDateStr,
+  startOfLocalDay,
+  type Rule,
+  type Window,
+} from '@schedulux/availability-engine';
 
 import { StorefrontModel } from '../models/Storefront';
 import { ServiceModel } from '../models/Service';
 import { ScheduleRuleModel } from '../models/ScheduleRule';
 import { DropModel } from '../models/Drop';
 import { AppointmentModel } from '../models/Appointment';
-import {
-  AvailableSlot,
-  AvailabilityResponse,
-  TimeBlock,
-  SlotAvailabilityResult,
-} from '../types/availability';
+import { AvailabilityResponse, SlotAvailabilityResult } from '../types/availability';
 import { ScheduleRule, Drop } from '../types';
+import { toDateStr } from '../utils/dates';
+
+/** Rules and drops for a slot's date, in engine form */
+export interface SlotContext {
+  timezone: string;
+  rules: Rule[];
+  windows: Window[];
+}
 
 export class AvailabilityService {
   /**
@@ -129,27 +122,20 @@ export class AvailabilityService {
       null // Check all services for concurrent booking limits
     );
 
-    // 6. Generate slots for each local calendar day in the range.
-    // Iterate over date strings, not by adding 24h, so DST changes don't skip or repeat a day.
-    const allSlots: AvailableSlot[] = [];
-
-    for (
-      let dateStr = startDateStr;
-      dateStr <= endDateStr;
-      dateStr = this.nextDateStr(dateStr)
-    ) {
-      const daySlots = this.generateSlotsForDay(
-        dateStr,
-        timezone,
-        rules,
-        existingAppointments,
-        slotDuration,
-        service.duration_minutes,
-        0, // V1: No travel buffer yet, V2: Calculate dynamically based on appointment locations
-        applicableDrops
-      );
-      allSlots.push(...daySlots);
-    }
+    // 6. Generate slots for each local calendar day in the range
+    const slots = computeSlots({
+      timezone,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      rules: this.toEngineRules(rules),
+      windows: this.toEngineWindows(applicableDrops),
+      bookings: existingAppointments.map((apt) => ({
+        start: apt.requested_start_datetime,
+        end: apt.requested_end_datetime,
+      })),
+      slotMinutes: slotDuration,
+      displayMinutes: service.duration_minutes,
+    });
 
     return {
       storefront_id: storefrontId,
@@ -161,7 +147,14 @@ export class AvailabilityService {
         buffer_time_minutes: service.buffer_time_minutes,
         price: service.price ?? null,
       },
-      slots: allSlots,
+      slots: slots.map((slot) => ({
+        start_datetime: slot.start,
+        end_datetime: slot.end,
+        local_date: slot.localDate,
+        local_start_time: slot.localStart,
+        local_end_time: slot.localEnd,
+        available_capacity: slot.remaining,
+      })),
     };
   }
 
@@ -180,7 +173,35 @@ export class AvailabilityService {
     startDatetime: Date,
     endDatetime: Date
   ): Promise<SlotAvailabilityResult> {
-    // 1. Fetch storefront and service
+    const context = await this.loadSlotContext(storefrontId, serviceId, startDatetime);
+    if ('available' in context) {
+      return context;
+    }
+
+    // Count existing overlapping appointments (all services share capacity)
+    const currentBookings = await AppointmentModel.countOverlappingAppointments(
+      storefrontId,
+      startDatetime,
+      endDatetime,
+      null
+    );
+
+    return this.evaluateSlot(context, startDatetime, endDatetime, currentBookings);
+  }
+
+  /**
+   * Load everything needed to judge a slot except the live booking count:
+   * timezone, rules, and drops for the slot's date.
+   *
+   * Booking writes call this *before* taking their lock, then count overlaps on
+   * the transaction's own connection, so nothing inside the lock needs a second
+   * pool connection (which could starve the pool under contention).
+   */
+  static async loadSlotContext(
+    storefrontId: number,
+    serviceId: number,
+    startDatetime: Date
+  ): Promise<SlotContext | SlotAvailabilityResult> {
     const storefront = await StorefrontModel.findById(storefrontId);
     if (!storefront) {
       return { available: false, reason: 'Storefront not found' };
@@ -191,420 +212,96 @@ export class AvailabilityService {
       return { available: false, reason: 'Service not found or inactive' };
     }
 
-    const timezone = storefront.timezone || 'UTC';
-
-    // 2. Check if slot is in the past
     if (isBefore(startDatetime, new Date())) {
       return { available: false, reason: 'Cannot book slots in the past' };
     }
 
-    // 3. Get effective rules for the date (padded a day each side; see getAvailableSlots)
+    // Padded a day each side; see getAvailableSlots
     const queryStart = addDays(startDatetime, -1);
     const queryEnd = addDays(startDatetime, 1);
 
-    const rules = await ScheduleRuleModel.findByDateRange(
-      storefrontId,
-      serviceId,
-      queryStart,
-      queryEnd
-    );
+    const rules = await ScheduleRuleModel.findByDateRange(storefrontId, serviceId, queryStart, queryEnd);
+    const drops = await DropModel.findActiveByDateRange(storefrontId, queryStart, queryEnd);
+    const applicableDrops = drops.filter((d) => d.service_id === null || d.service_id === serviceId);
 
-    // 3b. Get drops for the date
-    const drops = await DropModel.findActiveByDateRange(
-      storefrontId,
-      queryStart,
-      queryEnd
-    );
-    const applicableDrops = drops.filter(
-      d => d.service_id === null || d.service_id === serviceId
-    );
+    return {
+      timezone: storefront.timezone || 'UTC',
+      rules: this.toEngineRules(rules),
+      windows: this.toEngineWindows(applicableDrops),
+    };
+  }
 
-    // 4. Check if slot falls within working hours (rules + drops).
-    // Pass the UTC instant; the helpers convert to the storefront timezone themselves.
-    const ruleBlocks = this.getEffectiveTimeBlocksForDate(
-      startDatetime,
-      timezone,
-      rules
-    );
-    const dropBlocks = this.getDropTimeBlocksForDate(
-      startDatetime,
-      timezone,
-      applicableDrops
-    );
-    const effectiveBlocks = this.mergeTimeBlocks([...ruleBlocks, ...dropBlocks]);
-
-    const slotWithinWorkingHours = effectiveBlocks.some((block) => {
-      return (
-        block.isAvailable &&
-        !isBefore(startDatetime, block.start) &&
-        !isAfter(endDatetime, block.end)
-      );
+  /**
+   * Judge a slot against loaded context and a live overlap count (pure)
+   */
+  static evaluateSlot(
+    context: SlotContext,
+    startDatetime: Date,
+    endDatetime: Date,
+    currentBookings: number
+  ): SlotAvailabilityResult {
+    const result = checkSlot({
+      timezone: context.timezone,
+      start: startDatetime,
+      end: endDatetime,
+      rules: context.rules,
+      windows: context.windows,
+      overlapping: currentBookings,
     });
 
-    if (!slotWithinWorkingHours) {
-      return { available: false, reason: 'Slot is outside working hours' };
-    }
-
-    // 5. Find the applicable rule for max_concurrent
-    const applicableBlock = effectiveBlocks.find((block) => {
-      return (
-        block.isAvailable &&
-        !isBefore(startDatetime, block.start) &&
-        !isAfter(endDatetime, block.end)
-      );
-    });
-
-    const maxConcurrent = applicableBlock?.maxConcurrent ?? 1;
-
-    // 6. Count existing overlapping appointments
-    const currentBookings = await AppointmentModel.countOverlappingAppointments(
-      storefrontId,
-      startDatetime,
-      endDatetime,
-      null // Check all services for concurrent limit
-    );
-
-    if (currentBookings >= maxConcurrent) {
+    if (!result.available) {
+      if (result.reason === 'full') {
+        return {
+          available: false,
+          reason: 'Maximum concurrent bookings reached',
+          currentBookings,
+          maxConcurrent: result.capacity,
+        };
+      }
       return {
         available: false,
-        reason: 'Maximum concurrent bookings reached',
-        currentBookings,
-        maxConcurrent,
+        reason: result.reason === 'past' ? 'Cannot book slots in the past' : 'Slot is outside working hours',
       };
     }
 
     return {
       available: true,
       currentBookings,
-      maxConcurrent,
+      maxConcurrent: result.capacity,
     };
   }
 
-  /**
-   * Generate available slots for a single day
-   *
-   * @param travelBuffer - Minutes to add for travel between appointments (default: 0)
-   *                       V1: Always 0 (future-proofing for V2 dynamic travel time calculation)
-   */
-  private static generateSlotsForDay(
-    dateStr: string,
-    timezone: string,
-    allRules: ScheduleRule[],
-    allAppointments: any[],
-    slotDuration: number,
-    displayDuration: number,
-    travelBuffer: number = 0,
-    allDrops: Drop[] = []
-  ): AvailableSlot[] {
-    // Local day boundaries as UTC instants
-    const dayStart = this.parseLocalDate(dateStr, timezone);
-    const dayEnd = this.parseLocalDate(this.nextDateStr(dateStr), timezone);
-
-    // Get effective time blocks for this day (from rules)
-    const timeBlocks = this.getEffectiveTimeBlocksForDate(dayStart, timezone, allRules);
-
-    // Inject drop-based time blocks (priority: 100, overrides rules)
-    const dropBlocks = this.getDropTimeBlocksForDate(dayStart, timezone, allDrops);
-    timeBlocks.push(...dropBlocks);
-
-    // Re-merge to resolve overlaps with drop priority
-    const mergedBlocks = this.mergeTimeBlocks(timeBlocks);
-
-    // Filter appointments for this day
-    const dayAppointments = allAppointments.filter((apt) => {
-      const aptStart = new Date(apt.requested_start_datetime);
-      const aptEnd = new Date(apt.requested_end_datetime);
-      return isBefore(aptStart, dayEnd) && isAfter(aptEnd, dayStart);
-    });
-
-    const slots: AvailableSlot[] = [];
-    const now = new Date();
-
-    // For each available time block, generate slots
-    for (const block of mergedBlocks) {
-      if (!block.isAvailable) continue;
-
-      let slotStart = block.start;
-
-      while (true) {
-        const slotEnd = addMinutes(slotStart, slotDuration);
-
-        // Stop if slot would extend past block end
-        if (isAfter(slotEnd, block.end)) break;
-
-        // Skip slots in the past
-        if (!isBefore(slotStart, now)) {
-          // Count appointments that overlap with this slot
-          const overlappingCount = dayAppointments.filter((apt) => {
-            const aptStart = new Date(apt.requested_start_datetime);
-            const aptEnd = new Date(apt.requested_end_datetime);
-            return isBefore(aptStart, slotEnd) && isAfter(aptEnd, slotStart);
-          }).length;
-
-          const availableCapacity = block.maxConcurrent - overlappingCount;
-
-          // Only include slot if there's capacity
-          if (availableCapacity > 0) {
-            const localStart = toZonedTime(slotStart, timezone);
-            const displayEnd = addMinutes(slotStart, displayDuration);
-            const localEnd = toZonedTime(displayEnd, timezone);
-
-            slots.push({
-              start_datetime: slotStart.toISOString(),
-              end_datetime: slotEnd.toISOString(),
-              local_date: format(localStart, 'yyyy-MM-dd'),
-              local_start_time: format(localStart, 'HH:mm'),
-              local_end_time: format(localEnd, 'HH:mm'),
-              available_capacity: availableCapacity,
-            });
-          }
-        }
-
-        // Move to next slot
-        slotStart = slotEnd;
-      }
-    }
-
-    return slots;
+  private static toEngineRules(rules: ScheduleRule[]): Rule[] {
+    return rules.map((rule) => ({
+      id: rule.id,
+      type: rule.rule_type,
+      dayOfWeek: rule.day_of_week,
+      date: rule.specific_date ? toDateStr(rule.specific_date) : null,
+      month: rule.month,
+      year: rule.year,
+      start: rule.start_time,
+      end: rule.end_time,
+      available: rule.is_available,
+      capacity: rule.max_concurrent_appointments,
+      priority: rule.priority,
+    }));
   }
 
-  /**
-   * Get effective time blocks for a specific date
-   * Applies priority resolution: daily > monthly > weekly
-   */
-  private static getEffectiveTimeBlocksForDate(
-    date: Date,
-    timezone: string,
-    allRules: ScheduleRule[]
-  ): TimeBlock[] {
-    const localDate = toZonedTime(date, timezone);
-    const dayOfWeek = getDay(localDate);
-    const month = getMonth(localDate) + 1; // 1-12
-    const year = getYear(localDate);
-    const dateStr = format(localDate, 'yyyy-MM-dd');
-
-    // Filter rules applicable to this date
-    const applicableRules = allRules.filter((rule) => {
-      if (rule.rule_type === 'weekly') {
-        return rule.day_of_week === dayOfWeek;
-      }
-      if (rule.rule_type === 'daily') {
-        // Compare date strings to handle timezone correctly
-        const ruleDate = rule.specific_date;
-        if (!ruleDate) return false;
-        if (typeof ruleDate === 'string') {
-          return ruleDate.substring(0, 10) === dateStr;
-        }
-        return format(new Date(ruleDate), 'yyyy-MM-dd') === dateStr;
-      }
-      if (rule.rule_type === 'monthly') {
-        const monthMatch = rule.month === month;
-        const yearMatch = rule.year === null || rule.year === year;
-        return monthMatch && yearMatch;
-      }
-      return false;
-    });
-
-    // Sort by priority (higher first)
-    applicableRules.sort((a, b) => b.priority - a.priority);
-
-    // Convert rules to time blocks
-    const blocks: TimeBlock[] = applicableRules.map((rule) => {
-      const dayStart = startOfDay(localDate);
-
-      // Parse start and end times
-      const [startHour, startMin] = rule.start_time.split(':').map(Number);
-      const [endHour, endMin] = rule.end_time.split(':').map(Number);
-
-      const blockStartLocal = addMinutes(
-        addMinutes(dayStart, startHour * 60),
-        startMin
-      );
-      const blockEndLocal = addMinutes(
-        addMinutes(dayStart, endHour * 60),
-        endMin
-      );
-
-      // Convert to UTC for storage/comparison
-      const blockStartUtc = fromZonedTime(blockStartLocal, timezone);
-      const blockEndUtc = fromZonedTime(blockEndLocal, timezone);
-
-      return {
-        start: blockStartUtc,
-        end: blockEndUtc,
-        isAvailable: rule.is_available,
-        maxConcurrent: rule.max_concurrent_appointments,
-        priority: rule.priority,
-        ruleId: rule.id,
-      };
-    });
-
-    // Merge overlapping blocks (higher priority wins)
-    return this.mergeTimeBlocks(blocks);
+  static toEngineWindows(drops: Drop[]): Window[] {
+    return drops.map((drop) => ({
+      id: drop.id,
+      date: toDateStr(drop.drop_date),
+      start: drop.start_time,
+      end: drop.end_time,
+      capacity: drop.max_concurrent_appointments,
+    }));
   }
 
-  /**
-   * Merge overlapping time blocks, with higher priority taking precedence
-   */
-  private static mergeTimeBlocks(blocks: TimeBlock[]): TimeBlock[] {
-    if (blocks.length === 0) return [];
-
-    // Sort by start time, then by priority (descending)
-    const sorted = [...blocks].sort((a, b) => {
-      const startDiff = a.start.getTime() - b.start.getTime();
-      if (startDiff !== 0) return startDiff;
-      return b.priority - a.priority;
-    });
-
-    const result: TimeBlock[] = [];
-    const events: Array<{
-      time: Date;
-      type: 'start' | 'end';
-      block: TimeBlock;
-    }> = [];
-
-    // Create events for each block
-    for (const block of sorted) {
-      events.push({ time: block.start, type: 'start', block });
-      events.push({ time: block.end, type: 'end', block });
-    }
-
-    // Sort events by time
-    events.sort((a, b) => {
-      const timeDiff = a.time.getTime() - b.time.getTime();
-      if (timeDiff !== 0) return timeDiff;
-      // Process ends before starts at the same time
-      if (a.type !== b.type) return a.type === 'end' ? -1 : 1;
-      return 0;
-    });
-
-    // Process events using a sweep line algorithm
-    const activeBlocks: TimeBlock[] = [];
-    let lastTime: Date | null = null;
-
-    for (const event of events) {
-      // Emit segment if we have active blocks and time has advanced
-      if (lastTime && activeBlocks.length > 0 && event.time > lastTime) {
-        // Find highest priority active block
-        const topBlock = activeBlocks.reduce((max, b) =>
-          b.priority > max.priority ? b : max
-        );
-
-        result.push({
-          start: lastTime,
-          end: event.time,
-          isAvailable: topBlock.isAvailable,
-          maxConcurrent: topBlock.maxConcurrent,
-          priority: topBlock.priority,
-          ruleId: topBlock.ruleId,
-        });
-      }
-
-      // Update active blocks
-      if (event.type === 'start') {
-        activeBlocks.push(event.block);
-      } else {
-        const idx = activeBlocks.findIndex((b) => b === event.block);
-        if (idx !== -1) activeBlocks.splice(idx, 1);
-      }
-
-      lastTime = event.time;
-    }
-
-    // Merge adjacent blocks with same properties
-    return this.consolidateBlocks(result);
-  }
-
-  /**
-   * Consolidate adjacent blocks with same availability settings
-   */
-  private static consolidateBlocks(blocks: TimeBlock[]): TimeBlock[] {
-    if (blocks.length === 0) return [];
-
-    const result: TimeBlock[] = [blocks[0]];
-
-    for (let i = 1; i < blocks.length; i++) {
-      const prev = result[result.length - 1];
-      const curr = blocks[i];
-
-      // Merge if adjacent and same settings
-      if (
-        isEqual(prev.end, curr.start) &&
-        prev.isAvailable === curr.isAvailable &&
-        prev.maxConcurrent === curr.maxConcurrent
-      ) {
-        prev.end = curr.end;
-      } else {
-        result.push(curr);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Convert drops to time blocks for a specific date
-   * Drops get priority 100 (overrides all rules)
-   */
-  private static getDropTimeBlocksForDate(
-    date: Date,
-    timezone: string,
-    allDrops: Drop[]
-  ): TimeBlock[] {
-    const localDate = toZonedTime(date, timezone);
-    const dateStr = format(localDate, 'yyyy-MM-dd');
-
-    // Filter drops for this date
-    const dayDrops = allDrops.filter((drop) => {
-      const dropDate = typeof drop.drop_date === 'string'
-        ? drop.drop_date.substring(0, 10)
-        : format(new Date(drop.drop_date), 'yyyy-MM-dd');
-      return dropDate === dateStr;
-    });
-
-    return dayDrops.map((drop) => {
-      const dayStart = startOfDay(localDate);
-      const [startHour, startMin] = drop.start_time.split(':').map(Number);
-      const [endHour, endMin] = drop.end_time.split(':').map(Number);
-
-      const blockStartLocal = addMinutes(
-        addMinutes(dayStart, startHour * 60),
-        startMin
-      );
-      const blockEndLocal = addMinutes(
-        addMinutes(dayStart, endHour * 60),
-        endMin
-      );
-
-      const blockStartUtc = fromZonedTime(blockStartLocal, timezone);
-      const blockEndUtc = fromZonedTime(blockEndLocal, timezone);
-
-      return {
-        start: blockStartUtc,
-        end: blockEndUtc,
-        isAvailable: true,
-        maxConcurrent: drop.max_concurrent_appointments,
-        priority: 100,
-        dropId: drop.id,
-      };
-    });
-  }
-
-  /**
-   * Return the calendar date after a YYYY-MM-DD string (timezone-independent)
-   */
   private static nextDateStr(dateStr: string): string {
-    const d = new Date(`${dateStr}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + 1);
-    return d.toISOString().slice(0, 10);
+    return addDaysToDateStr(dateStr, 1);
   }
 
-  /**
-   * Parse a local date string (YYYY-MM-DD) into a Date object at midnight in the given timezone
-   */
   private static parseLocalDate(dateStr: string, timezone: string): Date {
-    // Parse as local date and convert to UTC
-    const localMidnight = parseISO(`${dateStr}T00:00:00`);
-    return fromZonedTime(localMidnight, timezone);
+    return startOfLocalDay(dateStr, timezone);
   }
 }

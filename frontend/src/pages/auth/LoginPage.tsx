@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,8 +29,7 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
 // ---------------------------------------------------------------------------
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -47,16 +46,7 @@ export default function LoginPage() {
       const success = await login(data.email, data.password);
       if (success) {
         toast.success('Login successful!');
-        setTimeout(() => {
-          const returnTo = searchParams.get('returnTo');
-          if (returnTo) {
-            navigate(returnTo);
-          } else if (user?.role === 'vendor') {
-            navigate('/dashboard');
-          } else {
-            navigate('/explore');
-          }
-        }, 100);
+        navigate('/dashboard');
       } else {
         toast.error('Invalid email or password');
       }
@@ -67,8 +57,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
-  const returnToParam = searchParams.get('returnTo');
 
   return (
     <AuthLayout title="Schedulux" subtitle="Welcome back to the hearth.">
@@ -171,12 +159,12 @@ export default function LoginPage() {
       {/* Bottom link */}
       <div className="mt-8 text-center">
         <p className="font-body text-sm text-on-surface-variant">
-          New to the community?{' '}
+          Don't have a page yet?{' '}
           <button
-            onClick={() => navigate(`/register${returnToParam ? `?returnTo=${returnToParam}` : ''}`)}
+            onClick={() => navigate('/register')}
             className="font-bold text-primary hover:underline underline-offset-4"
           >
-            Register your plot
+            Claim your link
           </button>
         </p>
       </div>

@@ -91,43 +91,33 @@ export class StorefrontModel {
    * });
    */
   static async create(vendorId: number, storefrontData: CreateStorefrontRequest): Promise<Storefront> {
-    // Destructure the incoming data object to extract individual fields
     const {
       name,
+      slug,
       description,
       address,
       phone,
       email,
       timezone = 'UTC',  // Default timezone to UTC if not specified
       business_hours,
-      // Marketplace fields with defaults
-      profile_type = 'business',
-      location_type = 'fixed',
-      service_radius,
-      service_area_city,
       avatar_url,
-      // Geolocation fields (for marketplace discovery)
-      latitude,
-      longitude,
       city,
-      state
+      state,
+      theme_color,
+      instagram_handle,
     } = storefrontData;
 
     // Insert new storefront and return the complete record (RETURNING *)
-    // PostgreSQL's RETURNING clause gives us the inserted row with auto-generated fields
-    // Note: is_verified is NOT included - defaults to false, admin-only field
     const result = await query(`
       INSERT INTO storefronts (
-        vendor_id, name, description, address, phone, email, timezone, business_hours,
-        profile_type, location_type, service_radius, service_area_city, avatar_url,
-        latitude, longitude, city, state
+        vendor_id, name, slug, description, address, phone, email, timezone, business_hours,
+        avatar_url, city, state, theme_color, instagram_handle
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE($13, 'purple'), $14)
       RETURNING *
     `, [
-      vendorId, name, description, address, phone, email, timezone, business_hours,
-      profile_type, location_type, service_radius ?? null, service_area_city ?? null, avatar_url ?? null,
-      latitude ?? null, longitude ?? null, city ?? null, state ?? null
+      vendorId, name, slug, description, address, phone, email, timezone, business_hours,
+      avatar_url ?? null, city ?? null, state ?? null, theme_color ?? null, instagram_handle ?? null
     ]);
 
     // Return the newly created storefront (first and only row from INSERT)
@@ -211,60 +201,24 @@ export class StorefrontModel {
   }
 
   /**
-   * Find a storefront by ID without ownership check (public view)
-   *
-   * Used for public marketplace pages where any user can view active storefronts
-   *
-   * @param id - The storefront ID
-   * @returns Promise<Storefront | null> - The storefront if found and active, null otherwise
+   * Find an active storefront by its public slug (no ownership check)
    */
-  static async findPublicById(id: number): Promise<Storefront | null> {
+  static async findPublicBySlug(slug: string): Promise<Storefront | null> {
     const result = await query(
-      'SELECT * FROM storefronts WHERE id = $1 AND deleted_at IS NULL AND is_active = TRUE',
-      [id]
+      'SELECT * FROM storefronts WHERE slug = $1 AND deleted_at IS NULL AND is_active = TRUE',
+      [slug]
     );
     return result.rows[0] || null;
   }
 
   /**
-   * Search storefronts for marketplace discovery (public, no auth)
-   *
-   * This method is called by MarketplaceService to execute the complex geographic
-   * search query. The actual query building is done in MarketplaceService.
-   *
-   * @param sqlQuery - Pre-built SQL query string
-   * @param params - Query parameters
-   * @returns Promise<any[]> - Raw database rows (to be mapped by MarketplaceService)
+   * Whether any storefront (including soft-deleted ones) already holds a slug
    */
-  static async findAllAdmin(limit: number, offset: number): Promise<any[]> {
-    const result = await query(`
-      SELECT s.*, u.first_name, u.last_name, u.email AS vendor_email
-      FROM storefronts s
-      JOIN users u ON s.vendor_id = u.id
-      WHERE s.deleted_at IS NULL
-      ORDER BY s.created_at DESC
-      LIMIT $1 OFFSET $2
-    `, [limit, offset]);
-    return result.rows;
-  }
-
-  static async countAll(): Promise<number> {
-    const result = await query('SELECT COUNT(*)::int FROM storefronts WHERE deleted_at IS NULL', []);
-    return result.rows[0].count;
-  }
-
-  static async setVerified(id: number, isVerified: boolean): Promise<any | null> {
-    const result = await query(`
-      UPDATE storefronts
-      SET is_verified = $2, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1 AND deleted_at IS NULL
-      RETURNING *
-    `, [id, isVerified]);
-    return result.rows[0] || null;
-  }
-
-  static async searchPublic(sqlQuery: string, params: any[]): Promise<any[]> {
-    const result = await query(sqlQuery, params);
-    return result.rows;
+  static async slugExists(slug: string, excludeId?: number): Promise<boolean> {
+    const result = await query(
+      'SELECT 1 FROM storefronts WHERE slug = $1 AND id IS DISTINCT FROM $2',
+      [slug, excludeId ?? null]
+    );
+    return result.rows.length > 0;
   }
 }
