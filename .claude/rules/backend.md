@@ -53,7 +53,7 @@
 
 ## Migrations
 
-In production/Docker, migrations run automatically on container startup via `npm run migrate` (`backend/src/migrate.ts`, tracks applied files in `schema_migrations`). Locally: `npm run build && npm run migrate`.
+In production/Docker, migrations run automatically on container startup via `npm run migrate` (`backend/src/migrate.ts`, tracks applied files in `schema_migrations`). Locally: `npm run build && npm run migrate` on a fresh database. A database whose earlier migrations were applied by hand with `psql` has no `schema_migrations` table, so the runner would re-run everything from 004; apply new files with `psql -d schedulux_primary -f backend/migrations/<file>.sql` instead.
 
 Files, in order: `004_clean_schema.sql` … `010_password_reset_tokens.sql`, `011_drops_pivot.sql` (guest booking columns, slugs, `drop_waitlist`, drops marketplace/geo/mobile columns).
 
