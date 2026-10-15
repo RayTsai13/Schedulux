@@ -84,7 +84,7 @@ VITE_API_URL=http://localhost:3000/api
 
 - Full AWS EC2 + RDS setup, updating, optional auto-deploy workflow: `docs/deployment.md`
 - CI checks: `.github/workflows/ci.yml` runs on PRs and pushes to `main`
-- The auto-deploy workflow is **not** committed; `docs/deployment.md` has a ready-to-add `deploy.yml`
+- Auto-deploy: `.github/workflows/deploy.yml` deploys to EC2 over SSH after CI passes on `main`
 - Local Docker stack: `docker compose -f docker-compose.local.yml up`
 - Production Docker stack: `docker compose up` (requires `.env` with RDS credentials)
 
@@ -101,7 +101,7 @@ VITE_API_URL=http://localhost:3000/api
 | Concurrency: per-page advisory lock, race demo | ✅ Done |
 | Email notifications (SendGrid) | ✅ Done |
 | Docker + Caddy + nginx, CI | ✅ Done |
-| Auto-deploy to EC2 | ⚠️ Documented in `docs/deployment.md`, workflow not committed |
+| Auto-deploy to EC2 | ✅ Done — `.github/workflows/deploy.yml` |
 | Legal pages | ✅ Done — placeholder text, needs legal review |
 | OG share images for drop links | ❌ Not started (needs a server-rendered share route) |
 | Payments / deposits | ❌ Not started |

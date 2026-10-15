@@ -170,38 +170,9 @@ aws rds create-db-snapshot --db-instance-identifier schedulux-db --db-snapshot-i
 
 ## Automatic deploys (optional)
 
-CI (`.github/workflows/ci.yml`) runs on every push and PR. To deploy automatically after CI passes on `main`, add `.github/workflows/deploy.yml`:
+CI (`.github/workflows/ci.yml`) runs on every push and PR. `.github/workflows/deploy.yml` runs after CI passes on a push to `main`: it SSHes into the instance, resets the checkout to `origin/main`, rebuilds and restarts the containers (migrations run on backend startup), prunes Docker build cache (the instance has an 8 GB disk), and checks `https://schedulux.net/health`. Take an RDS snapshot before merging anything with a destructive migration.
 
-```yaml
-name: Deploy
-
-on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
-
-jobs:
-  deploy:
-    if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/Schedulux
-            git fetch origin main && git reset --hard origin/main
-            export VITE_API_URL=https://yourdomain.com/api
-            docker compose build && docker compose up -d
-            sleep 10 && docker compose logs --tail=20 backend
-      - name: Health check
-        run: curl --fail --retry 5 --retry-delay 10 https://yourdomain.com/health
-```
-
-Add these repository secrets (Settings → Secrets and variables → Actions): `EC2_HOST` (Elastic IP), `EC2_USER` (`ec2-user`), `EC2_SSH_KEY` (the full contents of `schedulux-key.pem`, including the BEGIN/END lines). The deploy discards any local changes on the instance, so all changes must come through git.
+The workflow needs these repository secrets (Settings → Secrets and variables → Actions): `EC2_HOST` (Elastic IP), `EC2_USER` (`ec2-user`), `EC2_SSH_KEY` (the full contents of `schedulux-key.pem`, including the BEGIN/END lines). The deploy discards any local changes on the instance, so all changes must come through git.
 
 ---
 
